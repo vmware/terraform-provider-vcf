@@ -1,4 +1,27 @@
-# Ignore everything in this directory
-*
-# Except this file
-!.gitignore
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# Ignore any built binaries with default name
+terraform-provider-vcf
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+secrets.yml
+dist/
+.idea/
+.vscode/
+*.iml
+
+# Ignore editor temp files
+*~
+
+# MacOS
+## Ignore desktop services store files.
+**/.DS_Store
