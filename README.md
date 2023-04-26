@@ -1,7 +1,7 @@
 # Terraform provider for VMware Cloud Foundation
 
 This is the repository for the Terraform provider for VMware Cloud Foundation, which one can use with
-Terraform to work with [VMware Cloud Foundation](https://https://www.vmware.com/products/cloud-foundation.html).
+Terraform to work with [VMware Cloud Foundation](https://www.vmware.com/products/cloud-foundation.html).
 
 # Requirements
 
