@@ -29,7 +29,12 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{},
 
-		ResourcesMap: map[string]*schema.Resource{},
+		ResourcesMap: map[string]*schema.Resource{
+			"vcf_user":         ResourceUser(),
+			"vcf_network_pool": ResourceNetworkPool(),
+			"vcf_ceip":         ResourceCeip(),
+			"vcf_host":         ResourceHost(),
+		},
 
 		ConfigureContextFunc: providerConfigure,
 	}
@@ -38,13 +43,13 @@ func Provider() *schema.Provider {
 func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	username, isSetUsername := data.GetOk("sddc_manager_username")
 	password, isSetPassword := data.GetOk("sddc_manager_password")
-	host, isSetHost := data.GetOk("sddc_manager_host")
+	hostName, isSetHost := data.GetOk("sddc_manager_host")
 
 	if !isSetUsername || !isSetPassword || !isSetHost {
 		return nil, diag.Errorf("SDDC Manager username, password and hostname must be provided")
 	}
 
-	var newClient = NewSddcManagerClient(username.(string), password.(string), host.(string))
+	var newClient = NewSddcManagerClient(username.(string), password.(string), hostName.(string))
 	newClient.Connect()
 	return newClient, nil
 }

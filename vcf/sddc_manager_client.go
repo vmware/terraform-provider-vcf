@@ -93,7 +93,8 @@ func (sddcManagerClient *SddcManagerClient) Connect() {
 }
 
 // WaitForTask Wait for a task to complete (waits for up to a minute)
-func WaitForTask(taskId string, client *vcfclient.VcfClient) error {
+func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
+	apiClient := sddcManagerClient.ApiClient
 	// Fetch task status 10 times with a delay of 20 seconds each time
 	taskStatusRetry := 10
 
@@ -102,7 +103,7 @@ func WaitForTask(taskId string, client *vcfclient.VcfClient) error {
 		getTaskParams := tasks.NewGETTaskParams()
 		getTaskParams.ID = taskId
 
-		getTaskOk, err := client.Tasks.GETTask(getTaskParams)
+		getTaskOk, err := apiClient.Tasks.GETTask(getTaskParams)
 		if err != nil {
 			log.Println("error = ", err)
 			return err
@@ -124,17 +125,18 @@ func WaitForTask(taskId string, client *vcfclient.VcfClient) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Timedout waiting for task %s", taskId))
+	return fmt.Errorf("timedout waiting for task %s", taskId)
 }
 
 // WaitForTaskComplete Wait for task till it completes (either succeeds or fails)
-func WaitForTaskComplete(taskId string, client *vcfclient.VcfClient) error {
+func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(taskId string) error {
+	apiClient := sddcManagerClient.ApiClient
 	log.Printf("Getting status of task %s", taskId)
 	for {
 		getTaskParams := tasks.NewGETTaskParams()
 		getTaskParams.ID = taskId
 
-		getTaskOk, err := client.Tasks.GETTask(getTaskParams)
+		getTaskOk, err := apiClient.Tasks.GETTask(getTaskParams)
 		if err != nil {
 			log.Println("error = ", err)
 			return err

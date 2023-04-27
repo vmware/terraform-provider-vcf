@@ -3,6 +3,7 @@ module github.com/vmware/terraform-provider-vcf
 go 1.19
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/go-openapi/runtime v0.26.0
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.25.0
