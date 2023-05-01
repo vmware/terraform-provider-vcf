@@ -1,6 +1,9 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 PKG_NAME=vcf
 
+docoumentation:
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --examples-dir=./examples
+	
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
