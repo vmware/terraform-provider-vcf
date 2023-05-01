@@ -1,0 +1,22 @@
+---
+name: Pull Request Target
+
+on:
+  pull_request_target:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - edited
+    - ready_for_review
+
+jobs:
+  label-needs-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply Labels
+        uses: actions/labeler@v4
+        if: github.event.action == 'opened'
+        with:
+          configuration-path: .github/labeler-pull-requests.yml
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'      
