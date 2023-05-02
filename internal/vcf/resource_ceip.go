@@ -1,3 +1,6 @@
+/* Copyright 2023 VMware, Inc.
+   SPDX-License-Identifier: MPL-2.0 */
+
 package vcf
 
 import (
@@ -82,7 +85,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 /**
- * Mapping deletion of ceip resource to disabling ceip
+ * Mapping deletion of ceip resource to disabling ceip.
  */
 func resourceCeipDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
