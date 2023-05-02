@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: VMware Cloud Foundation Product Documentation
+    url: https://docs.vmware.com/en/VMware-Cloud-Foundation/
+    about: Efficiently manage virtual machine and container workloads. Deliver cloud benefits to on-premises, full-stack hyperconverged infrastructure deployments.
