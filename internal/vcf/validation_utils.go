@@ -9,7 +9,7 @@ import (
 	"unicode"
 )
 
-func validatePassword(v interface{}, k string) (warnings []string, errors []error) {
+func validatePassword(v interface{}, k string) (errors []error) {
 	password, ok := v.(string)
 	if !ok {
 		errors = append(errors, fmt.Errorf("expected not nil and type of %q to be string", k))
@@ -50,7 +50,7 @@ func validatePassword(v interface{}, k string) (warnings []string, errors []erro
 	return
 }
 
-func validateParsingFloatToInt(v interface{}, k string) (warnings []string, errors []error) {
+func validateParsingFloatToInt(v interface{}) (errors []error) {
 	floatNum := v.(float64)
 	var intNum = int(floatNum)
 	if floatNum != float64(intNum) {

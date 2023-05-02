@@ -23,7 +23,7 @@ func TestValidatePassword(t *testing.T) {
 		}
 
 		for _, passTest := range passwordTests {
-			_, err := validatePassword(passTest.password, "")
+			err := validatePassword(passTest.password, "")
 			if len(err) == 0 {
 				t.Errorf("Failed. Expected one error for password %s, but got zero", passTest.password)
 				break
@@ -37,7 +37,7 @@ func TestValidatePassword(t *testing.T) {
 	t.Run("Nil password validation", func(t *testing.T) {
 		var expectedError = "expected not nil and type of \"\" to be string"
 
-		_, err := validatePassword(nil, "")
+		err := validatePassword(nil, "")
 		if len(err) == 0 {
 			t.Fatalf("Failed. Expected one error for nil password, but got zero")
 		}
@@ -52,11 +52,11 @@ func TestValidateParsingFloatToInt(t *testing.T) {
 	var testFloatInt float64 = 3
 	var expectedErr = "expected an integer, got a float"
 
-	if _, err := validateParsingFloatToInt(testFloatNotInt, ""); len(err) == 0 {
+	if err := validateParsingFloatToInt(testFloatNotInt); len(err) == 0 {
 		t.Errorf("Failed. Expected error: \"%s\", for float64 %f", expectedErr, testFloatNotInt)
 	}
 
-	if _, err := validateParsingFloatToInt(testFloatInt, ""); len(err) != 0 {
+	if err := validateParsingFloatToInt(testFloatInt); len(err) != 0 {
 		t.Errorf("Failed. Expected no errors for float64 %f, got: \"%s\"", testFloatInt, err[0].Error())
 	}
 }

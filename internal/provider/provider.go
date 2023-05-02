@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	vcf2 "github.com/vmware/terraform-provider-vcf/internal/vcf"
+	vcf "github.com/vmware/terraform-provider-vcf/internal/vcf"
 )
 
 // Provider returns the resource configuration of the VCF provider.
@@ -34,10 +34,10 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"vcf_user":         vcf2.ResourceUser(),
-			"vcf_network_pool": vcf2.ResourceNetworkPool(),
-			"vcf_ceip":         vcf2.ResourceCeip(),
-			"vcf_host":         vcf2.ResourceHost(),
+			"vcf_user":         vcf.ResourceUser(),
+			"vcf_network_pool": vcf.ResourceNetworkPool(),
+			"vcf_ceip":         vcf.ResourceCeip(),
+			"vcf_host":         vcf.ResourceHost(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
@@ -53,7 +53,7 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		return nil, diag.Errorf("SDDC Manager username, password, and host must be provided")
 	}
 
-	var newClient = vcf2.NewSddcManagerClient(username.(string), password.(string), hostName.(string))
+	var newClient = vcf.NewSddcManagerClient(username.(string), password.(string), hostName.(string))
 	newClient.Connect()
 	return newClient, nil
 }

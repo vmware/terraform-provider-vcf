@@ -85,7 +85,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 /**
- * Mapping deletion of ceip resource to disabling ceip
+ * Mapping deletion of ceip resource to disabling ceip.
  */
 func resourceCeipDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)

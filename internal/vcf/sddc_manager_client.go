@@ -19,7 +19,7 @@ import (
 	vcfclient "github.com/vmware/vcf-sdk-go/client"
 )
 
-// SddcManagerClient model that represents properties to authenticate against VCF instance
+// SddcManagerClient model that represents properties to authenticate against VCF instance.
 type SddcManagerClient struct {
 	SddcManagerUsername string
 	SddcManagerPassword string
@@ -28,7 +28,7 @@ type SddcManagerClient struct {
 	ApiClient           *vcfclient.VcfClient
 }
 
-// NewSddcManagerClient constructs new Client instance with vcf credentials
+// NewSddcManagerClient constructs new Client instance with vcf credentials.
 func NewSddcManagerClient(username, password, host string) *SddcManagerClient {
 	return &SddcManagerClient{
 		SddcManagerUsername: username,
@@ -95,7 +95,7 @@ func (sddcManagerClient *SddcManagerClient) Connect() {
 	sddcManagerClient.AccessToken = &ok.Payload.AccessToken
 }
 
-// WaitForTask Wait for a task to complete (waits for up to a minute)
+// WaitForTask Wait for a task to complete (waits for up to a minute).
 func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
 	apiClient := sddcManagerClient.ApiClient
 	// Fetch task status 10 times with a delay of 20 seconds each time
@@ -131,7 +131,7 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
 	return fmt.Errorf("timedout waiting for task %s", taskId)
 }
 
-// WaitForTaskComplete Wait for task till it completes (either succeeds or fails)
+// WaitForTaskComplete Wait for task till it completes (either succeeds or fails).
 func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(taskId string) error {
 	apiClient := sddcManagerClient.ApiClient
 	log.Printf("Getting status of task %s", taskId)

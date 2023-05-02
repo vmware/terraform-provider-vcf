@@ -1,5 +1,5 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
-PKG_NAME=vcf
+PKG_NAME=internal
 
 docoumentation:
 	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --examples-dir=./examples
@@ -9,7 +9,7 @@ fmtcheck:
 
 lint:
 	@echo "==> Checking source code against linters..."
-	@golangci-lint --disable errcheck run ./$(PKG_NAME)/...
+	@golangci-lint run ./$(PKG_NAME)/...
 
 build: fmtcheck
 	go install
