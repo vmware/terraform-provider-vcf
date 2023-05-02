@@ -1,0 +1,12 @@
+---
+chore:
+  - '.github/**/*'
+  - '.gitignore'
+documentation:
+  - '**/*.md'
+github-actions:
+  - '.github/workflows/**/*'
+needs-review:
+  - '**'
+  - '.*'
+  - '.*/**'
