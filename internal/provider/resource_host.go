@@ -1,11 +1,10 @@
 /* Copyright 2023 VMware, Inc.
    SPDX-License-Identifier: MPL-2.0 */
 
-package vcf
+package provider
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -34,10 +33,10 @@ func ResourceHost() *schema.Resource {
 				Required:    true,
 				Description: "FQDN of the host",
 			},
-			"network_pool_name": {
+			"network_pool_id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Name of the network pool to associate the host with",
+				Description: "Id of the network pool to associate the host with",
 			},
 			"storage_type": {
 				Type:        schema.TypeString,
@@ -60,82 +59,67 @@ func ResourceHost() *schema.Resource {
 				Computed:    true,
 				Description: "UUID of the host. Known after commissioning.",
 			},
+			"status": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Assignable status of the host.",
+			},
 		},
 	}
 }
 
-func resourceHostCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 	log.Println(d)
 	params := hosts.NewCommissionHostsParams()
-	host := models.HostCommissionSpec{}
+	commissionSpec := models.HostCommissionSpec{}
 
 	if fqdn, ok := d.GetOk("fqdn"); ok {
 		fqdnVal := fqdn.(string)
-		host.Fqdn = &fqdnVal
+		commissionSpec.Fqdn = &fqdnVal
 	}
 
 	if storageType, ok := d.GetOk("storage_type"); ok {
 		storageTypeVal := storageType.(string)
-		host.StorageType = &storageTypeVal
+		commissionSpec.StorageType = &storageTypeVal
 	}
 
 	if username, ok := d.GetOk("username"); ok {
 		usernameVal := username.(string)
-		host.Username = &usernameVal
+		commissionSpec.Username = &usernameVal
 	}
 
 	if password, ok := d.GetOk("password"); ok {
 		passwordVal := password.(string)
-		host.Password = &passwordVal
+		commissionSpec.Password = &passwordVal
 	}
 
-	if networkPoolName, ok := d.GetOk("network_pool_name"); ok {
-		networkPoolNameVal := networkPoolName.(string)
-
-		// GetNetworkPools(params *GetNetworkPoolsParams, opts ...ClientOption) (*GetNetworkPoolsOK, error)
-		ok, err := apiClient.NetworkPools.GETNetworkPools(nil)
-		if err != nil {
-			log.Println("error = ", err)
-			return diag.FromErr(err)
-		}
-
-		found := false
-		for _, networkPool := range ok.Payload.Elements {
-			if networkPool.Name == networkPoolNameVal {
-				host.NetworkPoolID = &networkPool.ID
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			log.Println("Did not find network pool ", networkPoolNameVal)
-			return diag.Errorf("Did not find network pool %s", networkPoolNameVal)
-		}
+	if networkPoolId, ok := d.GetOk("network_pool_id"); ok {
+		networkPoolIdStr := networkPoolId.(string)
+		commissionSpec.NetworkPoolID = &networkPoolIdStr
 	}
 
-	params.HostCommissionSpecs = []*models.HostCommissionSpec{&host}
+	params.HostCommissionSpecs = []*models.HostCommissionSpec{&commissionSpec}
 
 	_, accepted, err := apiClient.Hosts.CommissionHosts(params)
 	if err != nil {
 		log.Println("error = ", err)
-		diag.FromErr(err)
+		return diag.FromErr(err)
 	}
 
-	log.Printf("%s host commission initiated. waiting for task id = %s", *host.Fqdn, accepted.Payload.ID)
+	log.Printf("%s commissionSpec commission initiated. waiting for task id = %s", *commissionSpec.Fqdn, accepted.Payload.ID)
 
 	err = vcfClient.WaitForTaskComplete(accepted.Payload.ID)
 	if err != nil {
 		log.Println("error = ", err)
-		diag.FromErr(err)
+		return diag.FromErr(err)
 	}
 
-	// Task complete, save the fqdn as id (required to decommission the host)
-	d.SetId(*host.Fqdn)
+	// Task complete, save the fqdn as id (required to decommission the commissionSpec)
+	d.SetId(*commissionSpec.Fqdn)
 
-	return nil
+	return resourceHostRead(ctx, d, meta)
 }
 
 func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -143,13 +127,13 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 	apiClient := vcfClient.ApiClient
 
 	// ID is the fqdn, but GET api needs uuid
-	id := d.Id()
-	hostId := ""
+	hostFqdn := d.Id()
+	hostUuid := ""
 	if hostIdVal, ok := d.GetOk("host_id"); ok {
-		hostId = hostIdVal.(string)
+		hostUuid = hostIdVal.(string)
 	}
 
-	if hostId == "" {
+	if hostUuid == "" {
 		// Get all hosts and match the fqdn
 		ok, err := apiClient.Hosts.GETHosts(nil)
 		if err != nil {
@@ -157,35 +141,36 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 			diag.FromErr(err)
 		}
 
-		jsonp, _ := json.MarshalIndent(ok.Payload, " ", " ")
-		log.Println(string(jsonp))
-
-		// Check if the resource with the known id exists
+		// Check if the resource with the known hostFqdn exists
 		for _, host := range ok.Payload.Elements {
-			if host.Fqdn == id {
+			if host.Fqdn == hostFqdn {
 				_ = d.Set("host_id", host.ID)
+				// storage_type is not returned by the VCF API ?!?
+				_ = d.Set("network_pool_id", host.Networkpool.ID)
+				_ = d.Set("fqdn", host.Fqdn)
+				_ = d.Set("status", host.Status)
 				return nil
 			}
 		}
 
 		// Did not find the resource, set ID to ""
-		log.Println("Did not find host with id ", id)
+		log.Println("Did not find host with hostFqdn ", hostFqdn)
 		d.SetId("")
 		return nil
 	} else {
-		// Get a single host
-		// GetHost(params *GetHostParams, opts ...ClientOption) (*GetHostOK, error)
-
+		// Get a single host using UUID
 		params := hosts.NewGETHostParams()
-		params.ID = hostId
+		params.ID = hostUuid
 
-		_, err := apiClient.Hosts.GETHosts(nil)
+		host, err := apiClient.Hosts.GETHost(params)
 		if err != nil {
 			log.Println("error = ", err)
-			diag.FromErr(err)
+			return diag.FromErr(err)
 		}
-
-		// Found the host
+		_ = d.Set("host_id", host.Payload.ID)
+		_ = d.Set("network_pool_id", host.Payload.Networkpool.ID)
+		_ = d.Set("fqdn", host.Payload.Fqdn)
+		_ = d.Set("status", host.Payload.Status)
 		return nil
 	}
 }
@@ -201,10 +186,10 @@ func resourceHostDelete(_ context.Context, d *schema.ResourceData, meta interfac
 	apiClient := vcfClient.ApiClient
 
 	params := hosts.NewDecommissionHostsParams()
-	host := models.HostDecommissionSpec{}
+	decommissionSpec := models.HostDecommissionSpec{}
 	id := d.Id()
-	host.Fqdn = &id
-	params.HostDecommissionSpecs = []*models.HostDecommissionSpec{&host}
+	decommissionSpec.Fqdn = &id
+	params.HostDecommissionSpecs = []*models.HostDecommissionSpec{&decommissionSpec}
 
 	log.Println(params)
 
@@ -212,17 +197,15 @@ func resourceHostDelete(_ context.Context, d *schema.ResourceData, meta interfac
 	_, accepted, err := apiClient.Hosts.DecommissionHosts(params)
 	if err != nil {
 		log.Println("error = ", err)
-		diag.FromErr(err)
+		return diag.FromErr(err)
 	}
 
 	log.Printf("%s: Decommission task initiated. Task id %s", d.Id(), accepted.Payload.ID)
 	err = vcfClient.WaitForTaskComplete(accepted.Payload.ID)
 	if err != nil {
 		log.Println("error = ", err)
-		diag.FromErr(err)
+		return diag.FromErr(err)
 	}
 
-	// Task complete, clear the fqdn which is set as id
-	d.SetId("")
 	return nil
 }

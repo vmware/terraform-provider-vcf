@@ -1,7 +1,7 @@
 /* Copyright 2023 VMware, Inc.
    SPDX-License-Identifier: MPL-2.0 */
 
-package vcf
+package provider
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -19,7 +18,6 @@ func ResourceNetworkPool() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceNetworkPoolCreate,
 		ReadContext:   resourceNetworkPoolRead,
-		UpdateContext: resourceNetworkPoolUpdate,
 		DeleteContext: resourceNetworkPoolDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -31,11 +29,13 @@ func ResourceNetworkPool() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true, // Updating network pools is partially supported in VCF API.
 				Description: "The name of the network pool",
 			},
 			"network": {
 				Type:        schema.TypeList,
 				Required:    true,
+				ForceNew:    true, // Updating network pools is partially supported in VCF API.
 				Description: "Represents a network in a network pool",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -98,7 +98,7 @@ func ResourceNetworkPool() *schema.Resource {
 func resourceNetworkPoolCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	params := network_pools.NewCreateNetworkPoolParams()
+	createParams := network_pools.NewCreateNetworkPoolParams()
 	networkPool := models.NetworkPool{}
 
 	if name, ok := d.GetOk("name"); ok {
@@ -111,7 +111,6 @@ func resourceNetworkPoolCreate(_ context.Context, d *schema.ResourceData, meta i
 
 		for i, network := range networks {
 			networkMap := network.(map[string]interface{})
-			log.Println(spew.Sdump(networkMap))
 			networkPool.Networks[i] = &models.Network{
 				Gateway: networkMap["gateway"].(string),
 				Mask:    networkMap["mask"].(string),
@@ -134,12 +133,10 @@ func resourceNetworkPoolCreate(_ context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	params.NetworkPool = &networkPool
-	log.Println(spew.Sdump(params.NetworkPool))
+	createParams.NetworkPool = &networkPool
 
-	_, created, err := apiClient.NetworkPools.CreateNetworkPool(params)
+	_, created, err := apiClient.NetworkPools.CreateNetworkPool(createParams)
 	if err != nil {
-		log.Println("error = ", err)
 		return diag.FromErr(err)
 	}
 
@@ -156,30 +153,17 @@ func resourceNetworkPoolRead(_ context.Context, d *schema.ResourceData, meta int
 	params := network_pools.NewGETNetworkPoolParams()
 	params.ID = d.Id()
 
-	_, err := apiClient.NetworkPools.GETNetworkPool(params)
+	networkPoolPayload, err := apiClient.NetworkPools.GETNetworkPool(params)
 	if err != nil {
-		log.Println("error = ", err)
-		// TODO : Look for not found error
-		/*
-			log.Println("Did not find network pool with id ", id)
-			d.SetId("")
-			return nil
-		*/
 		return diag.FromErr(err)
 	}
+	networkPool := networkPoolPayload.Payload
+	d.SetId(networkPool.ID)
+	_ = d.Set("name", networkPool.Name)
 
-	// jsonp, _ := json.MarshalIndent(ok.Payload, " ", " ")
-	// log.Println(string(jsonp))
 	return nil
 }
 
-/**
- * Updating network pools is partially supported in VCF API.
- * ipPools can be added or removed, but not yet implemented here in the provider.
- */
-func resourceNetworkPoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return resourceNetworkPoolRead(ctx, d, meta)
-}
 func resourceNetworkPoolDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 

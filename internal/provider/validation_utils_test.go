@@ -1,7 +1,7 @@
 /* Copyright 2023 VMware, Inc.
    SPDX-License-Identifier: MPL-2.0 */
 
-package vcf
+package provider
 
 import (
 	"reflect"
