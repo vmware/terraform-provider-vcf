@@ -4,4 +4,5 @@
 
 > Release Date: TBA
 
-Initial release, details TBA
+Initial release, adding support for commissioning/decommissioning hosts, creating/destroying
+network pools, creating/destroying SSO user, turning on/off the telemetry (CEIP)

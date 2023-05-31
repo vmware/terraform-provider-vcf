@@ -9,6 +9,31 @@ description: |-
 # vcf_host (Resource)
 
 
+Prerequisites for commissioning Hosts
+* The following data is required:
+  * Username of each host
+  * Password of each host
+  * FQDN of each host
+  * Network pool ID to which each host has to be associated with
+
+
+* The host, if intended to be used for a vSAN domain, should be vSAN compliant and certified as per the VMware Hardware Compatibility Guide.
+BIOS, HBA, SSD, HDD, etc. of the host must match the VMware Hardware Compatibility Guide.
+* The host must have the drivers and firmware versions specified in the VMware Hardware Compatibility Guide.
+* The host must have the supported version of ESXi (i.e 6.7.0-13006603) pre-installed on it.
+* SSH and syslog must be enabled on the host.
+* The host must be configured with DNS server for forward and reverse lookup and FQDN.
+* The host name must be same as the FQDN.
+* The host must have a standard switch with two NIC ports with a minimum 10 Gbps speed.
+* The management IP must be configured to the first NIC port.
+* Ensure that the host has a standard switch and the default uplinks with 10Gb speed are configured starting with traditional numbering (e.g., vmnic0) and increasing sequentially.
+* Ensure that the host hardware health status is healthy without any errors.
+* All disk partitions on HDD / SSD are deleted.
+* The hosts, if intended to be used for vSAN, domain must be associated with vSAN enabled network pool.
+* The hosts, if intended to be used for NFS, domain must be associated with NFS enabled network pool.
+* The hosts, if intended to be used for VMFS on FC, domain must be associated with either a NFS enabled or vMotion enabled network pool.
+* The hosts, if intended to be used for VVOL, domain must be associated with either a NFS enabled or vMotion enabled network pool.
+* The hosts, if intended to be used for vSAN HCI Mesh(VSAN_REMOTE), domain must be associated with vSAN enabled network pool.
 
 
 
@@ -18,7 +43,7 @@ description: |-
 ### Required
 
 - `fqdn` (String) FQDN of the host
-- `network_pool_name` (String) Name of the network pool to associate the host with
+- `network_pool_id` (String) Id of the network pool to associate the host with
 - `password` (String, Sensitive) Password of the host
 - `storage_type` (String) Storage Type. One among: VSAN, VSAN_REMOTE, NFS, VMFS_FC, VVOL
 - `username` (String) Username of the host
@@ -31,6 +56,7 @@ description: |-
 
 - `host_id` (String) UUID of the host. Known after commissioning.
 - `id` (String) The ID of this resource.
+- `status` (String) Assignable status of the host.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

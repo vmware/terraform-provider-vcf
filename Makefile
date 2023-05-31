@@ -1,7 +1,7 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 PKG_NAME=internal
 
-docoumentation:
+documentation:
 	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --examples-dir=./examples
 	
 fmtcheck:
