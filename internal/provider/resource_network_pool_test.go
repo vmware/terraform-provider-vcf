@@ -63,7 +63,7 @@ func testCheckVcfNetworkPoolDestroy(_ *terraform.State) error {
 	vcfClient := testAccProvider.Meta().(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	hosts, err := apiClient.NetworkPools.GETNetworkPools(nil)
+	hosts, err := apiClient.NetworkPools.GetNetworkPools(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return err

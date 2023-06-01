@@ -150,10 +150,10 @@ func resourceNetworkPoolCreate(_ context.Context, d *schema.ResourceData, meta i
 func resourceNetworkPoolRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	params := network_pools.NewGETNetworkPoolParams()
+	params := network_pools.NewGetNetworkPoolParams()
 	params.ID = d.Id()
 
-	networkPoolPayload, err := apiClient.NetworkPools.GETNetworkPool(params)
+	networkPoolPayload, err := apiClient.NetworkPools.GetNetworkPool(params)
 	if err != nil {
 		return diag.FromErr(err)
 	}

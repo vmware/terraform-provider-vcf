@@ -36,7 +36,7 @@ func testVerifyVcfCeip(enabledState string) error {
 	vcfClient := testAccProvider.Meta().(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	ceipResult, err := apiClient.CEIP.GETCEIPStatus(nil)
+	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return err

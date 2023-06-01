@@ -135,7 +135,7 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 
 	if hostUuid == "" {
 		// Get all hosts and match the fqdn
-		ok, err := apiClient.Hosts.GETHosts(nil)
+		ok, err := apiClient.Hosts.GetHosts(nil)
 		if err != nil {
 			log.Println("error = ", err)
 			diag.FromErr(err)
@@ -159,10 +159,10 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 		return nil
 	} else {
 		// Get a single host using UUID
-		params := hosts.NewGETHostParams()
+		params := hosts.NewGetHostParams()
 		params.ID = hostUuid
 
-		host, err := apiClient.Hosts.GETHost(params)
+		host, err := apiClient.Hosts.GetHost(params)
 		if err != nil {
 			log.Println("error = ", err)
 			return diag.FromErr(err)

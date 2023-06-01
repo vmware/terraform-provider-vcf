@@ -74,7 +74,7 @@ func testCheckVcfHostDestroy(_ *terraform.State) error {
 	vcfClient := testAccProvider.Meta().(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	hosts, err := apiClient.Hosts.GETHosts(nil)
+	hosts, err := apiClient.Hosts.GetHosts(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return err

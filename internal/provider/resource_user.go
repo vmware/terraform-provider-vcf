@@ -91,7 +91,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if roleName, ok := d.GetOk("role_name"); ok {
 		roleNameVal := roleName.(string)
 
-		roleResult, err := client.Users.GETRoles(nil)
+		roleResult, err := client.Users.GetRoles(nil)
 		if err != nil {
 			log.Println("error = ", err)
 			return diag.FromErr(err)
@@ -129,7 +129,7 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 
 	id := d.Id()
 
-	ok, err := client.Users.GETUsers(nil)
+	ok, err := client.Users.GetUsers(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return diag.FromErr(err)

@@ -54,7 +54,7 @@ func resourceCeipCreate(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceCeipRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	ceipResult, err := apiClient.CEIP.GETCEIPStatus(nil)
+	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return diag.FromErr(err)
