@@ -8,7 +8,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/hashicorp/terraform-plugin-docs v0.14.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1
-	github.com/vmware/vcf-sdk-go v0.1.0
+	github.com/vmware/vcf-sdk-go v0.1.1
 )
 
 require (
