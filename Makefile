@@ -1,7 +1,7 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 PKG_NAME=internal
 
-docoumentation:
+documentation:
 	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --examples-dir=./examples
 	
 fmtcheck:
@@ -24,4 +24,4 @@ test: fmtcheck
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 testacc:
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 240m
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -parallel=4

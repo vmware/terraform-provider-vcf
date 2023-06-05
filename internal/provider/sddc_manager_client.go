@@ -1,7 +1,7 @@
 /* Copyright 2023 VMware, Inc.
    SPDX-License-Identifier: MPL-2.0 */
 
-package vcf
+package provider
 
 import (
 	"crypto/tls"
@@ -103,10 +103,10 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
 
 	for taskStatusRetry > 0 {
 		log.Printf("Getting status of task %s, retry left %d", taskId, taskStatusRetry)
-		getTaskParams := tasks.NewGETTaskParams()
+		getTaskParams := tasks.NewGetTaskParams()
 		getTaskParams.ID = taskId
 
-		getTaskOk, err := apiClient.Tasks.GETTask(getTaskParams)
+		getTaskOk, err := apiClient.Tasks.GetTask(getTaskParams)
 		if err != nil {
 			log.Println("error = ", err)
 			return err
@@ -136,10 +136,10 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(taskId string) e
 	apiClient := sddcManagerClient.ApiClient
 	log.Printf("Getting status of task %s", taskId)
 	for {
-		getTaskParams := tasks.NewGETTaskParams()
+		getTaskParams := tasks.NewGetTaskParams()
 		getTaskParams.ID = taskId
 
-		getTaskOk, err := apiClient.Tasks.GETTask(getTaskParams)
+		getTaskOk, err := apiClient.Tasks.GetTask(getTaskParams)
 		if err != nil {
 			log.Println("error = ", err)
 			return err

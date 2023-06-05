@@ -1,12 +1,12 @@
 /* Copyright 2023 VMware, Inc.
    SPDX-License-Identifier: MPL-2.0 */
 
-package vcf
+package provider
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/vcf-sdk-go/client/ceip"
 	"github.com/vmware/vcf-sdk-go/models"
 
@@ -14,6 +14,14 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+const (
+	DISABLED_STATE = "DISABLED"
+	ENABLED_STATE  = "ENABLED"
+
+	ENABLE_API_PARAM  = "ENABLE"
+	DISABLE_API_PARAM = "DISABLE"
 )
 
 func ResourceCeip() *schema.Resource {
@@ -30,9 +38,10 @@ func ResourceCeip() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"status": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "User provided CEIP operation. One among: ENABLE, DISABLE",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "User provided CEIP operation. One among: ENABLED, DISABLED",
+				ValidateFunc: validation.StringInSlice([]string{ENABLED_STATE, DISABLED_STATE}, false),
 			},
 		},
 	}
@@ -45,16 +54,13 @@ func resourceCeipCreate(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceCeipRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	ok, err := apiClient.CEIP.GETCEIPStatus(nil)
+	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return diag.FromErr(err)
 	}
 
-	jsonp, _ := json.MarshalIndent(ok.Payload, " ", " ")
-	log.Println(string(jsonp))
-
-	d.SetId(ok.Payload.InstanceID)
+	d.SetId(ceipResult.Payload.InstanceID)
 	return nil
 }
 
@@ -67,7 +73,14 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	if status, ok := d.GetOk("status"); ok {
 		statusVal := status.(string)
-		updateSpec.Status = &statusVal
+		// the VCF PATCH API requires the params "ENABLE/DISABLE" while the resource states are "ENABLED/DISABLED"
+		var enableApiParam string
+		if statusVal == ENABLED_STATE {
+			enableApiParam = ENABLE_API_PARAM
+		} else if statusVal == DISABLED_STATE {
+			enableApiParam = DISABLE_API_PARAM
+		}
+		updateSpec.Status = &enableApiParam
 	}
 
 	params.CEIPUpdateSpec = &updateSpec
@@ -93,7 +106,7 @@ func resourceCeipDelete(_ context.Context, d *schema.ResourceData, meta interfac
 
 	params := ceip.NewUpdateCEIPStatusParams()
 	updateSpec := models.CEIPUpdateSpec{}
-	statusVal := "DISABLE"
+	statusVal := DISABLE_API_PARAM
 	updateSpec.Status = &statusVal
 	params.CEIPUpdateSpec = &updateSpec
 
@@ -107,7 +120,6 @@ func resourceCeipDelete(_ context.Context, d *schema.ResourceData, meta interfac
 		return diag.FromErr(err)
 	}
 
-	log.Printf("%s: Delete complete", d.Id())
 	d.SetId("")
 	return nil
 }
