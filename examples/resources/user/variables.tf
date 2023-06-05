@@ -1,5 +1,5 @@
 variable "sddc_manager_username" {
-  description = "username used to authenticate against an SDDC Manager instance"
+  description = "Username used to authenticate against an SDDC Manager instance"
   default = ""
 }
 
@@ -15,7 +15,7 @@ variable "sddc_manager_host" {
 
 variable "sso_domain" {
   description = "The SSO domain in which an SSO user is to be created"
-  default = "vrack.vsphere.local"
+  default = "rainpole.io"
 }
 
 variable "sso_username" {

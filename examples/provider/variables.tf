@@ -1,5 +1,5 @@
 variable "sddc_manager_username" {
-  description = "username used to authenticate against an SDDC Manager instance"
+  description = "Username used to authenticate against an SDDC Manager instance"
   default = ""
 }
 
