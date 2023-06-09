@@ -69,13 +69,13 @@ func (sddcManagerClient *SddcManagerClient) Connect() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	cfg := vcfclient.DefaultTransportConfig()
-	oclient := openapiclient.New(sddcManagerClient.SddcManagerHost, cfg.BasePath, cfg.Schemes)
-	// oclient.SetDebug(true)
+	openApiClient := openapiclient.New(sddcManagerClient.SddcManagerHost, cfg.BasePath, cfg.Schemes)
+	// openApiClient.SetDebug(true)
 
-	oclient.Transport = newTransport()
+	openApiClient.Transport = newTransport()
 
 	// create the API client, with the transport
-	vclient := vcfclient.New(oclient, strfmt.Default)
+	vclient := vcfclient.New(openApiClient, strfmt.Default)
 	// save the client for later use
 	sddcManagerClient.ApiClient = vclient
 	// Get access token
@@ -97,34 +97,29 @@ func (sddcManagerClient *SddcManagerClient) Connect() {
 
 // WaitForTask Wait for a task to complete (waits for up to a minute).
 func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
-	apiClient := sddcManagerClient.ApiClient
 	// Fetch task status 10 times with a delay of 20 seconds each time
 	taskStatusRetry := 10
 
 	for taskStatusRetry > 0 {
-		log.Printf("Getting status of task %s, retry left %d", taskId, taskStatusRetry)
-		getTaskParams := tasks.NewGetTaskParams()
-		getTaskParams.ID = taskId
-
-		getTaskOk, err := apiClient.Tasks.GetTask(getTaskParams)
+		task, err := sddcManagerClient.getTask(taskId)
 		if err != nil {
 			log.Println("error = ", err)
 			return err
 		}
 
-		if getTaskOk.Payload.Status == "In Progress" || getTaskOk.Payload.Status == "Pending" {
+		if task.Status == "In Progress" || task.Status == "Pending" {
 			time.Sleep(20 * time.Second)
 			taskStatusRetry--
 			continue
 		}
 
-		if getTaskOk.Payload.Status == "Failed" || getTaskOk.Payload.Status == "Cancelled" {
-			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", getTaskParams.ID, getTaskOk.Payload.Status)
+		if task.Status == "Failed" || task.Status == "Cancelled" {
+			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, task.Status)
 			log.Println(errorMsg)
 			return errors.New(errorMsg)
 		}
 
-		log.Printf("Task with ID = %s is in state %s, completed at %s", getTaskParams.ID, getTaskOk.Payload.Status, getTaskOk.Payload.CompletionTimestamp)
+		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, task.Status, task.CompletionTimestamp)
 		return nil
 	}
 
@@ -133,30 +128,49 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
 
 // WaitForTaskComplete Wait for task till it completes (either succeeds or fails).
 func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(taskId string) error {
-	apiClient := sddcManagerClient.ApiClient
 	log.Printf("Getting status of task %s", taskId)
 	for {
-		getTaskParams := tasks.NewGetTaskParams()
-		getTaskParams.ID = taskId
-
-		getTaskOk, err := apiClient.Tasks.GetTask(getTaskParams)
+		task, err := sddcManagerClient.getTask(taskId)
 		if err != nil {
-			log.Println("error = ", err)
 			return err
 		}
 
-		if getTaskOk.Payload.Status == "In Progress" || getTaskOk.Payload.Status == "Pending" {
+		if task.Status == "In Progress" || task.Status == "Pending" {
 			time.Sleep(20 * time.Second)
 			continue
 		}
 
-		if getTaskOk.Payload.Status == "Failed" || getTaskOk.Payload.Status == "Cancelled" {
-			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", getTaskParams.ID, getTaskOk.Payload.Status)
+		if task.Status == "Failed" || task.Status == "Cancelled" {
+			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, task.Status)
 			log.Println(errorMsg)
 			return errors.New(errorMsg)
 		}
 
-		log.Printf("Task with ID = %s is in state %s, completed at %s", getTaskParams.ID, getTaskOk.Payload.Status, getTaskOk.Payload.CompletionTimestamp)
+		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, task.Status, task.CompletionTimestamp)
 		return nil
 	}
+}
+
+func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(taskId string) (string, error) {
+	task, err := sddcManagerClient.getTask(taskId)
+	if err != nil {
+		return "", err
+	}
+	if len(task.Resources) == 0 {
+		return "", fmt.Errorf("no resources associated with Task with ID %q", taskId)
+	}
+	return *task.Resources[0].ResourceID, nil
+}
+
+func (sddcManagerClient *SddcManagerClient) getTask(taskId string) (*models.Task, error) {
+	apiClient := sddcManagerClient.ApiClient
+	getTaskParams := tasks.NewGetTaskParams()
+	getTaskParams.ID = taskId
+
+	getTaskResult, err := apiClient.Tasks.GetTask(getTaskParams)
+	if err != nil {
+		log.Println("error = ", err)
+		return nil, err
+	}
+	return getTaskResult.Payload, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/vcf-sdk-go/client/ceip"
 	"github.com/vmware/vcf-sdk-go/models"
+	"strings"
 
 	"log"
 	"time"
@@ -41,7 +42,10 @@ func ResourceCeip() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "User provided CEIP operation. One among: ENABLED, DISABLED",
-				ValidateFunc: validation.StringInSlice([]string{ENABLED_STATE, DISABLED_STATE}, false),
+				ValidateFunc: validation.StringInSlice([]string{ENABLED_STATE, DISABLED_STATE}, true),
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return oldValue == strings.ToUpper(newValue) || strings.ToUpper(oldValue) == newValue
+				},
 			},
 		},
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/vmware/vcf-sdk-go/client/users"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -46,7 +47,10 @@ func ResourceUser() *schema.Resource {
 				ForceNew:    true,
 				Description: "The type of the user. One of: USER, GROUP, SERVICE",
 				ValidateFunc: validation.StringInSlice([]string{
-					"USER", "GROUP", "SERVICE"}, false),
+					"USER", "GROUP", "SERVICE"}, true),
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return oldValue == strings.ToUpper(newValue) || strings.ToUpper(oldValue) == newValue
+				},
 			},
 			"role_name": {
 				Type:        schema.TypeString,

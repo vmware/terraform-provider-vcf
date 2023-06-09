@@ -41,6 +41,7 @@ func Provider() *schema.Provider {
 			"vcf_network_pool": ResourceNetworkPool(),
 			"vcf_ceip":         ResourceCeip(),
 			"vcf_host":         ResourceHost(),
+			"vcf_domain":       ResourceDomain(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

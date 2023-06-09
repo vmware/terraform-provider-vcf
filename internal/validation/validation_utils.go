@@ -1,15 +1,21 @@
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+/*
+ *  Copyright 2023 VMware, Inc.
+ *    SPDX-License-Identifier: MPL-2.0
+ */
 
-package provider
+package validation
 
 import (
+	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/vmware/vcf-sdk-go/models"
+	"net/netip"
 	"strings"
 	"unicode"
 )
 
-func validatePassword(v interface{}, k string) (errors []error) {
+func ValidatePassword(v interface{}, k string) (errors []error) {
 	password, ok := v.(string)
 	if !ok {
 		errors = append(errors, fmt.Errorf("expected not nil and type of %q to be string", k))
@@ -50,7 +56,7 @@ func validatePassword(v interface{}, k string) (errors []error) {
 	return
 }
 
-func validateParsingFloatToInt(v interface{}) (errors []error) {
+func ValidateParsingFloatToInt(v interface{}) (errors []error) {
 	floatNum := v.(float64)
 	var intNum = int(floatNum)
 	if floatNum != float64(intNum) {
@@ -59,7 +65,7 @@ func validateParsingFloatToInt(v interface{}) (errors []error) {
 	return
 }
 
-func convertToStringSlice(params []interface{}) []string {
+func ConvertToStringSlice(params []interface{}) []string {
 	var paramSlice []string
 	for _, p := range params {
 		if param, ok := p.(string); ok {
@@ -67,4 +73,36 @@ func convertToStringSlice(params []interface{}) []string {
 		}
 	}
 	return paramSlice
+}
+
+func validateIPv4Address(value string) error {
+	addr, err := netip.ParseAddr(value)
+	if err != nil {
+		return err
+	}
+
+	if !addr.Is4() {
+		return errors.New("invalid IPv4 address")
+	}
+	return nil
+}
+
+func ValidateIPv4AddressSchema(i interface{}, k string) (_ []string, errors []error) {
+	ipAddress, ok := i.(string)
+	if !ok {
+		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+		return nil, errors
+	}
+	return nil, []error{validateIPv4Address(ipAddress)}
+}
+
+func HasValidationFailed(validationResult *models.Validation) bool {
+	if validationResult == nil {
+		return false
+	}
+	return validationResult.ExecutionStatus == "FAILED"
+}
+
+func ConvertValidationResultToDiag(validationResult *models.Validation) diag.Diagnostics {
+	return diag.Diagnostics{}
 }
