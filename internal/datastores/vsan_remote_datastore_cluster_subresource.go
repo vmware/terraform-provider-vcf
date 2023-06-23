@@ -6,7 +6,9 @@
 package datastores
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // VsanRemoteDatastoreClusterSchema this helper function extracts the VSAN Datastore Cluster
@@ -22,4 +24,22 @@ func VsanRemoteDatastoreClusterSchema() *schema.Resource {
 			},
 		},
 	}
+}
+
+func TryConvertToVSANRemoteDatastoreClusterSpec(object map[string]interface{}) (*models.VSANRemoteDatastoreClusterSpec, error) {
+	if object == nil {
+		return nil, fmt.Errorf("cannot convert to VSANRemoteDatastoreClusterSpec, object is nil")
+	}
+	datastoreUuids := object["datastore_uuids"].([]string)
+	if len(datastoreUuids) == 0 {
+		return nil, fmt.Errorf("cannot convert to VSANRemoteDatastoreClusterSpec, datastore_uuids is required")
+	}
+	result := &models.VSANRemoteDatastoreClusterSpec{}
+	result.VSANRemoteDatastoreSpec = []*models.VSANRemoteDatastoreSpec{}
+	for _, datastoreUuid := range datastoreUuids {
+		datastoreUuidRef := &datastoreUuid
+		result.VSANRemoteDatastoreSpec = append(result.VSANRemoteDatastoreSpec,
+			&models.VSANRemoteDatastoreSpec{DatastoreUUID: datastoreUuidRef})
+	}
+	return result, nil
 }

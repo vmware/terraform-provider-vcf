@@ -18,19 +18,19 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "SDDC Manager username.",
-				DefaultFunc: schema.EnvDefaultFunc(constants.VCF_TEST_USERNAME, nil),
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUsername, nil),
 			},
 			"sddc_manager_password": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "SDDC Manager password.",
-				DefaultFunc: schema.EnvDefaultFunc(constants.VCF_TEST_PASSWORD, nil),
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestPassword, nil),
 			},
 			"sddc_manager_host": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "SDDC Manager host.",
-				DefaultFunc: schema.EnvDefaultFunc(constants.VCF_TEST_URL, nil),
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUrl, nil),
 			},
 		},
 
@@ -42,6 +42,7 @@ func Provider() *schema.Provider {
 			"vcf_ceip":         ResourceCeip(),
 			"vcf_host":         ResourceHost(),
 			"vcf_domain":       ResourceDomain(),
+			"vcf_cluster":      ResourceCluster(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

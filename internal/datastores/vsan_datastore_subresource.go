@@ -4,8 +4,11 @@
 package datastores
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // VsanDatastoreSchema this helper function extracts the VSAN Datastore schema, so that
@@ -19,23 +22,49 @@ func VsanDatastoreSchema() *schema.Resource {
 				Description:  "Datastore name used for cluster creation",
 				ValidateFunc: validation.NoZeroValues,
 			},
+			"license_key": {
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "License key for the vSAN data store to be applied in vCenter",
+				ValidateFunc: validation.NoZeroValues,
+			},
+			"failures_to_tolerate": {
+				Type:         schema.TypeInt,
+				Required:     true,
+				Description:  "Number of vSphere host failures to tolerate in the vSAN cluster (can be 0, 1, or 2)",
+				ValidateFunc: validation.IntBetween(0, 2),
+			},
 			"dedup_and_compression_enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Enable vSAN deduplication and compression",
 			},
-			"failures_to_tolerate": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Description:  "Number of vSphere host failures to tolerate in the vSAN cluster (can be 0, 1, or 2)",
-				ValidateFunc: validation.IntBetween(0, 2),
-			},
-			"license_key": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Description:  "License key for the vSAN data store to be applied in vCenter",
-				ValidateFunc: validation.NoZeroValues,
-			},
 		},
 	}
+}
+
+func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSANDatastoreSpec, error) {
+	if object == nil {
+		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, object is nil")
+	}
+	datastoreName := object["datastore_name"].(string)
+	if len(datastoreName) == 0 {
+		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, datastore_name is required")
+	}
+	result := &models.VSANDatastoreSpec{}
+	result.DatastoreName = &datastoreName
+	licenseKey := object["license_key"].(string)
+	if len(licenseKey) == 0 {
+		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, license_key is required")
+	}
+	result.LicenseKey = licenseKey
+	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validation_utils.IsEmpty(dedupAndCompressionEnabled) {
+		result.DedupAndCompressionEnabled = dedupAndCompressionEnabled.(bool)
+	}
+	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok {
+		failuresToTolerateInt := int32(failuresToTolerate.(int))
+		result.FailuresToTolerate = &failuresToTolerateInt
+	}
+
+	return result, nil
 }

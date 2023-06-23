@@ -9,13 +9,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/vmware/vcf-sdk-go/client/clusters"
+	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
 	"net/netip"
 	"strings"
 	"unicode"
 )
 
-func ValidatePassword(v interface{}, k string) (errors []error) {
+func ValidatePassword(v interface{}, k string) (warnings []string, errors []error) {
 	password, ok := v.(string)
 	if !ok {
 		errors = append(errors, fmt.Errorf("expected not nil and type of %q to be string", k))
@@ -93,16 +95,101 @@ func ValidateIPv4AddressSchema(i interface{}, k string) (_ []string, errors []er
 		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
 		return nil, errors
 	}
-	return nil, []error{validateIPv4Address(ipAddress)}
+	ipValidationError := validateIPv4Address(ipAddress)
+	if ipValidationError != nil {
+		return nil, []error{}
+	} else {
+		return nil, nil
+	}
+}
+
+func ConvertVcfErrorToDiag(err interface{}) diag.Diagnostics {
+	if err == nil {
+		return nil
+	}
+	domainsBadRequest, ok := err.(*domains.ValidateDomainsOperationsBadRequest)
+	if ok {
+		return convertVcfErrorsToDiagErrors(domainsBadRequest.Payload)
+	}
+	clustersBadRequest, ok := err.(*clusters.ValidateClusterOperationsBadRequest)
+	if ok {
+		return convertVcfErrorsToDiagErrors(clustersBadRequest.Payload)
+	}
+	createDomainBadRequest, ok := err.(*domains.CreateDomainBadRequest)
+	if ok {
+		return convertVcfErrorsToDiagErrors(createDomainBadRequest.Payload)
+	}
+
+	return diag.FromErr(err.(error))
+}
+
+func convertVcfErrorsToDiagErrors(err *models.Error) []diag.Diagnostic {
+	var result []diag.Diagnostic
+
+	var errorDetail string
+	if IsEmpty(err.ReferenceToken) {
+		errorDetail = err.RemediationMessage
+	} else {
+		errorDetail = fmt.Sprintf("Look for reference token %q in service logs", err.ReferenceToken)
+	}
+
+	result = append(result, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  err.Message,
+		Detail:   errorDetail,
+	})
+
+	for _, nestedErr := range err.NestedErrors {
+		result = append(result, convertVcfErrorsToDiagErrors(nestedErr)...)
+	}
+	return result
 }
 
 func HasValidationFailed(validationResult *models.Validation) bool {
 	if validationResult == nil {
 		return false
 	}
-	return validationResult.ExecutionStatus == "FAILED"
+	return validationResult.ResultStatus == "FAILED"
 }
 
 func ConvertValidationResultToDiag(validationResult *models.Validation) diag.Diagnostics {
-	return diag.Diagnostics{}
+	return convertValidationChecksToDiagErrors(validationResult.ValidationChecks)
+}
+
+func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCheck) []diag.Diagnostic {
+	var result []diag.Diagnostic
+	for _, validationCheck := range validationChecks {
+		if validationCheck.Severity == "ERROR" {
+			result = append(result, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  validationCheck.ErrorResponse.Message,
+				Detail:   validationCheck.Description,
+			})
+		}
+		if len(validationCheck.NestedValidationChecks) > 0 {
+			result = append(result, convertValidationChecksToDiagErrors(validationCheck.NestedValidationChecks)...)
+		}
+	}
+	return result
+}
+
+func IsEmpty(object interface{}) bool {
+	if object == nil {
+		return true
+	}
+	objectStr, ok := object.(string)
+	if ok {
+		if len(objectStr) > 0 {
+			return false
+		}
+	}
+	objectAnySlice, ok := object.([]interface{})
+	if ok {
+		if len(objectAnySlice) > 0 {
+			return false
+		}
+	}
+	_, ok = object.(int)
+
+	return !ok
 }

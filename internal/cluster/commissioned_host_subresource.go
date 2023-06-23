@@ -6,10 +6,12 @@
 package cluster
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // CommissionedHostSchema this helper function extracts the Host
@@ -73,12 +75,84 @@ func CommissionedHostSchema() *schema.Resource {
 				Description:  "SSH thumbprint(fingerprint) of the vSphere host. Note:This field will be mandatory in future releases.",
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"vmnics": {
+			"vmnic": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "Contains vmnic configurations for vSphere host",
 				Elem:        network.VMNicSchema(),
 			},
+			"az_name": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Fault domain name of the host",
+			},
 		},
 	}
+}
+
+func FlattenHost(host *models.HostReference) *map[string]interface{} {
+	result := make(map[string]interface{})
+	if host == nil {
+		return &result
+	}
+	result["id"] = host.ID
+	result["host_name"] = host.Fqdn
+	result["ip_address"] = host.IPAddress
+	result["az_name"] = host.AzName
+
+	return &result
+}
+
+func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, error) {
+	result := &models.HostSpec{}
+	if object == nil {
+		return nil, fmt.Errorf("cannot conver to HostSpec, object is nil")
+	}
+	id := object["id"].(string)
+	if len(id) == 0 {
+		return nil, fmt.Errorf("cannot conver to HostSpec, id is required")
+	}
+	result.ID = &id
+	if hostName, ok := object["host_name"]; ok && !validation_utils.IsEmpty(hostName) {
+		result.HostName = hostName.(string)
+	}
+	if availabilityZoneName, ok := object["availability_zone_name"]; ok && !validation_utils.IsEmpty(availabilityZoneName) {
+		result.AzName = availabilityZoneName.(string)
+	}
+	if ipAddress, ok := object["ip_address"]; ok && !validation_utils.IsEmpty(ipAddress) {
+		result.IPAddress = ipAddress.(string)
+	}
+	if licenseKey, ok := object["license_key"]; ok && !validation_utils.IsEmpty(licenseKey) {
+		result.LicenseKey = licenseKey.(string)
+	}
+	if userName, ok := object["username"]; ok && !validation_utils.IsEmpty(userName) {
+		result.Username = userName.(string)
+	}
+	if password, ok := object["password"]; ok && !validation_utils.IsEmpty(password) {
+		result.Password = password.(string)
+	}
+	if serialNumber, ok := object["serial_number"]; ok && !validation_utils.IsEmpty(serialNumber) {
+		result.SerialNumber = serialNumber.(string)
+	}
+	if sshThumbprint, ok := object["ssh_thumbprint"]; ok && !validation_utils.IsEmpty(sshThumbprint) {
+		result.SSHThumbprint = sshThumbprint.(string)
+	}
+	if vmNicsRaw, ok := object["vmnic"]; ok && !validation_utils.IsEmpty(vmNicsRaw) {
+		vmNicsList := vmNicsRaw.([]interface{})
+		if len(vmNicsList) > 0 {
+			result.HostNetworkSpec = &models.HostNetworkSpec{}
+			result.HostNetworkSpec.VMNics = []*models.VMNic{}
+			for _, vmNicListEntry := range vmNicsList {
+				vmNic, err := network.TryConvertToVmNic(vmNicListEntry.(map[string]interface{}))
+				if err != nil {
+					return nil, err
+				}
+				result.HostNetworkSpec.VMNics = append(result.HostNetworkSpec.VMNics, vmNic)
+			}
+		} else {
+			return nil, fmt.Errorf("cannot convert to ClusterSpec, hosts list is empty")
+		}
+	}
+
+	return result, nil
 }

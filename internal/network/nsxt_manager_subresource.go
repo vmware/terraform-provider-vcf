@@ -6,9 +6,11 @@
 package network
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // NsxtManagerSchema this helper function extracts the Nsxt Manager schema, which contains
@@ -30,22 +32,51 @@ func NsxtManagerSchema() *schema.Resource {
 			},
 			"dns_name": {
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				Description:  "DNS name of the virtual machine, e.g., vc-1.domain1.rainpole.io",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"subnet_mask": {
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				Description:  "Subnet mask",
 				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
 			},
 			"gateway": {
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				Description:  "IPv4 gateway the VM can use to connect to the outside world",
 				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
 			},
 		},
 	}
+}
+
+func TryConvertToNsxManagerSpecs(object map[string]interface{}) (models.NsxManagerSpec, error) {
+	result := models.NsxManagerSpec{}
+	if object == nil {
+		return result, fmt.Errorf("cannot conver to NsxManagerSpec, object is nil")
+	}
+	name := object["name"].(string)
+	if len(name) == 0 {
+		return result, fmt.Errorf("cannot conver to NsxManagerSpec, name is required")
+	}
+	ipAddress := object["ip_address"].(string)
+	if len(ipAddress) == 0 {
+		return result, fmt.Errorf("cannot conver to NsxManagerSpec, ip_address is required")
+	}
+	result.Name = &name
+	result.NetworkDetailsSpec = &models.NetworkDetailsSpec{
+		IPAddress: &ipAddress,
+	}
+	if dnsName, ok := object["dns_name"]; ok && !validation_utils.IsEmpty(dnsName) {
+		result.NetworkDetailsSpec.DNSName = dnsName.(string)
+	}
+	if subnetMask, ok := object["subnet_mask"]; ok && !validation_utils.IsEmpty(subnetMask) {
+		result.NetworkDetailsSpec.SubnetMask = subnetMask.(string)
+	}
+	if gateway, ok := object["gateway"]; ok && !validation_utils.IsEmpty(gateway) {
+		result.NetworkDetailsSpec.Gateway = gateway.(string)
+	}
+	return result, nil
 }

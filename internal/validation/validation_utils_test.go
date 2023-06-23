@@ -25,7 +25,7 @@ func TestValidatePassword(t *testing.T) {
 		}
 
 		for _, passTest := range passwordTests {
-			err := ValidatePassword(passTest.password, "")
+			_, err := ValidatePassword(passTest.password, "")
 			if len(err) == 0 {
 				t.Errorf("Failed. Expected one error for password %s, but got zero", passTest.password)
 				break
@@ -39,7 +39,7 @@ func TestValidatePassword(t *testing.T) {
 	t.Run("Nil password validation", func(t *testing.T) {
 		var expectedError = "expected not nil and type of \"\" to be string"
 
-		err := ValidatePassword(nil, "")
+		_, err := ValidatePassword(nil, "")
 		if len(err) == 0 {
 			t.Fatalf("Failed. Expected one error for nil password, but got zero")
 		}

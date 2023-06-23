@@ -6,8 +6,11 @@
 package network
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // VMNicSchema this helper function extracts the VMNic Schema, so that
@@ -40,4 +43,35 @@ func VMNicSchema() *schema.Resource {
 			},
 		},
 	}
+}
+
+func TryConvertToVmNic(object map[string]interface{}) (*models.VMNic, error) {
+	if object == nil {
+		return nil, fmt.Errorf("cannot convert to VMNic, object is nil")
+	}
+	id := object["id"].(string)
+	if len(id) == 0 {
+		return nil, fmt.Errorf("cannot convert to VMNic, id is required")
+	}
+	result := &models.VMNic{}
+	result.ID = id
+	if moveToNvds, ok := object["move_to_nvds"]; ok && !validation_utils.IsEmpty(moveToNvds) {
+		result.MoveToNvds = moveToNvds.(bool)
+	}
+	if uplink, ok := object["uplink"]; ok && !validation_utils.IsEmpty(uplink) {
+		result.Uplink = uplink.(string)
+	}
+	if vdsName, ok := object["vds_name"]; ok && !validation_utils.IsEmpty(vdsName) {
+		result.VdsName = vdsName.(string)
+	}
+	return result, nil
+}
+
+func FlattenVMNic(vmNic *models.VMNicInfo) *map[string]interface{} {
+	result := make(map[string]interface{})
+	if vmNic == nil {
+		return &result
+	}
+
+	return &result
 }

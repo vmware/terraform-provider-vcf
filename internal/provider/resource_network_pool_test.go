@@ -19,7 +19,7 @@ func TestAccResourceVcfNetworkPool(t *testing.T) {
 		CheckDestroy:      testCheckVcfNetworkPoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVcfNetworkPoolConfig(constants.VCF_TEST_NETWORK_POOL_NAME),
+				Config: testAccVcfNetworkPoolConfig(constants.VcfTestNetworkPoolName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_network_pool.test_pool", "id"),
 				),
@@ -70,7 +70,7 @@ func testCheckVcfNetworkPoolDestroy(_ *terraform.State) error {
 	}
 
 	for _, networkPool := range hosts.Payload.Elements {
-		if networkPool.Name == constants.VCF_TEST_NETWORK_POOL_NAME {
+		if networkPool.Name == constants.VcfTestNetworkPoolName {
 			return fmt.Errorf("found networkPool %q", networkPool.ID)
 		}
 	}

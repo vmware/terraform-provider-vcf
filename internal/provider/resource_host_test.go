@@ -21,8 +21,8 @@ func TestAccResourceVcfHost(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfHostConfig(
-					os.Getenv(constants.VCF_TEST_COMMISSIONED_HOST_FQDN),
-					os.Getenv(constants.VCF_TEST_COMMISSIONED_HOST_PASS)),
+					os.Getenv(constants.VcfTestHost1Fqdn),
+					os.Getenv(constants.VcfTestHost1Pass)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_host.host1", "host_id"),
 				),
@@ -81,7 +81,7 @@ func testCheckVcfHostDestroy(_ *terraform.State) error {
 	}
 
 	for _, host := range hosts.Payload.Elements {
-		if host.Fqdn == os.Getenv(constants.VCF_TEST_COMMISSIONED_HOST_FQDN) {
+		if host.Fqdn == os.Getenv(constants.VcfTestHost1Fqdn) {
 			return fmt.Errorf("found host %q", host.ID)
 		}
 	}

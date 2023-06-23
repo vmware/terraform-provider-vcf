@@ -4,7 +4,9 @@
 package datastores
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // VmfsDatastoreSchema this helper function extracts the VMFS Datastore schema, so that
@@ -20,4 +22,21 @@ func VmfsDatastoreSchema() *schema.Resource {
 			},
 		},
 	}
+}
+
+func TryConvertToVmfsDatastoreSpec(object map[string]interface{}) (*models.VmfsDatastoreSpec, error) {
+	if object == nil {
+		return nil, fmt.Errorf("cannot convert to VmfsDatastoreSpec, object is nil")
+	}
+	datastoreNames := object["datastore_names"].([]string)
+	if len(datastoreNames) == 0 {
+		return nil, fmt.Errorf("cannot convert to VmfsDatastoreSpec, datastore_names is required")
+	}
+	result := &models.VmfsDatastoreSpec{}
+	result.FcSpec = []*models.FcSpec{}
+	for _, datastoreName := range datastoreNames {
+		datastoreNameRef := &datastoreName
+		result.FcSpec = append(result.FcSpec, &models.FcSpec{DatastoreName: datastoreNameRef})
+	}
+	return result, nil
 }

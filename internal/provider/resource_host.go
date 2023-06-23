@@ -5,6 +5,8 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -19,7 +21,6 @@ func ResourceHost() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceHostCreate,
 		ReadContext:   resourceHostRead,
-		UpdateContext: resourceHostUpdate,
 		DeleteContext: resourceHostDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -31,26 +32,31 @@ func ResourceHost() *schema.Resource {
 			"fqdn": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "FQDN of the host",
 			},
 			"network_pool_id": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "Id of the network pool to associate the host with",
 			},
 			"storage_type": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "Storage Type. One among: VSAN, VSAN_REMOTE, NFS, VMFS_FC, VVOL",
 			},
 			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "Username of the host",
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Sensitive:   true,
 				Description: "Password of the host",
 			},
@@ -71,7 +77,6 @@ func ResourceHost() *schema.Resource {
 func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
-	log.Println(d)
 	params := hosts.NewCommissionHostsParams()
 	commissionSpec := models.HostCommissionSpec{}
 
@@ -104,15 +109,16 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	_, accepted, err := apiClient.Hosts.CommissionHosts(params)
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
-	log.Printf("%s commissionSpec commission initiated. waiting for task id = %s", *commissionSpec.Fqdn, accepted.Payload.ID)
+	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
+		*commissionSpec.Fqdn, accepted.Payload.ID))
 
 	err = vcfClient.WaitForTaskComplete(accepted.Payload.ID)
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
@@ -122,7 +128,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	return resourceHostRead(ctx, d, meta)
 }
 
-func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
@@ -137,7 +143,7 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 		// Get all hosts and match the fqdn
 		ok, err := apiClient.Hosts.GetHosts(nil)
 		if err != nil {
-			log.Println("error = ", err)
+			tflog.Error(ctx, err.Error())
 			diag.FromErr(err)
 		}
 
@@ -154,7 +160,7 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 		}
 
 		// Did not find the resource, set ID to ""
-		log.Println("Did not find host with hostFqdn ", hostFqdn)
+		tflog.Warn(ctx, "Did not find host with hostFqdn "+hostFqdn)
 		d.SetId("")
 		return nil
 	} else {
@@ -164,7 +170,7 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 
 		host, err := apiClient.Hosts.GetHost(params)
 		if err != nil {
-			log.Println("error = ", err)
+			tflog.Error(ctx, err.Error())
 			return diag.FromErr(err)
 		}
 		_ = d.Set("host_id", host.Payload.ID)
@@ -175,13 +181,7 @@ func resourceHostRead(_ context.Context, d *schema.ResourceData, meta interface{
 	}
 }
 
-/**
- * Updating hosts is not supported in VCF API.
- */
-func resourceHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return resourceHostRead(ctx, d, meta)
-}
-func resourceHostDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
@@ -196,14 +196,14 @@ func resourceHostDelete(_ context.Context, d *schema.ResourceData, meta interfac
 	// DecommissionHosts(params *DecommissionHostsParams, opts ...ClientOption) (*DecommissionHostsOK, *DecommissionHostsAccepted, error)
 	_, accepted, err := apiClient.Hosts.DecommissionHosts(params)
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
 	log.Printf("%s: Decommission task initiated. Task id %s", d.Id(), accepted.Payload.ID)
 	err = vcfClient.WaitForTaskComplete(accepted.Payload.ID)
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
