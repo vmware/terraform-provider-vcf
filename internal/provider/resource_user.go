@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/users"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
@@ -26,7 +27,7 @@ func ResourceUser() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(2 * time.Hour),
+			Create: schema.DefaultTimeout(30 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -75,7 +76,8 @@ func ResourceUser() *schema.Resource {
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SddcManagerClient).ApiClient
 	log.Println(d)
-	params := users.NewAddUsersParams()
+	params := users.NewAddUsersParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	user := models.User{}
 
 	if name, ok := d.GetOk("name"); ok {
@@ -128,12 +130,13 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	return resourceUserRead(ctx, d, meta)
 }
 
-func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SddcManagerClient).ApiClient
 
 	id := d.Id()
 
-	ok, err := client.Users.GetUsers(nil)
+	ok, err := client.Users.GetUsers(
+		users.NewGetUsersParamsWithContext(ctx).WithTimeout(constants.DefaultVcfApiCallTimeout))
 	if err != nil {
 		log.Println("error = ", err)
 		return diag.FromErr(err)
@@ -151,10 +154,11 @@ func resourceUserRead(_ context.Context, d *schema.ResourceData, meta interface{
 	return nil
 }
 
-func resourceUserDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SddcManagerClient).ApiClient
 
-	params := users.NewDeleteUserParams()
+	params := users.NewDeleteUserParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	params.ID = d.Id()
 
 	log.Println(params)

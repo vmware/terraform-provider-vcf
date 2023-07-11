@@ -72,7 +72,7 @@ func clusterSubresourceSchema() *schema.Resource {
 				Required:    true,
 				Description: "List of vSphere host information from the free pool to consume in the workload domain",
 				MinItems:    1,
-				Elem:        cluster.CommissionedHostSchema(),
+				Elem:        cluster.HostSpecSchema(),
 			},
 			"cluster_image_id": {
 				Type:         schema.TypeString,
@@ -186,6 +186,7 @@ func clusterSubresourceSchema() *schema.Resource {
 	}
 }
 
+// TODO implement support for VxRailDetails.
 func tryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to ClusterSpec, object is nil")

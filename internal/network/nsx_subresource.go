@@ -13,15 +13,15 @@ import (
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
-// NsxTSchema this helper function extracts the NSX-T schema, which
-// contains the parameters required to install and configure NSX-T in a workload domain.
-func NsxTSchema() *schema.Resource {
+// NsxSchema this helper function extracts the NSX schema, which
+// contains the parameters required to install and configure NSX in a workload domain.
+func NsxSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"vip": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "Virtual IP address which would act as proxy/alias for NSX-T Managers",
+				Description:  "Virtual IP address which would act as proxy/alias for NSX Managers",
 				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
 			},
 			"vip_fqdn": {
@@ -56,38 +56,39 @@ func NsxTSchema() *schema.Resource {
 				Description:  "NSX manager Audit password",
 				ValidateFunc: validation_utils.ValidatePassword,
 			},
-			"nsx_manager": {
+			"nsx_manager_node": {
 				Type:        schema.TypeList,
 				Required:    true,
 				Description: "Specification details of the NSX Manager virtual machines. 3 of these are required for the first workload domain",
-				Elem:        NsxtManagerSchema(),
+				Elem:        NsxManagerNodeSchema(),
 			},
 		},
 	}
 }
 
-func TryConvertToNsxtSpec(object map[string]interface{}) (*models.NsxTSpec, error) {
+// TODO support IpPoolSpecs.
+func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error) {
 	if object == nil {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, object is nil")
 	}
 	vip := object["vip"].(string)
 	if len(vip) == 0 {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, vip is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, vip is required")
 	}
 	vipFqdn := object["vip_fqdn"].(string)
 	if len(vipFqdn) == 0 {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, vip_fqdn is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, vip_fqdn is required")
 	}
 	if object["nsx_manager"] == nil {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, nsx_manager is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, nsx_manager is required")
 	}
 	nsxManagerAdminPassword := object["nsx_manager_admin_password"].(string)
 	if len(nsxManagerAdminPassword) == 0 {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, nsx_manager_admin_password is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, nsx_manager_admin_password is required")
 	}
 	licenseKey := object["license_key"].(string)
 	if len(licenseKey) == 0 {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, license_key is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, license_key is required")
 	}
 
 	result := &models.NsxTSpec{}
@@ -103,15 +104,15 @@ func TryConvertToNsxtSpec(object map[string]interface{}) (*models.NsxTSpec, erro
 	if nsxManagerAuditPassword, ok := object["nsx_manager_audit_password"]; ok && !validation_utils.IsEmpty(nsxManagerAuditPassword) {
 		result.NsxManagerAuditPassword = nsxManagerAuditPassword.(string)
 	}
-	nsxManagerList := object["nsx_manager"].([]interface{})
+	nsxManagerList := object["nsx_manager_node"].([]interface{})
 	if len(nsxManagerList) == 0 {
-		return nil, fmt.Errorf("cannot conver to NsxTSpec, at least one entry for nsx_manager is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, at least one entry for nsx_manager is required")
 	}
 
 	var nsxManagerSpecs []*models.NsxManagerSpec
 	for _, nsxManagerListEntry := range nsxManagerList {
 		nsxManager := nsxManagerListEntry.(map[string]interface{})
-		nsxManagerSpec, err := TryConvertToNsxManagerSpecs(nsxManager)
+		nsxManagerSpec, err := TryConvertToNsxManagerNodeSpec(nsxManager)
 		if err != nil {
 			return nil, err
 		}

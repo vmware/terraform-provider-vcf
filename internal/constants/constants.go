@@ -3,7 +3,10 @@
 
 package constants
 
+import "time"
+
 const (
+	DefaultVcfApiCallTimeout = 2 * time.Minute
 
 	// VcfTestUrl URL of a VCF instance, used for Acceptance tests.
 	VcfTestUrl = "VCF_TEST_URL"
@@ -44,17 +47,14 @@ const (
 	// with the SDDC Manager.
 	VcfTestHost4Pass = "VCF_TEST_HOST4_PASS"
 
-	// VcfTestNsxtLicenseKey license key for NSXT required for domain and cluster acceptance tests.
-	VcfTestNsxtLicenseKey = "VCF_TEST_NSXT_LICENSE_KEY"
+	// VcfTestNsxLicenseKey license key for NSX required for domain and cluster acceptance tests.
+	VcfTestNsxLicenseKey = "VCF_TEST_NSX_LICENSE_KEY"
 
-	// VcfTestEsxiLicenseKey license key for NSXT required for domain and cluster acceptance tests.
+	// VcfTestEsxiLicenseKey license key for ESX required for domain and cluster acceptance tests.
 	VcfTestEsxiLicenseKey = "VCF_TEST_ESXI_LICENSE_KEY"
 
 	// VcfTestVsanLicenseKey license key for VSAN required for domain and cluster acceptance tests.
 	VcfTestVsanLicenseKey = "VCF_TEST_VSAN_LICENSE_KEY"
-
-	// VcfTestGatewayIp the gateway IP required for domain and cluster acceptance tests.
-	VcfTestGatewayIp = "VCF_TEST_GATEWAY_IP"
 
 	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
 	VcfTestNetworkPoolName = "terraform-test-pool"

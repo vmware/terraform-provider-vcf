@@ -14,9 +14,9 @@ import (
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
-// CommissionedHostSchema this helper function extracts the Host
+// HostSpecSchema this helper function extracts the Host
 // schema, so that it's made available for both Domain and Cluster creation.
-func CommissionedHostSchema() *schema.Resource {
+func HostSpecSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -72,7 +72,7 @@ func CommissionedHostSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Sensitive:    true,
-				Description:  "SSH thumbprint(fingerprint) of the vSphere host. Note:This field will be mandatory in future releases.",
+				Description:  "SSH thumbprint (fingerprint) of the vSphere host. Note: This field will be mandatory in future releases.",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"vmnic": {
@@ -81,26 +81,8 @@ func CommissionedHostSchema() *schema.Resource {
 				Description: "Contains vmnic configurations for vSphere host",
 				Elem:        network.VMNicSchema(),
 			},
-			"az_name": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Fault domain name of the host",
-			},
 		},
 	}
-}
-
-func FlattenHost(host *models.HostReference) *map[string]interface{} {
-	result := make(map[string]interface{})
-	if host == nil {
-		return &result
-	}
-	result["id"] = host.ID
-	result["host_name"] = host.Fqdn
-	result["ip_address"] = host.IPAddress
-	result["az_name"] = host.AzName
-
-	return &result
 }
 
 func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, error) {

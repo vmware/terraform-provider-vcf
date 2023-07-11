@@ -13,9 +13,9 @@ import (
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
-// NsxtManagerSchema this helper function extracts the Nsxt Manager schema, which contains
+// NsxManagerNodeSchema this helper function extracts the NSX Manager Node schema, which contains
 // the parameters required to install and configure NSX Manager in a workload domain.
-func NsxtManagerSchema() *schema.Resource {
+func NsxManagerNodeSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -33,7 +33,7 @@ func NsxtManagerSchema() *schema.Resource {
 			"dns_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "DNS name of the virtual machine, e.g., vc-1.domain1.rainpole.io",
+				Description:  "DNS name of the virtual machine, e.g., nsx-1.domain1.rainpole.io",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"subnet_mask": {
@@ -52,18 +52,18 @@ func NsxtManagerSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToNsxManagerSpecs(object map[string]interface{}) (models.NsxManagerSpec, error) {
+func TryConvertToNsxManagerNodeSpec(object map[string]interface{}) (models.NsxManagerSpec, error) {
 	result := models.NsxManagerSpec{}
 	if object == nil {
-		return result, fmt.Errorf("cannot conver to NsxManagerSpec, object is nil")
+		return result, fmt.Errorf("cannot convert to NsxManagerSpec, object is nil")
 	}
 	name := object["name"].(string)
 	if len(name) == 0 {
-		return result, fmt.Errorf("cannot conver to NsxManagerSpec, name is required")
+		return result, fmt.Errorf("cannot convert to NsxManagerSpec, name is required")
 	}
 	ipAddress := object["ip_address"].(string)
 	if len(ipAddress) == 0 {
-		return result, fmt.Errorf("cannot conver to NsxManagerSpec, ip_address is required")
+		return result, fmt.Errorf("cannot convert to NsxManagerSpec, ip_address is required")
 	}
 	result.Name = &name
 	result.NetworkDetailsSpec = &models.NetworkDetailsSpec{

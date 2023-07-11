@@ -4,9 +4,12 @@
 package provider
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/runtime"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/tasks"
 	"github.com/vmware/vcf-sdk-go/client/tokens"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -64,7 +67,7 @@ func (c *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func (sddcManagerClient *SddcManagerClient) Connect() {
+func (sddcManagerClient *SddcManagerClient) Connect() error {
 	// Disable cert checks
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -83,25 +86,27 @@ func (sddcManagerClient *SddcManagerClient) Connect() {
 		Username: sddcManagerClient.SddcManagerUsername,
 		Password: sddcManagerClient.SddcManagerPassword,
 	}
-	params := tokens.NewCreateTokenParams().WithTokenCreationSpec(tokenSpec)
+	params := tokens.NewCreateTokenParams().
+		WithTokenCreationSpec(tokenSpec).WithTimeout(constants.DefaultVcfApiCallTimeout)
 
 	ok, _, err := vclient.Tokens.CreateToken(params)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	accessToken = &ok.Payload.AccessToken
 	// save the access token for later use
 	sddcManagerClient.AccessToken = &ok.Payload.AccessToken
+	return nil
 }
 
 // WaitForTask Wait for a task to complete (waits for up to a minute).
-func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
+func (sddcManagerClient *SddcManagerClient) WaitForTask(ctx context.Context, taskId string) error {
 	// Fetch task status 10 times with a delay of 20 seconds each time
 	taskStatusRetry := 10
 
 	for taskStatusRetry > 0 {
-		task, err := sddcManagerClient.getTask(taskId)
+		task, err := sddcManagerClient.getTask(ctx, taskId)
 		if err != nil {
 			log.Println("error = ", err)
 			return err
@@ -127,10 +132,10 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(taskId string) error {
 }
 
 // WaitForTaskComplete Wait for task till it completes (either succeeds or fails).
-func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(taskId string) error {
+func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Context, taskId string) error {
 	log.Printf("Getting status of task %s", taskId)
 	for {
-		task, err := sddcManagerClient.getTask(taskId)
+		task, err := sddcManagerClient.getTask(ctx, taskId)
 		if err != nil {
 			return err
 		}
@@ -151,8 +156,8 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(taskId string) e
 	}
 }
 
-func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(taskId string) (string, error) {
-	task, err := sddcManagerClient.getTask(taskId)
+func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx context.Context, taskId string) (string, error) {
+	task, err := sddcManagerClient.getTask(ctx, taskId)
 	if err != nil {
 		return "", err
 	}
@@ -162,13 +167,24 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(task
 	return *task.Resources[0].ResourceID, nil
 }
 
-func (sddcManagerClient *SddcManagerClient) getTask(taskId string) (*models.Task, error) {
+func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*models.Task, error) {
 	apiClient := sddcManagerClient.ApiClient
-	getTaskParams := tasks.NewGetTaskParams()
+	getTaskParams := tasks.NewGetTaskParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
+		WithContext(ctx)
 	getTaskParams.ID = taskId
 
 	getTaskResult, err := apiClient.Tasks.GetTask(getTaskParams)
 	if err != nil {
+		apiError, isApiError := err.(*runtime.APIError)
+		// if the error is 4xx, then relogin and retry getting the task
+		if isApiError && apiError.IsClientError() {
+			err := sddcManagerClient.Connect()
+			if err != nil {
+				return nil, err
+			}
+			return sddcManagerClient.getTask(ctx, taskId)
+		}
+
 		log.Println("error = ", err)
 		return nil, err
 	}

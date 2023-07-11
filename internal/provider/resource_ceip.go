@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/ceip"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strings"
@@ -58,7 +59,7 @@ func resourceCeipCreate(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)
+	ceipResult, err := apiClient.CEIP.GetCEIPStatus(ceip.NewGetCEIPStatusParamsWithTimeout(constants.DefaultVcfApiCallTimeout))
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -72,7 +73,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := ceip.NewUpdateCEIPStatusParams()
+	params := ceip.NewUpdateCEIPStatusParamsWithTimeout(2 * time.Minute)
 	updateSpec := models.CEIPUpdateSpec{}
 
 	if status, ok := d.GetOk("status"); ok {
@@ -94,7 +95,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	if vcfClient.WaitForTask(ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
 		return diag.FromErr(err)
 	}
 
@@ -120,7 +121,7 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	if vcfClient.WaitForTask(ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
 		return diag.FromErr(err)
 	}
 

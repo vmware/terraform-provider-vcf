@@ -25,7 +25,7 @@ func VdsSchema() *schema.Resource {
 				Description:  "vSphere Distributed Switch name",
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"is_used_by_nsxt": {
+			"is_used_by_nsx": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Identifies if the vSphere distributed switch is used by NSX-T",
@@ -60,8 +60,8 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error)
 		return nil, fmt.Errorf("cannot conver to VdsSpec, name is required")
 	}
 	result.Name = &name
-	if isUsedByNsxt, ok := object["is_used_by_nsxt"]; ok && !validation_utils.IsEmpty(isUsedByNsxt) {
-		result.IsUsedByNSXT = isUsedByNsxt.(bool)
+	if isUsedByNsx, ok := object["is_used_by_nsx"]; ok && !validation_utils.IsEmpty(isUsedByNsx) {
+		result.IsUsedByNSXT = isUsedByNsx.(bool)
 	}
 	if portgroupsRaw, ok := object["portgroup"]; ok && !validation_utils.IsEmpty(portgroupsRaw) {
 		portgroupsList := portgroupsRaw.([]interface{})

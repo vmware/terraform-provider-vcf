@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
 
@@ -77,7 +78,7 @@ func ResourceHost() *schema.Resource {
 func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
-	params := hosts.NewCommissionHostsParams()
+	params := hosts.NewCommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
 	commissionSpec := models.HostCommissionSpec{}
 
 	if fqdn, ok := d.GetOk("fqdn"); ok {
@@ -116,7 +117,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
 		*commissionSpec.Fqdn, accepted.Payload.ID))
 
-	err = vcfClient.WaitForTaskComplete(accepted.Payload.ID)
+	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -141,7 +142,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	if hostUuid == "" {
 		// Get all hosts and match the fqdn
-		ok, err := apiClient.Hosts.GetHosts(nil)
+		ok, err := apiClient.Hosts.GetHosts(hosts.NewGetHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout))
 		if err != nil {
 			tflog.Error(ctx, err.Error())
 			diag.FromErr(err)
@@ -165,7 +166,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		return nil
 	} else {
 		// Get a single host using UUID
-		params := hosts.NewGetHostParams()
+		params := hosts.NewGetHostParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
 		params.ID = hostUuid
 
 		host, err := apiClient.Hosts.GetHost(params)
@@ -185,7 +186,7 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := hosts.NewDecommissionHostsParams()
+	params := hosts.NewDecommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
 	decommissionSpec := models.HostDecommissionSpec{}
 	id := d.Id()
 	decommissionSpec.Fqdn = &id
@@ -201,7 +202,7 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("%s: Decommission task initiated. Task id %s", d.Id(), accepted.Payload.ID)
-	err = vcfClient.WaitForTaskComplete(accepted.Payload.ID)
+	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)

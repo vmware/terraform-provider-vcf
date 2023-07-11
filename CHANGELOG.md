@@ -4,7 +4,7 @@
 
 > Release Date: TBA
 
-Add support for workload groups.
+Add support for workload domains.
 
 ## [v0.1.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.1.0)
 

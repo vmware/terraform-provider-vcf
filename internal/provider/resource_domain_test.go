@@ -30,7 +30,7 @@ func TestAccResourceVcfDomain(t *testing.T) {
 					os.Getenv(constants.VcfTestHost3Pass),
 					os.Getenv(constants.VcfTestHost4Fqdn),
 					os.Getenv(constants.VcfTestHost4Pass),
-					os.Getenv(constants.VcfTestNsxtLicenseKey),
+					os.Getenv(constants.VcfTestNsxLicenseKey),
 					os.Getenv(constants.VcfTestEsxiLicenseKey),
 					os.Getenv(constants.VcfTestVsanLicenseKey)),
 				Check: resource.ComposeTestCheckFunc(
@@ -48,7 +48,7 @@ func TestAccResourceVcfDomain(t *testing.T) {
 }
 
 func testAccVcfDomainConfig(host1Fqdn, host1SshPassword, host2Fqdn, host2SshPassword,
-	host3Fqdn, host3SshPassword, nsxtLicenseKey, esxiLicenseKey, vsanLicenseKey string) string {
+	host3Fqdn, host3SshPassword, nsxLicenseKey, esxiLicenseKey, vsanLicenseKey string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "domain_pool" {
 		name    = "engineering-pool"
@@ -101,38 +101,40 @@ func testAccVcfDomainConfig(host1Fqdn, host1SshPassword, host2Fqdn, host2SshPass
 	}
 	resource "vcf_domain" "domain1" {
 		name                    = "test-domain"
-		vcenter_name            = "test-vcenter"
-        vcenter_datacenter_name = "test-datacenter"
-		vcenter_root_password   = "S@mpleP@ss123!"
-		vcenter_vm_size         = "tiny"
-        vcenter_storage_size    = "lstorage"
-		vcenter_ip_address      = "10.0.1.6"
-		vcenter_subnet_mask     = "255.255.255.0"
-		vcenter_gateway         = "10.0.0.250"
-		vcenter_dns_name        = "test-vcenter.rainpole.io"
-		nsxt_configuration {
-			vip        					= "10.0.1.30"
+		vcenter {
+			name            = "test-vcenter"
+			datacenter_name = "test-datacenter"
+			root_password   = "S@mpleP@ss123!"
+			vm_size         = "tiny"
+			storage_size    = "lstorage"
+			ip_address      = "10.0.0.43"
+			ubnet_mask     = "255.255.255.0"
+			gateway         = "10.0.0.250"
+			dns_name        = "test-vcenter.rainpole.io"
+		}
+		nsx_configuration {
+			vip        					= "10.0.0.66"
 			vip_fqdn   					= "nsx-mgmt1.rainpole.io"
 			nsx_manager_admin_password	= "Nqkva_parola1"
 			license_key                 = %q
-			nsx_manager {
-				name        = "nsxt-manager-test1"
-				ip_address  = "10.0.1.40"
-				dns_name    = "nsxt-manager-test1.rainpole.io"
+			nsx_manager_node {
+				name        = "nsx-manager-test1"
+				ip_address  = "10.0.0.62"
+				dns_name    = "nsx-manager-test1.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
-			nsx_manager {
-				name        = "nsxt-manager-test2"
-				ip_address  = "10.0.1.41"
-				dns_name    = "nsxt-manager-test2.rainpole.io"
+			nsx_manager_node {
+				name        = "nsx-manager-test2"
+				ip_address  = "10.0.0.63"
+				dns_name    = "nsx-manager-test2.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
-			nsx_manager {
-				name        = "nsxt-manager-test3"
-				ip_address  = "10.0.1.42"
-				dns_name    = "nsxt-manager-test3.rainpole.io"
+			nsx_manager_node {
+				name        = "nsx-manager-test3"
+				ip_address  = "10.0.0.64"
+				dns_name    = "nsx-manager-test3.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
@@ -198,7 +200,7 @@ func testAccVcfDomainConfig(host1Fqdn, host1SshPassword, host2Fqdn, host2SshPass
 			geneve_vlan_id = 2
 		}
 	}`, host1Fqdn, host1SshPassword, host2Fqdn, host2SshPassword,
-		host3Fqdn, host3SshPassword, nsxtLicenseKey, esxiLicenseKey,
+		host3Fqdn, host3SshPassword, nsxLicenseKey, esxiLicenseKey,
 		esxiLicenseKey, esxiLicenseKey, vsanLicenseKey)
 }
 

@@ -58,6 +58,9 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 	}
 
 	var newClient = NewSddcManagerClient(username.(string), password.(string), hostName.(string))
-	newClient.Connect()
+	err := newClient.Connect()
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
 	return newClient, nil
 }

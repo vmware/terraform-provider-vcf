@@ -24,7 +24,7 @@ func VsanDatastoreSchema() *schema.Resource {
 			},
 			"license_key": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "License key for the vSAN data store to be applied in vCenter",
 				ValidateFunc: validation.NoZeroValues,
 			},
@@ -54,9 +54,6 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSAND
 	result := &models.VSANDatastoreSpec{}
 	result.DatastoreName = &datastoreName
 	licenseKey := object["license_key"].(string)
-	if len(licenseKey) == 0 {
-		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, license_key is required")
-	}
 	result.LicenseKey = licenseKey
 	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validation_utils.IsEmpty(dedupAndCompressionEnabled) {
 		result.DedupAndCompressionEnabled = dedupAndCompressionEnabled.(bool)

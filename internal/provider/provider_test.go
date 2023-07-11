@@ -64,8 +64,8 @@ func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv(constants.VcfTestHost4Pass); v == "" {
 		t.Fatal(constants.VcfTestHost2Pass + " must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VcfTestNsxtLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestNsxtLicenseKey + " must be set for acceptance tests")
+	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
 	}
 	if v := os.Getenv(constants.VcfTestEsxiLicenseKey); v == "" {
 		t.Fatal(constants.VcfTestEsxiLicenseKey + " must be set for acceptance tests")
