@@ -122,3 +122,39 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 
 	return result, nil
 }
+
+// NsxClusterRefSchema this helper function extracts the NSX Cluster Reference schema, which
+// contains information provided by the domain data source.
+func NsxClusterRefSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "ID of the NSX cluster",
+			},
+			"vip": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "VIP (Virtual IP Address) of the NSX cluster",
+			},
+			"vip_fqdn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "FQDN for VIP of the NSX cluster",
+			},
+		},
+	}
+}
+
+func FlattenNsxClusterRef(nsxClusterRef *models.NsxTClusterReference) *map[string]interface{} {
+	result := make(map[string]interface{})
+	if nsxClusterRef == nil {
+		return &result
+	}
+	result["id"] = nsxClusterRef.ID
+	result["vip"] = nsxClusterRef.Vip
+	result["vip_fqdn"] = nsxClusterRef.VipFqdn
+
+	return &result
+}

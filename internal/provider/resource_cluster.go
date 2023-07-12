@@ -177,7 +177,7 @@ func clusterSubresourceSchema() *schema.Resource {
 				Computed:    true,
 				Description: "Status of the cluster if default or not",
 			},
-			"is_streched": {
+			"is_stretched": {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Status of the cluster if Stretched or not",
@@ -344,6 +344,31 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 	}
 
 	return result, nil
+}
+
+func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
+	result := make(map[string]interface{})
+	if clusterObj == nil {
+		return &result
+	}
+
+	result["id"] = clusterObj.ID
+	result["name"] = clusterObj.Name
+	result["primary_datastore_name"] = clusterObj.PrimaryDatastoreName
+	result["primary_datastore_type"] = clusterObj.PrimaryDatastoreType
+	result["primary_datastore_type"] = clusterObj.PrimaryDatastoreType
+	result["is_default"] = clusterObj.IsDefault
+	result["is_stretched"] = clusterObj.IsStretched
+
+	// TODO typically the VCF 4.5.1 returns only the IDs for the hosts inside models.Cluster
+	// consider getting the fqdn, ip and az name with an additional GET request
+	flattenedHosts := make([]map[string]interface{}, len(clusterObj.Hosts))
+	for j, host := range clusterObj.Hosts {
+		flattenedHosts[j] = *cluster.FlattenHost(host)
+	}
+	result["host"] = flattenedHosts
+
+	return &result
 }
 
 func toBoolPointer(object interface{}) *bool {

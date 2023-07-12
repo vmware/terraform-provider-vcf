@@ -85,6 +85,19 @@ func HostSpecSchema() *schema.Resource {
 	}
 }
 
+func FlattenHost(host *models.HostReference) *map[string]interface{} {
+	result := make(map[string]interface{})
+	if host == nil {
+		return &result
+	}
+	result["id"] = host.ID
+	result["host_name"] = host.Fqdn
+	result["ip_address"] = host.IPAddress
+	result["availability_zone_name"] = host.AzName
+
+	return &result
+}
+
 func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, error) {
 	result := &models.HostSpec{}
 	if object == nil {
@@ -132,7 +145,7 @@ func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, erro
 				result.HostNetworkSpec.VMNics = append(result.HostNetworkSpec.VMNics, vmNic)
 			}
 		} else {
-			return nil, fmt.Errorf("cannot convert to ClusterSpec, hosts list is empty")
+			return nil, fmt.Errorf("cannot convert to ClusterSpec, vmnic list is empty")
 		}
 	}
 

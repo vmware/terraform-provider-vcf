@@ -30,7 +30,7 @@ func VsanDatastoreSchema() *schema.Resource {
 			},
 			"failures_to_tolerate": {
 				Type:         schema.TypeInt,
-				Required:     true,
+				Optional:     true,
 				Description:  "Number of vSphere host failures to tolerate in the vSAN cluster (can be 0, 1, or 2)",
 				ValidateFunc: validation.IntBetween(0, 2),
 			},
@@ -58,7 +58,7 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSAND
 	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validation_utils.IsEmpty(dedupAndCompressionEnabled) {
 		result.DedupAndCompressionEnabled = dedupAndCompressionEnabled.(bool)
 	}
-	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok {
+	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validation_utils.IsEmpty(failuresToTolerate) {
 		failuresToTolerateInt := int32(failuresToTolerate.(int))
 		result.FailuresToTolerate = &failuresToTolerateInt
 	}

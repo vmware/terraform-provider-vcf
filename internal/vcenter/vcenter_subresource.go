@@ -14,11 +14,21 @@ import (
 	"strings"
 )
 
-// VcenterSubresourceSchema this helper function extracts the vcenter schema, which
+// VCSubresourceSchema this helper function extracts the vcenter schema, which
 // contains the parameters required to configure Vcenter in a workload domain.
-func VcenterSubresourceSchema() *schema.Resource {
+func VCSubresourceSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "ID of the vCenter",
+			},
+			"fqdn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "FQDN of the vCenter",
+			},
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,

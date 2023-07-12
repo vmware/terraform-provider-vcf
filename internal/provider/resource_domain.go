@@ -52,7 +52,7 @@ func ResourceDomain() *schema.Resource {
 				Description: "Specification describing vcenter settings",
 				MinItems:    1,
 				MaxItems:    1,
-				Elem:        vcenter.VcenterSubresourceSchema(),
+				Elem:        vcenter.VCSubresourceSchema(),
 			},
 			"nsx_configuration": {
 				Type:        schema.TypeList,
@@ -67,16 +67,6 @@ func ResourceDomain() *schema.Resource {
 				Description: "Specification representing the clusters to be added to the workload domain",
 				MinItems:    1,
 				Elem:        clusterSubresourceSchema(),
-			},
-			"vcenter_id": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "ID of the vCenter",
-			},
-			"vcenter_fqdn": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "FQDN of the vCenter",
 			},
 			"status": {
 				Type:        schema.TypeString,
@@ -202,10 +192,10 @@ func resourceDomainRead(ctx context.Context, data *schema.ResourceData, meta int
 	if len(domain.VCENTERS) < 1 {
 		return diag.FromErr(fmt.Errorf("no vCenters found for domain %q", data.Id()))
 	}
-	_ = data.Set("vcenter_id", domain.VCENTERS[0].ID)
-	_ = data.Set("vcenter_fqdn", domain.VCENTERS[0].Fqdn)
+	_ = data.Set("vcenter.0.id", domain.VCENTERS[0].ID)
+	_ = data.Set("vcenter.0.fqdn", domain.VCENTERS[0].Fqdn)
 
-	err = readAndSetClustersData(domain.Clusters, data, apiClient)
+	err = readAndSetClustersDataToDomainResource(data, apiClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -331,13 +321,9 @@ func createDomainCreationSpec(data *schema.ResourceData) (*models.DomainCreation
 	return result, nil
 }
 
-func readAndSetClustersData(domainClusterRefs []*models.ClusterReference, data *schema.ResourceData, apiClient *client.VcfClient) error {
-	clusterIds := make(map[string]interface{}, len(domainClusterRefs))
-	for _, clusterReference := range domainClusterRefs {
-		clusterIds[*clusterReference.ID] = true
-	}
-
+func readAndSetClustersDataToDomainResource(data *schema.ResourceData, apiClient *client.VcfClient) error {
 	getClustersParams := clusters.GetClustersParams{
+		// TODO: handle stretched clusters
 		IsStretched: toBoolPointer(false),
 	}
 	getClustersParams.WithTimeout(constants.DefaultVcfApiCallTimeout)
@@ -350,19 +336,19 @@ func readAndSetClustersData(domainClusterRefs []*models.ClusterReference, data *
 	domainClusterData := data.Get("cluster")
 	domainClusterDataList := domainClusterData.([]interface{})
 	allClusters := clustersResult.Payload.Elements
-	for i, domainClusterRaw := range domainClusterDataList {
+	for _, domainClusterRaw := range domainClusterDataList {
 		domainCluster := domainClusterRaw.(map[string]interface{})
 		for _, cluster := range allClusters {
 			if domainCluster["name"] == cluster.Name {
-				clusterIndex := fmt.Sprintf("cluster.%d", i)
-				_ = data.Set(clusterIndex+".id", cluster.ID)
-				_ = data.Set(clusterIndex+".primary_datastore_name", cluster.PrimaryDatastoreName)
-				_ = data.Set(clusterIndex+".primary_datastore_type", cluster.PrimaryDatastoreType)
-				_ = data.Set(clusterIndex+".is_default", cluster.IsDefault)
-				_ = data.Set(clusterIndex+".is_streched", cluster.IsStretched)
+				domainCluster["id"] = cluster.ID
+				domainCluster["primary_datastore_name"] = cluster.PrimaryDatastoreName
+				domainCluster["primary_datastore_type"] = cluster.PrimaryDatastoreType
+				domainCluster["is_default"] = cluster.IsDefault
+				domainCluster["is_stretched"] = cluster.IsStretched
 			}
 		}
 	}
+	_ = data.Set("cluster", domainClusterData)
 
 	return nil
 }

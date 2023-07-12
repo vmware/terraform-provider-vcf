@@ -56,6 +56,10 @@ const (
 	// VcfTestVsanLicenseKey license key for VSAN required for domain and cluster acceptance tests.
 	VcfTestVsanLicenseKey = "VCF_TEST_VSAN_LICENSE_KEY"
 
+	// VcfTestDomainDataSourceId id of a VCF Domain used in domain data source acceptance test.
+	// Typically, the id of management domain is used as it is already created in any VCF env.
+	VcfTestDomainDataSourceId = "VCF_DOMAIN_DATA_SOURCE_ID"
+
 	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
 	VcfTestNetworkPoolName = "terraform-test-pool"
 )
