@@ -31,19 +31,49 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 // testAccPreCheck validates all required environment variables for running acceptance
 // tests are set.
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv(constants.VCF_TEST_URL); v == "" {
-		t.Fatal(constants.VCF_TEST_URL + " must be set for acceptance tests")
+	if v := os.Getenv(constants.VcfTestUrl); v == "" {
+		t.Fatal(constants.VcfTestUrl + " must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VCF_TEST_USERNAME); v == "" {
-		t.Fatal(constants.VCF_TEST_USERNAME + " must be set for acceptance tests")
+	if v := os.Getenv(constants.VcfTestUsername); v == "" {
+		t.Fatal(constants.VcfTestUsername + " must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VCF_TEST_PASSWORD); v == "" {
-		t.Fatal(constants.VCF_TEST_PASSWORD + " must be set for acceptance tests")
+	if v := os.Getenv(constants.VcfTestPassword); v == "" {
+		t.Fatal(constants.VcfTestPassword + " must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VCF_TEST_COMMISSIONED_HOST_FQDN); v == "" {
-		t.Fatal(constants.VCF_TEST_COMMISSIONED_HOST_FQDN + " must be set for acceptance tests")
+	if v := os.Getenv(constants.VcfTestHost1Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost1Fqdn + " must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VCF_TEST_COMMISSIONED_HOST_PASS); v == "" {
-		t.Fatal(constants.VCF_TEST_COMMISSIONED_HOST_PASS + " must be set for acceptance tests")
+	if v := os.Getenv(constants.VcfTestHost1Pass); v == "" {
+		t.Fatal(constants.VcfTestHost1Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost2Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost2Fqdn + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost2Pass); v == "" {
+		t.Fatal(constants.VcfTestHost2Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost3Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost3Fqdn + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost3Pass); v == "" {
+		t.Fatal(constants.VcfTestHost3Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost4Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost2Fqdn + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost4Pass); v == "" {
+		t.Fatal(constants.VcfTestHost2Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestEsxiLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestEsxiLicenseKey + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestVsanLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestVsanLicenseKey + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
+		t.Fatal(constants.VcfTestDomainDataSourceId + " must be set for acceptance tests")
 	}
 }
