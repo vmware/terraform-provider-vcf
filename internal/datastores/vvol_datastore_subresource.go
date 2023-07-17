@@ -19,7 +19,7 @@ func VvolDatastoreSchema() *schema.Resource {
 			"datastore_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "Datastore name used for cluster creation",
+				Description:  "vVol datastore name used for cluster creation",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"storage_container_id": {
@@ -31,7 +31,7 @@ func VvolDatastoreSchema() *schema.Resource {
 			"storage_protocol_type": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Type of the VASA storage protocol. One among: ISCSI, NFS, FC",
+				Description: "Type of the VASA storage protocol. One among: ISCSI, NFS, FC.",
 				ValidateFunc: validation.StringInSlice(
 					[]string{"ISCSI", "NFS", "FC"}, true),
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {

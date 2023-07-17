@@ -22,7 +22,7 @@ func ResourceCluster() *schema.Resource {
 	clusterResourceSchema["domain_id"] = &schema.Schema{
 		Type:         schema.TypeString,
 		Required:     true,
-		Description:  "The ID of a domain that the cluster belongs to",
+		Description:  "The ID of a workload domain that the cluster belongs to",
 		ValidateFunc: validation.NoZeroValues,
 	}
 
@@ -59,25 +59,25 @@ func clusterSubresourceSchema() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Cluster ID",
+				Description: "ID of the cluster",
 			},
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "Name of the new cluster that will be added to the specified workload domain",
+				Description:  "Name of the cluster to add to the workload domain",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"host": {
 				Type:        schema.TypeList,
 				Required:    true,
-				Description: "List of vSphere host information from the free pool to consume in the workload domain",
+				Description: "List of ESXi host information from the free pool to consume in a workload domain",
 				MinItems:    1,
 				Elem:        cluster.HostSpecSchema(),
 			},
 			"cluster_image_id": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "ID of the Cluster Image to be used with the Cluster",
+				Description:  "ID of the cluster image to be used with the cluster",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"evc_mode": {
@@ -114,7 +114,7 @@ func clusterSubresourceSchema() *schema.Resource {
 			"high_availability_enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Description: "High availability settings for the cluster",
+				Description: "vSphere High Availability settings for the cluster",
 			},
 			"vsan_datastore": {
 				Type:        schema.TypeList,
@@ -152,14 +152,14 @@ func clusterSubresourceSchema() *schema.Resource {
 			"geneve_vlan_id": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Description:  "Vlan id of Geneve for NSX-T based workload domains",
+				Description:  "VLAN ID use for NSX Geneve in the workload domain",
 				ValidateFunc: validation.IntBetween(0, 4095),
 			},
 			"vds": {
 				Type:        schema.TypeList,
 				Required:    true,
 				MinItems:    1,
-				Description: "Distributed switches to add to the cluster",
+				Description: "vSphere Distributed Switches to add to the cluster",
 				Elem:        network.VdsSchema(),
 			},
 			"primary_datastore_name": {
@@ -180,7 +180,7 @@ func clusterSubresourceSchema() *schema.Resource {
 			"is_stretched": {
 				Type:        schema.TypeBool,
 				Computed:    true,
-				Description: "Status of the cluster if Stretched or not",
+				Description: "Status of the cluster if stretched or not",
 			},
 		},
 	}

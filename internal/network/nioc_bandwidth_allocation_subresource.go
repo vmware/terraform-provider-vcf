@@ -74,11 +74,11 @@ func NiocBandwidthAllocationSchema() *schema.Resource {
 func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*models.NiocBandwidthAllocationSpec, error) {
 	result := &models.NiocBandwidthAllocationSpec{}
 	if object == nil {
-		return nil, fmt.Errorf("cannot conver to NiocBandwidthAllocationSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to NiocBandwidthAllocationSpec, object is nil")
 	}
 	typeParam := object["type"].(string)
 	if len(typeParam) == 0 {
-		return nil, fmt.Errorf("cannot conver to NiocBandwidthAllocationSpec, type is required")
+		return nil, fmt.Errorf("cannot convert to NiocBandwidthAllocationSpec, type is required")
 	}
 	result.Type = &typeParam
 	result.NiocTrafficResourceAllocation = &models.NiocTrafficResourceAllocation{}

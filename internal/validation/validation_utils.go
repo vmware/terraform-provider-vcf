@@ -130,7 +130,7 @@ func convertVcfErrorsToDiagErrors(err *models.Error) []diag.Diagnostic {
 	if IsEmpty(err.ReferenceToken) {
 		errorDetail = err.RemediationMessage
 	} else {
-		errorDetail = fmt.Sprintf("Look for reference token %q in service logs", err.ReferenceToken)
+		errorDetail = fmt.Sprintf("look for reference token %q in service logs", err.ReferenceToken)
 	}
 
 	result = append(result, diag.Diagnostic{

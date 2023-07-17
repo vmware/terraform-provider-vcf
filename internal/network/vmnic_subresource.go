@@ -14,14 +14,14 @@ import (
 )
 
 // VMNicSchema this helper function extracts the VMNic Schema, so that
-// it's made available for both Domain and Cluster creation.
+// it's made available for both workload domain and cluster creation.
 func VMNicSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "VmNic ID of vSphere host to be associated with VDS, once added to cluster",
+				Description:  "ESXI host vmnic ID to be associated with a VDS, once added to cluster",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"move_to_nvds": {
@@ -38,7 +38,7 @@ func VMNicSchema() *schema.Resource {
 			"vds_name": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "VDS name to associate with vSphere host",
+				Description:  "Name of the VDS to associate with the ESXi host",
 				ValidateFunc: validation.NoZeroValues,
 			},
 		},
@@ -65,13 +65,4 @@ func TryConvertToVmNic(object map[string]interface{}) (*models.VMNic, error) {
 		result.VdsName = vdsName.(string)
 	}
 	return result, nil
-}
-
-func FlattenVMNic(vmNic *models.VMNicInfo) *map[string]interface{} {
-	result := make(map[string]interface{})
-	if vmNic == nil {
-		return &result
-	}
-
-	return &result
 }

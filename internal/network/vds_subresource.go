@@ -14,7 +14,7 @@ import (
 )
 
 // VdsSchema this helper function extracts the VDS Schema, so that
-// it's made available for both Domain and Cluster creation.
+// it's made available for both workload domain and cluster creation.
 // This specification contains vSphere distributed switch configurations.
 func VdsSchema() *schema.Resource {
 	return &schema.Resource{
@@ -28,7 +28,7 @@ func VdsSchema() *schema.Resource {
 			"is_used_by_nsx": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Description: "Identifies if the vSphere distributed switch is used by NSX-T",
+				Description: "Identifies if the vSphere distributed switch is used by NSX",
 			},
 			"portgroup": {
 				Type:        schema.TypeList,
@@ -53,11 +53,11 @@ func VdsSchema() *schema.Resource {
 func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error) {
 	result := &models.VdsSpec{}
 	if object == nil {
-		return nil, fmt.Errorf("cannot conver to VdsSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to VdsSpec, object is nil")
 	}
 	name := object["name"].(string)
 	if len(name) == 0 {
-		return nil, fmt.Errorf("cannot conver to VdsSpec, name is required")
+		return nil, fmt.Errorf("cannot convert to VdsSpec, name is required")
 	}
 	result.Name = &name
 	if isUsedByNsx, ok := object["is_used_by_nsx"]; ok && !validation_utils.IsEmpty(isUsedByNsx) {

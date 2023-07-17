@@ -18,7 +18,6 @@ import (
 	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
 	"sort"
-	"strconv"
 	"time"
 )
 
@@ -38,7 +37,7 @@ func DataSourceDomain() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Name of the domain (from 3 to 20 characters)",
+				Description: "Name of the domain",
 			},
 			"cluster": {
 				Type:        schema.TypeList,
@@ -49,18 +48,18 @@ func DataSourceDomain() *schema.Resource {
 			"nsx_cluster_ref": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "Represents NSX Cluster references associated with the domain",
+				Description: "Represents NSX Manager cluster references associated with the domain",
 				Elem:        network.NsxClusterRefSchema(),
 			},
 			"vcenter_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of the vCenter",
+				Description: "ID of the vCenter Server instance",
 			},
 			"vcenter_fqdn": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "FQDN of the vCenter",
+				Description: "Fully qualified domain name of the vCenter Server instance",
 			},
 			"status": {
 				Type:        schema.TypeString,
@@ -85,37 +84,7 @@ func DataSourceDomain() *schema.Resource {
 			"is_management_sso_domain": {
 				Type:        schema.TypeBool,
 				Computed:    true,
-				Description: "Shows whether the workload domain is joined to the Management domain SSO",
-			},
-			"total_cpu_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a cpu total metric for the domain",
-			},
-			"used_cpu_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a cpu used metric for the domain",
-			},
-			"total_memory_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a memory total metric for the domain",
-			},
-			"used_memory_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a memory used metric for the domain",
-			},
-			"total_storage_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a storage total metric for the domain",
-			},
-			"used_storage_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a storage used metric for the domain",
+				Description: "Shows whether the domain is joined to the management domain SSO",
 			},
 		},
 	}
@@ -142,7 +111,7 @@ func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta i
 	_ = data.Set("sso_name", domain.SSOName)
 	_ = data.Set("is_management_sso_domain", domain.IsManagementSSODomain)
 	if len(domain.VCENTERS) < 1 {
-		return diag.FromErr(fmt.Errorf("no vCenters found for domain %q", data.Id()))
+		return diag.FromErr(fmt.Errorf("no vCenter Server instance found for domain %q", data.Id()))
 	}
 	_ = data.Set("vcenter_id", domain.VCENTERS[0].ID)
 	_ = data.Set("vcenter_fqdn", domain.VCENTERS[0].Fqdn)
@@ -154,28 +123,6 @@ func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta i
 	flattenedNsxClusterRef := make([]map[string]interface{}, 1)
 	flattenedNsxClusterRef[0] = *network.FlattenNsxClusterRef(domain.NSXTCluster)
 	_ = data.Set("nsx_cluster_ref", flattenedNsxClusterRef)
-
-	totalCpuCapacity := strconv.FormatFloat(domain.Capacity.CPU.Total.Value,
-		'f', 2, 64) + " " + domain.Capacity.CPU.Total.Unit
-	usedCpuCapacity := strconv.FormatFloat(domain.Capacity.CPU.Used.Value,
-		'f', 2, 64) + " " + domain.Capacity.CPU.Used.Unit
-	_ = data.Set("total_cpu_capacity", totalCpuCapacity)
-	_ = data.Set("used_cpu_capacity", usedCpuCapacity)
-
-	totalMemoryCapacity := strconv.FormatFloat(domain.Capacity.Memory.Total.Value,
-		'f', 2, 64) + " " + domain.Capacity.Memory.Total.Unit
-	usedMemoryCapacity := strconv.FormatFloat(domain.Capacity.Memory.Used.Value,
-		'f', 2, 64) + " " + domain.Capacity.Memory.Used.Unit
-	_ = data.Set("total_memory_capacity", totalMemoryCapacity)
-	_ = data.Set("used_memory_capacity", usedMemoryCapacity)
-
-	totalStorageCapacity := strconv.FormatFloat(domain.Capacity.Storage.Total.Value,
-		'f', 2, 64) + " " + domain.Capacity.Storage.Total.Unit
-	usedStorageCapacity := strconv.FormatFloat(domain.Capacity.Storage.Used.Value,
-		'f', 2, 64) + " " + domain.Capacity.Storage.Used.Unit
-	_ = data.Set("total_storage_capacity", totalStorageCapacity)
-	_ = data.Set("used_storage_capacity", usedStorageCapacity)
-
 	return nil
 }
 

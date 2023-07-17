@@ -27,11 +27,11 @@ func TestValidatePassword(t *testing.T) {
 		for _, passTest := range passwordTests {
 			_, err := ValidatePassword(passTest.password, "")
 			if len(err) == 0 {
-				t.Errorf("Failed. Expected one error for password %s, but got zero", passTest.password)
+				t.Errorf("failed. expected one error for password %s, but got zero", passTest.password)
 				break
 			}
 			if !strings.Contains(err[0].Error(), passTest.expectedErr) {
-				t.Errorf("Failed. Unexpected error for password %s : %s, expected %s", passTest.password, err[0].Error(), passTest.expectedErr)
+				t.Errorf("failed. Unexpected error for password %s : %s, expected %s", passTest.password, err[0].Error(), passTest.expectedErr)
 			}
 		}
 	})
@@ -41,7 +41,7 @@ func TestValidatePassword(t *testing.T) {
 
 		_, err := ValidatePassword(nil, "")
 		if len(err) == 0 {
-			t.Fatalf("Failed. Expected one error for nil password, but got zero")
+			t.Fatalf("failed. expected one error for nil password, but got zero")
 		}
 		if !strings.Contains(err[0].Error(), expectedError) {
 			t.Errorf("Failed. Unexpected error for nil password: %s, expected %s", err[0].Error(), expectedError)

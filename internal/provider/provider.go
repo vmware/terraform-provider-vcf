@@ -17,19 +17,19 @@ func Provider() *schema.Provider {
 			"sddc_manager_username": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "SDDC Manager username.",
+				Description: "Username to authenticate to SDDC Manager",
 				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUsername, nil),
 			},
 			"sddc_manager_password": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "SDDC Manager password.",
+				Description: "Password to authenticate to SDDC Manager",
 				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestPassword, nil),
 			},
 			"sddc_manager_host": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "SDDC Manager host.",
+				Description: "Fully qualified domain name or IP address of the SDDC Manager",
 				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUrl, nil),
 			},
 		},

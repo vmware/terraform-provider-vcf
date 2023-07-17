@@ -29,6 +29,7 @@ type SddcManagerClient struct {
 	SddcManagerHost     string
 	AccessToken         *string
 	ApiClient           *vcfclient.VcfClient
+	taskRetries         int
 }
 
 // NewSddcManagerClient constructs new Client instance with vcf credentials.
@@ -37,10 +38,12 @@ func NewSddcManagerClient(username, password, host string) *SddcManagerClient {
 		SddcManagerUsername: username,
 		SddcManagerPassword: password,
 		SddcManagerHost:     host,
+		taskRetries:         0,
 	}
 }
 
 var accessToken *string
+var maxRetries int = 10
 
 func newTransport() *customTransport {
 	return &customTransport{
@@ -156,7 +159,7 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 	}
 }
 
-func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx context.Context, taskId string) (string, error) {
+func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx context.Context, taskId, resourceType string) (string, error) {
 	task, err := sddcManagerClient.getTask(ctx, taskId)
 	if err != nil {
 		return "", err
@@ -164,7 +167,12 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx 
 	if len(task.Resources) == 0 {
 		return "", fmt.Errorf("no resources associated with Task with ID %q", taskId)
 	}
-	return *task.Resources[0].ResourceID, nil
+	for _, resource := range task.Resources {
+		if *resource.Type == resourceType {
+			return *resource.ResourceID, nil
+		}
+	}
+	return "", fmt.Errorf("task %q did not contain resources of type %q", taskId, resourceType)
 }
 
 func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*models.Task, error) {
@@ -184,9 +192,15 @@ func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId 
 			}
 			return sddcManagerClient.getTask(ctx, taskId)
 		}
-
+		// retry the task up to maxRetries
+		if sddcManagerClient.taskRetries < maxRetries {
+			sddcManagerClient.taskRetries++
+			return sddcManagerClient.getTask(ctx, taskId)
+		}
 		log.Println("error = ", err)
 		return nil, err
 	}
+	// reset the counter
+	sddcManagerClient.taskRetries = 0
 	return getTaskResult.Payload, nil
 }

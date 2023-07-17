@@ -15,7 +15,7 @@ import (
 )
 
 // PortgroupSchema this helper function extracts the Portgroup Schema, so that
-// it's made available for both Domain and Cluster creation.
+// it's made available for both workload domain and cluster creation.
 func PortgroupSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -50,11 +50,11 @@ func PortgroupSchema() *schema.Resource {
 func tryConvertToPortgroupSpec(object map[string]interface{}) (*models.PortgroupSpec, error) {
 	result := &models.PortgroupSpec{}
 	if object == nil {
-		return nil, fmt.Errorf("cannot conver to PortgroupSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to PortgroupSpec, object is nil")
 	}
 	name := object["name"].(string)
 	if len(name) == 0 {
-		return nil, fmt.Errorf("cannot conver to PortgroupSpec, name is required")
+		return nil, fmt.Errorf("cannot convert to PortgroupSpec, name is required")
 	}
 	result.Name = &name
 	if transportType, ok := object["transport_type"]; ok && !validation_utils.IsEmpty(transportType) {

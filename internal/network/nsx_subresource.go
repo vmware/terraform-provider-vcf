@@ -21,19 +21,20 @@ func NsxSchema() *schema.Resource {
 			"vip": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "Virtual IP address which would act as proxy/alias for NSX Managers",
+				Description:  "Virtual IP (VIP) for the NSX Manager cluster",
 				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
 			},
 			"vip_fqdn": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "FQDN for VIP so that common SSL certificates can be installed across all managers",
+				Description:  "Fully qualified domain name of the NSX Manager cluster VIP",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"license_key": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "NSX license value",
+				Sensitive:    true,
+				Description:  "NSX license to be used",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"form_factor": {
@@ -46,14 +47,14 @@ func NsxSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Sensitive:    true,
-				Description:  "NSX manager admin password (basic auth and SSH)",
+				Description:  "NSX Manager admin user password",
 				ValidateFunc: validation_utils.ValidatePassword,
 			},
 			"nsx_manager_audit_password": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Sensitive:    true,
-				Description:  "NSX manager Audit password",
+				Description:  "NSX Manager audit user password",
 				ValidateFunc: validation_utils.ValidatePassword,
 			},
 			"nsx_manager_node": {
@@ -79,7 +80,7 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 	if len(vipFqdn) == 0 {
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, vip_fqdn is required")
 	}
-	if object["nsx_manager"] == nil {
+	if object["nsx_manager_node"] == nil {
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, nsx_manager is required")
 	}
 	nsxManagerAdminPassword := object["nsx_manager_admin_password"].(string)
@@ -106,7 +107,7 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 	}
 	nsxManagerList := object["nsx_manager_node"].([]interface{})
 	if len(nsxManagerList) == 0 {
-		return nil, fmt.Errorf("cannot convert to NsxTSpec, at least one entry for nsx_manager is required")
+		return nil, fmt.Errorf("cannot convert to NsxTSpec, at least one entry for nsx_manager_node is required")
 	}
 
 	var nsxManagerSpecs []*models.NsxManagerSpec
@@ -131,17 +132,17 @@ func NsxClusterRefSchema() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of the NSX cluster",
+				Description: "ID of the NSX Manager cluster",
 			},
 			"vip": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "VIP (Virtual IP Address) of the NSX cluster",
+				Description: "Virtual IP address (VIP) of the NSX Manager cluster",
 			},
 			"vip_fqdn": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "FQDN for VIP of the NSX cluster",
+				Description: "Fully qualified domain name of the NSX Manager cluster VIP",
 			},
 		},
 	}

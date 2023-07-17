@@ -11,13 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
-	"strconv"
 	"time"
 )
 
@@ -49,7 +48,7 @@ func ResourceDomain() *schema.Resource {
 			"vcenter": {
 				Type:        schema.TypeList,
 				Required:    true,
-				Description: "Specification describing vcenter settings",
+				Description: "Specification describing vCenter Server instance settings",
 				MinItems:    1,
 				MaxItems:    1,
 				Elem:        vcenter.VCSubresourceSchema(),
@@ -57,7 +56,7 @@ func ResourceDomain() *schema.Resource {
 			"nsx_configuration": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "Specification details for NSX-T configuration",
+				Description: "Specification details for NSX configuration",
 				MaxItems:    1,
 				Elem:        network.NsxSchema(),
 			},
@@ -91,37 +90,7 @@ func ResourceDomain() *schema.Resource {
 			"is_management_sso_domain": {
 				Type:        schema.TypeBool,
 				Computed:    true,
-				Description: "Shows whether the workload domain is joined to the Management domain SSO",
-			},
-			"total_cpu_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a cpu total metric for the domain",
-			},
-			"used_cpu_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a cpu used metric for the domain",
-			},
-			"total_memory_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a memory total metric for the domain",
-			},
-			"used_memory_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a memory used metric for the domain",
-			},
-			"total_storage_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a storage total metric for the domain",
-			},
-			"used_storage_capacity": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Represents a storage used metric for the domain",
+				Description: "Shows whether the workload domain is joined to the management domain SSO",
 			},
 		},
 	}
@@ -141,10 +110,10 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 
 	validateResponse, err := apiClient.Domains.ValidateDomainsOperations(validateDomainSpec)
 	if err != nil {
-		return validation_utils.ConvertVcfErrorToDiag(err)
+		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validation_utils.HasValidationFailed(validateResponse.Payload) {
-		return validation_utils.ConvertValidationResultToDiag(validateResponse.Payload)
+	if validationUtils.HasValidationFailed(validateResponse.Payload) {
+		return validationUtils.ConvertValidationResultToDiag(validateResponse.Payload)
 	}
 
 	domainCreationParams := domains.NewCreateDomainParamsWithContext(ctx).
@@ -153,14 +122,14 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 
 	_, accepted, err := apiClient.Domains.CreateDomain(domainCreationParams)
 	if err != nil {
-		return validation_utils.ConvertVcfErrorToDiag(err)
+		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
 	taskId := accepted.Payload.ID
 	err = vcfClient.WaitForTaskComplete(ctx, taskId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId)
+	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Domain")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -190,36 +159,19 @@ func resourceDomainRead(ctx context.Context, data *schema.ResourceData, meta int
 	_ = data.Set("sso_name", domain.SSOName)
 	_ = data.Set("is_management_sso_domain", domain.IsManagementSSODomain)
 	if len(domain.VCENTERS) < 1 {
-		return diag.FromErr(fmt.Errorf("no vCenters found for domain %q", data.Id()))
+		return diag.FromErr(fmt.Errorf("no vCenter Server instance found for domain %q", data.Id()))
 	}
-	_ = data.Set("vcenter.0.id", domain.VCENTERS[0].ID)
-	_ = data.Set("vcenter.0.fqdn", domain.VCENTERS[0].Fqdn)
 
-	err = readAndSetClustersDataToDomainResource(data, apiClient)
+	vcenterConfigRaw := data.Get("vcenter").([]interface{})
+	vcenterConfig := vcenterConfigRaw[0].(map[string]interface{})
+	vcenterConfig["id"] = domain.VCENTERS[0].ID
+	vcenterConfig["fqdn"] = domain.VCENTERS[0].Fqdn
+	_ = data.Set("vcenter", vcenterConfigRaw)
+
+	err = readAndSetClustersDataToDomainResource(domain.Clusters, ctx, data, apiClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	totalCpuCapacity := strconv.FormatFloat(domain.Capacity.CPU.Total.Value,
-		'f', 2, 64) + " " + domain.Capacity.CPU.Total.Unit
-	usedCpuCapacity := strconv.FormatFloat(domain.Capacity.CPU.Used.Value,
-		'f', 2, 64) + " " + domain.Capacity.CPU.Used.Unit
-	_ = data.Set("total_cpu_capacity", totalCpuCapacity)
-	_ = data.Set("used_cpu_capacity", usedCpuCapacity)
-
-	totalMemoryCapacity := strconv.FormatFloat(domain.Capacity.Memory.Total.Value,
-		'f', 2, 64) + " " + domain.Capacity.Memory.Total.Unit
-	usedMemoryCapacity := strconv.FormatFloat(domain.Capacity.Memory.Used.Value,
-		'f', 2, 64) + " " + domain.Capacity.Memory.Used.Unit
-	_ = data.Set("total_memory_capacity", totalMemoryCapacity)
-	_ = data.Set("used_memory_capacity", usedMemoryCapacity)
-
-	totalStorageCapacity := strconv.FormatFloat(domain.Capacity.Storage.Total.Value,
-		'f', 2, 64) + " " + domain.Capacity.Storage.Total.Unit
-	usedStorageCapacity := strconv.FormatFloat(domain.Capacity.Storage.Used.Value,
-		'f', 2, 64) + " " + domain.Capacity.Storage.Used.Unit
-	_ = data.Set("total_storage_capacity", totalStorageCapacity)
-	_ = data.Set("used_storage_capacity", usedStorageCapacity)
 
 	return nil
 }
@@ -261,7 +213,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	domainUpdateParams.DomainUpdateSpec = markForDeleteUpdateSpec
 	domainUpdateParams.ID = data.Id()
 
-	_, acceptedUpdateTask, err := apiClient.Domains.UpdateDomain(domainUpdateParams)
+	acceptedUpdateTask, _, err := apiClient.Domains.UpdateDomain(domainUpdateParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -275,11 +227,16 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	domainDeleteParams.ID = data.Id()
 
-	_, acceptedDeleteTask, err := apiClient.Domains.DeleteDomain(domainDeleteParams)
+	acceptedDeleteTask, acceptedDeleteTask2, err := apiClient.Domains.DeleteDomain(domainDeleteParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	taskId = acceptedDeleteTask.Payload.ID
+	if acceptedDeleteTask != nil {
+		taskId = acceptedDeleteTask.Payload.ID
+	}
+	if acceptedDeleteTask2 != nil {
+		taskId = acceptedDeleteTask2.Payload.ID
+	}
 	err = vcfClient.WaitForTaskComplete(ctx, taskId)
 	if err != nil {
 		return diag.FromErr(err)
@@ -321,15 +278,17 @@ func createDomainCreationSpec(data *schema.ResourceData) (*models.DomainCreation
 	return result, nil
 }
 
-func readAndSetClustersDataToDomainResource(data *schema.ResourceData, apiClient *client.VcfClient) error {
-	getClustersParams := clusters.GetClustersParams{
-		// TODO: handle stretched clusters
-		IsStretched: toBoolPointer(false),
+func readAndSetClustersDataToDomainResource(domainClusterRefs []*models.ClusterReference,
+	ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) error {
+	clusterIdsInTheCurrentDomain := make(map[string]bool, len(domainClusterRefs))
+	for _, clusterReference := range domainClusterRefs {
+		clusterIdsInTheCurrentDomain[*clusterReference.ID] = true
 	}
-	getClustersParams.WithTimeout(constants.DefaultVcfApiCallTimeout)
 
-	// TODO: consider parallel GetCluster(clusterId) calls
-	clustersResult, err := apiClient.Clusters.GetClusters(&getClustersParams)
+	getClustersParams := clusters.NewGetClustersParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+
+	clustersResult, err := apiClient.Clusters.GetClusters(getClustersParams)
 	if err != nil {
 		return err
 	}
@@ -339,6 +298,11 @@ func readAndSetClustersDataToDomainResource(data *schema.ResourceData, apiClient
 	for _, domainClusterRaw := range domainClusterDataList {
 		domainCluster := domainClusterRaw.(map[string]interface{})
 		for _, cluster := range allClusters {
+			_, ok := clusterIdsInTheCurrentDomain[cluster.ID]
+			// go over clusters that are in the domain, skip the rest
+			if !ok {
+				continue
+			}
 			if domainCluster["name"] == cluster.Name {
 				domainCluster["id"] = cluster.ID
 				domainCluster["primary_datastore_name"] = cluster.PrimaryDatastoreName
@@ -396,7 +360,7 @@ func generateVcenterSpecFromResourceData(data *schema.ResourceData) (*models.Vce
 }
 
 func generateComputeSpecFromResourceData(data *schema.ResourceData) (*models.ComputeSpec, error) {
-	if clusterConfigRaw, ok := data.GetOk("cluster"); ok && !validation_utils.IsEmpty(clusterConfigRaw) {
+	if clusterConfigRaw, ok := data.GetOk("cluster"); ok && !validationUtils.IsEmpty(clusterConfigRaw) {
 		clusterConfigList := clusterConfigRaw.([]interface{})
 		result := new(models.ComputeSpec)
 		var clusterSpecs []*models.ClusterSpec
