@@ -12,14 +12,14 @@ import (
 )
 
 // NfsDatastoreSchema this helper function extracts the NFS Datastore schema, so that
-// it's made available for both Domain and Cluster creation.
+// it's made available for both workload domain and cluster creation.
 func NfsDatastoreSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"datastore_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "Datastore name used for cluster creation",
+				Description:  "NFS datastore name used for cluster creation",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"path": {
@@ -36,7 +36,7 @@ func NfsDatastoreSchema() *schema.Resource {
 			"server_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "NFS Server name used for cluster creation",
+				Description:  "Fully qualified domain name or IP address of the NFS endpoint",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"user_tag": {

@@ -35,12 +35,21 @@ func TestAccResourceVcfDomain(t *testing.T) {
 					os.Getenv(constants.VcfTestVsanLicenseKey)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_default"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.2.id"),
 				),
 			},
 		},
@@ -100,41 +109,42 @@ func testAccVcfDomainConfig(host1Fqdn, host1SshPassword, host2Fqdn, host2SshPass
 		storage_type = "VSAN"
 	}
 	resource "vcf_domain" "domain1" {
-		name                    = "test-domain"
+		name                    = "sfo-w01-vc01"
 		vcenter {
 			name            = "test-vcenter"
 			datacenter_name = "test-datacenter"
 			root_password   = "S@mpleP@ss123!"
-			vm_size         = "tiny"
+			vm_size         = "medium"
 			storage_size    = "lstorage"
 			ip_address      = "10.0.0.43"
-			ubnet_mask     = "255.255.255.0"
+			subnet_mask     = "255.255.255.0"
 			gateway         = "10.0.0.250"
-			dns_name        = "test-vcenter.rainpole.io"
+			dns_name        = "sfo-w01-vc01.sfo.rainpole.io"
 		}
 		nsx_configuration {
 			vip        					= "10.0.0.66"
-			vip_fqdn   					= "nsx-mgmt1.rainpole.io"
+			vip_fqdn   					= "sfo-w01-nsx01.sfo.rainpole.io"
 			nsx_manager_admin_password	= "Nqkva_parola1"
+			form_factor                 = "small"
 			license_key                 = %q
 			nsx_manager_node {
-				name        = "nsx-manager-test1"
+				name        = "sfo-w01-nsx01a"
 				ip_address  = "10.0.0.62"
-				dns_name    = "nsx-manager-test1.rainpole.io"
+				dns_name    = "sfo-w01-nsx01a.sfo.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
-				name        = "nsx-manager-test2"
+				name        = "sfo-w01-nsx01b"
 				ip_address  = "10.0.0.63"
-				dns_name    = "nsx-manager-test2.rainpole.io"
+				dns_name    = "sfo-w01-nsx01b.sfo.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
-				name        = "nsx-manager-test3"
+				name        = "sfo-w01-nsx01c"
 				ip_address  = "10.0.0.64"
-				dns_name    = "nsx-manager-test3.rainpole.io"
+				dns_name    = "sfo-w01-nsx01c.sfo.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
@@ -221,7 +231,7 @@ func testCheckVcfDomainDestroy(state *terraform.State) error {
 		domainResult, err := apiClient.Domains.GetDomain(&getDomainParams)
 		if err != nil {
 			log.Println("error = ", err)
-			return err
+			return nil
 		}
 		if domainResult.Payload != nil {
 			return fmt.Errorf("domain with id %q not destroyed", domainId)

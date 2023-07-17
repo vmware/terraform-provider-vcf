@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strings"
 )
@@ -22,40 +22,40 @@ func VCSubresourceSchema() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of the vCenter",
+				Description: "ID of the vCenter Server instance",
 			},
 			"fqdn": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "FQDN of the vCenter",
+				Description: "Fully qualified domain name of the vCenter Server instance",
 			},
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
-				Description:  "Name of the vCenter virtual machine to be created with the domain",
+				Description:  "Name of the vCenter Server Appliance virtual machine to be created for the workload domain",
 			},
 			"datacenter_name": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
-				Description:  "vCenter datacenter name",
+				Description:  "vSphere datacenter name",
 			},
 			"root_password": {
 				Type:         schema.TypeString,
 				Required:     true,
 				Sensitive:    true,
 				ForceNew:     true,
-				Description:  "Password for the vCenter root shell user (8-20 characters)",
-				ValidateFunc: validation_utils.ValidatePassword,
+				Description:  "root password for the vCenter Server Appliance (8-20 characters)",
+				ValidateFunc: validationUtils.ValidatePassword,
 			},
 			"vm_size": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "VCenter VM size. One among: xlarge, large, medium, small, tiny",
+				Description: "vCenter Server instance size. One among: xlarge, large, medium, small, tiny",
 				ValidateFunc: validation.StringInSlice([]string{
 					"xlarge", "large", "medium", "small", "tiny",
 				}, true),
@@ -67,7 +67,7 @@ func VCSubresourceSchema() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "VCenter storage size. One among: lstorage, xlstorage",
+				Description: "vCenter Server storage size. One among: lstorage, xlstorage",
 				ValidateFunc: validation.StringInSlice([]string{
 					"lstorage", "xlstorage",
 				}, true),
@@ -80,27 +80,27 @@ func VCSubresourceSchema() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				Description:  "IPv4 address of the vCenter virtual machine",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
 			"subnet_mask": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				Description:  "Subnet mask",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				Description:  "IPv4 subnet mask of the vCenter Server instance",
+				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
 			"gateway": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				Description:  "IPv4 gateway the vCenter VM can use to connect to the outside world",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				Description:  "IPv4 gateway of the vCenter Server instance",
+				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
 			"dns_name": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				Description:  "DNS name of the virtual machine, e.g., vc-1.domain1.rainpole.io",
+				Description:  "Fully qualified domain name of the vCenter Server instance",
 				ValidateFunc: validation.NoZeroValues,
 			},
 		},
@@ -109,38 +109,44 @@ func VCSubresourceSchema() *schema.Resource {
 
 func TryConvertToVcenterSpec(object map[string]interface{}) (*models.VcenterSpec, error) {
 	if object == nil {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, object is nil")
 	}
 	name := object["name"].(string)
 	if len(name) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, name is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, name is required")
 	}
 	datacenterName := object["datacenter_name"].(string)
 	if len(datacenterName) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, datacenter_name is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, datacenter_name is required")
 	}
 	rootPassword := object["root_password"].(string)
 	if len(rootPassword) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, root_password is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, root_password is required")
 	}
 	ipAddress := object["ip_address"].(string)
 	if len(ipAddress) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, ip_address is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, ip_address is required")
 	}
 	subnetMask := object["subnet_mask"].(string)
 	if len(subnetMask) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, subnet_mask is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, subnet_mask is required")
 	}
 	gateway := object["gateway"].(string)
 	if len(gateway) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, gateway is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, gateway is required")
 	}
 	dnsName := object["dns_name"].(string)
 	if len(dnsName) == 0 {
-		return nil, fmt.Errorf("cannot conver to VcenterSpec, dns_name is required")
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, dns_name is required")
 	}
-	vcenterStorageSize := object["vcenter_storage_size"].(string)
-	vcenterVmSize := object["vcenter_vm_size"].(string)
+	vcenterStorageSize, ok := object["storage_size"].(string)
+	if !ok {
+		vcenterStorageSize = ""
+	}
+	vcenterVmSize, ok := object["vm_size"].(string)
+	if !ok {
+		vcenterVmSize = ""
+	}
 	networkDetailsSpec := new(models.NetworkDetailsSpec)
 	networkDetailsSpec.IPAddress = &ipAddress
 	networkDetailsSpec.SubnetMask = subnetMask

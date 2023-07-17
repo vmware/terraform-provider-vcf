@@ -19,7 +19,7 @@ func VsanRemoteDatastoreClusterSchema() *schema.Resource {
 			"datastore_uuids": {
 				Type:        schema.TypeList,
 				Required:    true,
-				Description: "vSAN Remote Datastore UUID",
+				Description: "vSAN HCI Mesh remote datastore UUIDs",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},

@@ -15,19 +15,19 @@ import (
 )
 
 // HostSpecSchema this helper function extracts the Host
-// schema, so that it's made available for both Domain and Cluster creation.
+// schema, so that it's made available for both workload domain and cluster creation.
 func HostSpecSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "ID of a vSphere host in the free pool",
+				Description: "ID of the ESXi host in the free pool",
 			},
 			"host_name": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Host name of the vSphere host",
+				Description:  "Host name of the ESXi host",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"availability_zone_name": {
@@ -39,46 +39,47 @@ func HostSpecSchema() *schema.Resource {
 			"ip_address": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "IP address of the vSphere host",
+				Description:  "IPv4 address of the ESXi host",
 				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
 			},
 			"license_key": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Description: "License key of a vSphere host in the free pool. This is required except in cases where the " +
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
+				Description: "License key for an ESXi host in the free pool. This is required except in cases where the " +
 					"ESXi host has already been licensed outside of the VMware Cloud Foundation system",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"username": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Username of the vSphere host",
+				Description:  "Username to authenticate to the ESXi host",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"password": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Sensitive:    true,
-				Description:  "SSH password of the vSphere host",
+				Description:  "Password to authenticate to the ESXi host",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"serial_number": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Serial Number of the vSphere hosts",
+				Description:  "Serial number of the ESXi host",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"ssh_thumbprint": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Sensitive:    true,
-				Description:  "SSH thumbprint (fingerprint) of the vSphere host. Note: This field will be mandatory in future releases.",
+				Description:  "SSH thumbprint of the ESXi host",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"vmnic": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "Contains vmnic configurations for vSphere host",
+				Description: "vmnic configuration for the ESXi host",
 				Elem:        network.VMNicSchema(),
 			},
 		},
@@ -101,11 +102,11 @@ func FlattenHost(host *models.HostReference) *map[string]interface{} {
 func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, error) {
 	result := &models.HostSpec{}
 	if object == nil {
-		return nil, fmt.Errorf("cannot conver to HostSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to HostSpec, object is nil")
 	}
 	id := object["id"].(string)
 	if len(id) == 0 {
-		return nil, fmt.Errorf("cannot conver to HostSpec, id is required")
+		return nil, fmt.Errorf("cannot convert to HostSpec, id is required")
 	}
 	result.ID = &id
 	if hostName, ok := object["host_name"]; ok && !validation_utils.IsEmpty(hostName) {
@@ -145,7 +146,7 @@ func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, erro
 				result.HostNetworkSpec.VMNics = append(result.HostNetworkSpec.VMNics, vmNic)
 			}
 		} else {
-			return nil, fmt.Errorf("cannot convert to ClusterSpec, vmnic list is empty")
+			return nil, fmt.Errorf("cannot convert to HostSpec, vmnic list is empty")
 		}
 	}
 

@@ -34,13 +34,13 @@ func ResourceHost() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "FQDN of the host",
+				Description: "Fully qualified domain name of ESXi host",
 			},
 			"network_pool_id": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "Id of the network pool to associate the host with",
+				Description: "ID of the network pool to associate the ESXi host with",
 			},
 			"storage_type": {
 				Type:        schema.TypeString,
@@ -52,14 +52,14 @@ func ResourceHost() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "Username of the host",
+				Description: "Username to authenticate to the ESXi host",
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Sensitive:   true,
-				Description: "Password of the host",
+				Description: "Password to authenticate to the ESXi host",
 			},
 			"host_id": {
 				Type:        schema.TypeString,
@@ -161,7 +161,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		// Did not find the resource, set ID to ""
-		tflog.Warn(ctx, "Did not find host with hostFqdn "+hostFqdn)
+		tflog.Warn(ctx, "did not find host with FQDN "+hostFqdn)
 		d.SetId("")
 		return nil
 	} else {
