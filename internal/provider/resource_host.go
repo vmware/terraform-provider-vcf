@@ -117,7 +117,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
 		*commissionSpec.Fqdn, accepted.Payload.ID))
 
-	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID)
+	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -202,7 +202,7 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	log.Printf("%s: Decommission task initiated. Task id %s", d.Id(), accepted.Payload.ID)
-	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID)
+	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)

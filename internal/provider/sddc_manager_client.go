@@ -8,7 +8,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/runtime"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/tasks"
 	"github.com/vmware/vcf-sdk-go/client/tokens"
@@ -29,7 +29,9 @@ type SddcManagerClient struct {
 	SddcManagerHost     string
 	AccessToken         *string
 	ApiClient           *vcfclient.VcfClient
-	taskRetries         int
+	lastRefreshTime     time.Time
+	isRefreshing        bool
+	getTaskRetries      int
 }
 
 // NewSddcManagerClient constructs new Client instance with vcf credentials.
@@ -38,24 +40,40 @@ func NewSddcManagerClient(username, password, host string) *SddcManagerClient {
 		SddcManagerUsername: username,
 		SddcManagerPassword: password,
 		SddcManagerHost:     host,
-		taskRetries:         0,
+		lastRefreshTime:     time.Now(),
+		isRefreshing:        false,
+		getTaskRetries:      0,
 	}
 }
 
 var accessToken *string
-var maxRetries int = 10
 
-func newTransport() *customTransport {
+const maxGetTaskRetries int = 10
+const maxTaskRetries int = 3
+
+func newTransport(sddcManagerClient *SddcManagerClient) *customTransport {
 	return &customTransport{
 		originalTransport: http.DefaultTransport,
+		sddcManagerClient: sddcManagerClient,
 	}
 }
 
 type customTransport struct {
 	originalTransport http.RoundTripper
+	sddcManagerClient *SddcManagerClient
 }
 
 func (c *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	// Refresh the access token every 20 minutes so that SDK operations won't start to
+	// fail with 401, 403 because of token expiration, during long-running tasks
+	if time.Since(c.sddcManagerClient.lastRefreshTime) > 20*time.Minute &&
+		!c.sddcManagerClient.isRefreshing {
+		err := c.sddcManagerClient.Connect()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if accessToken != nil {
 		r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *accessToken))
 	}
@@ -71,6 +89,7 @@ func (c *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func (sddcManagerClient *SddcManagerClient) Connect() error {
+	sddcManagerClient.isRefreshing = true
 	// Disable cert checks
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -78,12 +97,12 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 	openApiClient := openapiclient.New(sddcManagerClient.SddcManagerHost, cfg.BasePath, cfg.Schemes)
 	// openApiClient.SetDebug(true)
 
-	openApiClient.Transport = newTransport()
+	openApiClient.Transport = newTransport(sddcManagerClient)
 
 	// create the API client, with the transport
-	vclient := vcfclient.New(openApiClient, strfmt.Default)
+	vcfClient := vcfclient.New(openApiClient, strfmt.Default)
 	// save the client for later use
-	sddcManagerClient.ApiClient = vclient
+	sddcManagerClient.ApiClient = vcfClient
 	// Get access token
 	tokenSpec := &models.TokenCreationSpec{
 		Username: sddcManagerClient.SddcManagerUsername,
@@ -92,14 +111,16 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 	params := tokens.NewCreateTokenParams().
 		WithTokenCreationSpec(tokenSpec).WithTimeout(constants.DefaultVcfApiCallTimeout)
 
-	ok, _, err := vclient.Tokens.CreateToken(params)
+	ok, _, err := vcfClient.Tokens.CreateToken(params)
 	if err != nil {
 		return err
 	}
 
 	accessToken = &ok.Payload.AccessToken
 	// save the access token for later use
+	sddcManagerClient.lastRefreshTime = time.Now()
 	sddcManagerClient.AccessToken = &ok.Payload.AccessToken
+	sddcManagerClient.isRefreshing = false
 	return nil
 }
 
@@ -135,8 +156,9 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(ctx context.Context, tas
 }
 
 // WaitForTaskComplete Wait for task till it completes (either succeeds or fails).
-func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Context, taskId string) error {
+func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Context, taskId string, retry bool) error {
 	log.Printf("Getting status of task %s", taskId)
+	currentTaskRetries := 0
 	for {
 		task, err := sddcManagerClient.getTask(ctx, taskId)
 		if err != nil {
@@ -150,8 +172,19 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 
 		if task.Status == "Failed" || task.Status == "Cancelled" {
 			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, task.Status)
-			log.Println(errorMsg)
-			return errors.New(errorMsg)
+			tflog.Error(ctx, errorMsg)
+
+			if retry && currentTaskRetries < maxTaskRetries {
+				currentTaskRetries++
+				err := sddcManagerClient.retryTask(ctx, taskId)
+				if err != nil {
+					tflog.Error(ctx, fmt.Sprintf("Task %q %q failed after %d retries",
+						taskId, task.Type, currentTaskRetries))
+					return err
+				}
+			} else {
+				return errors.New(errorMsg)
+			}
 		}
 
 		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, task.Status, task.CompletionTimestamp)
@@ -183,24 +216,27 @@ func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId 
 
 	getTaskResult, err := apiClient.Tasks.GetTask(getTaskParams)
 	if err != nil {
-		apiError, isApiError := err.(*runtime.APIError)
-		// if the error is 4xx, then relogin and retry getting the task
-		if isApiError && apiError.IsClientError() {
-			err := sddcManagerClient.Connect()
-			if err != nil {
-				return nil, err
-			}
-			return sddcManagerClient.getTask(ctx, taskId)
-		}
-		// retry the task up to maxRetries
-		if sddcManagerClient.taskRetries < maxRetries {
-			sddcManagerClient.taskRetries++
+		// retry the task up to maxGetTaskRetries
+		if sddcManagerClient.getTaskRetries < maxGetTaskRetries {
+			sddcManagerClient.getTaskRetries++
 			return sddcManagerClient.getTask(ctx, taskId)
 		}
 		log.Println("error = ", err)
 		return nil, err
 	}
 	// reset the counter
-	sddcManagerClient.taskRetries = 0
+	sddcManagerClient.getTaskRetries = 0
 	return getTaskResult.Payload, nil
+}
+
+func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskId string) error {
+	apiClient := sddcManagerClient.ApiClient
+	retryTaskParams := tasks.NewRetryTaskParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
+		WithContext(ctx)
+	retryTaskParams.ID = taskId
+	_, err := apiClient.Tasks.RetryTask(retryTaskParams)
+	if err != nil {
+		return err
+	}
+	return nil
 }

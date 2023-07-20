@@ -125,7 +125,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
 	taskId := accepted.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId)
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -194,7 +194,7 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 			return diag.FromErr(err)
 		}
 		taskId := accepted.Payload.ID
-		err = vcfClient.WaitForTaskComplete(ctx, taskId)
+		err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -218,7 +218,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 	taskId := acceptedUpdateTask.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId)
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -237,7 +237,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	if acceptedDeleteTask2 != nil {
 		taskId = acceptedDeleteTask2.Payload.ID
 	}
-	err = vcfClient.WaitForTaskComplete(ctx, taskId)
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}

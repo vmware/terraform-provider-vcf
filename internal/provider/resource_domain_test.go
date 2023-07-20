@@ -6,6 +6,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -150,7 +151,7 @@ func testAccVcfDomainConfig(host1Fqdn, host1SshPassword, host2Fqdn, host2SshPass
 			}
         }
 		cluster {
-			name = "test-cluster"
+			name = "sfo-w01-cl01"
 			host {
 				id = vcf_host.host1.host_id
 				license_key = %q
@@ -224,16 +225,17 @@ func testCheckVcfDomainDestroy(state *terraform.State) error {
 		}
 
 		domainId := rs.Primary.Attributes["id"]
-		getDomainParams := domains.GetDomainParams{
-			ID: domainId,
-		}
+		getDomainParams := domains.NewGetDomainParams().
+			WithTimeout(constants.DefaultVcfApiCallTimeout).
+			WithContext(context.TODO())
+		getDomainParams.ID = domainId
 
-		domainResult, err := apiClient.Domains.GetDomain(&getDomainParams)
+		domainResult, err := apiClient.Domains.GetDomain(getDomainParams)
 		if err != nil {
 			log.Println("error = ", err)
 			return nil
 		}
-		if domainResult.Payload != nil {
+		if domainResult != nil && domainResult.Payload != nil {
 			return fmt.Errorf("domain with id %q not destroyed", domainId)
 		}
 
