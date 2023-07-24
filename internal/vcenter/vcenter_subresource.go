@@ -32,14 +32,12 @@ func VCSubresourceSchema() *schema.Resource {
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 				Description:  "Name of the vCenter Server Appliance virtual machine to be created for the workload domain",
 			},
 			"datacenter_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.NoZeroValues,
 				Description:  "vSphere datacenter name",
 			},
@@ -47,14 +45,12 @@ func VCSubresourceSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Sensitive:    true,
-				ForceNew:     true,
 				Description:  "root password for the vCenter Server Appliance (8-20 characters)",
 				ValidateFunc: validationUtils.ValidatePassword,
 			},
 			"vm_size": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 				Description: "vCenter Server instance size. One among: xlarge, large, medium, small, tiny",
 				ValidateFunc: validation.StringInSlice([]string{
 					"xlarge", "large", "medium", "small", "tiny",
@@ -66,7 +62,6 @@ func VCSubresourceSchema() *schema.Resource {
 			"storage_size": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				ForceNew:    true,
 				Description: "vCenter Server storage size. One among: lstorage, xlstorage",
 				ValidateFunc: validation.StringInSlice([]string{
 					"lstorage", "xlstorage",
@@ -78,28 +73,24 @@ func VCSubresourceSchema() *schema.Resource {
 			"ip_address": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				Description:  "IPv4 address of the vCenter virtual machine",
 				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
 			"subnet_mask": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				Description:  "IPv4 subnet mask of the vCenter Server instance",
 				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
 			"gateway": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				Description:  "IPv4 gateway of the vCenter Server instance",
 				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
 			"dns_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
 				Description:  "Fully qualified domain name of the vCenter Server instance",
 				ValidateFunc: validation.NoZeroValues,
 			},

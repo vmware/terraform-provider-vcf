@@ -40,7 +40,7 @@ func NsxSchema() *schema.Resource {
 			"form_factor": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "NSX manager form factor",
+				Description:  "Form factor for the NSX Manager appliance",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"nsx_manager_admin_password": {

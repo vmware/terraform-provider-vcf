@@ -22,6 +22,7 @@ func ResourceHost() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceHostCreate,
 		ReadContext:   resourceHostRead,
+		UpdateContext: resourceHostUpdate,
 		DeleteContext: resourceHostDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -33,31 +34,26 @@ func ResourceHost() *schema.Resource {
 			"fqdn": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Fully qualified domain name of ESXi host",
 			},
 			"network_pool_id": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "ID of the network pool to associate the ESXi host with",
 			},
 			"storage_type": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Storage Type. One among: VSAN, VSAN_REMOTE, NFS, VMFS_FC, VVOL",
 			},
 			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Description: "Username to authenticate to the ESXi host",
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
 				Sensitive:   true,
 				Description: "Password to authenticate to the ESXi host",
 			},
@@ -180,6 +176,11 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		_ = d.Set("status", host.Payload.Status)
 		return nil
 	}
+}
+
+// There is no update method for commissioned hosts
+func resourceHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceDomainRead(ctx, d, meta)
 }
 
 func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

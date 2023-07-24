@@ -171,7 +171,7 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 		}
 
 		if task.Status == "Failed" || task.Status == "Cancelled" {
-			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, task.Status)
+			errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s", taskId, task.Name, task.Type, task.Status)
 			tflog.Error(ctx, errorMsg)
 
 			if retry && currentTaskRetries < maxTaskRetries {
