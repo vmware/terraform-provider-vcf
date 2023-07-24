@@ -178,7 +178,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 }
 
-// There is no update method for commissioned hosts
+// There is no update method for commissioned hosts.
 func resourceHostUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return resourceDomainRead(ctx, d, meta)
 }
