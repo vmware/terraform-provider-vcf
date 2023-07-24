@@ -27,9 +27,9 @@ func ResourceDomain() *schema.Resource {
 		UpdateContext: resourceDomainUpdate,
 		DeleteContext: resourceDomainDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(12 * time.Hour),
+			Create: schema.DefaultTimeout(4 * time.Hour),
 			Read:   schema.DefaultTimeout(20 * time.Minute),
-			Update: schema.DefaultTimeout(6 * time.Hour),
+			Update: schema.DefaultTimeout(4 * time.Hour),
 			Delete: schema.DefaultTimeout(1 * time.Hour),
 		},
 		Schema: map[string]*schema.Schema{
