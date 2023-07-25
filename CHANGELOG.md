@@ -2,9 +2,9 @@
 
 ## [v0.2.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.2.0)
 
-> Release Date: TBA
+> Release Date: Jul 25th 2023
 
-Add support for workload domains.
+Add support for creating/deleting workload domains and being used as datasource.
 
 ## [v0.1.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.1.0)
 
