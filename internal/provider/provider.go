@@ -17,30 +17,34 @@ func Provider() *schema.Provider {
 			"sddc_manager_username": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "SDDC Manager username.",
-				DefaultFunc: schema.EnvDefaultFunc(constants.VCF_TEST_USERNAME, nil),
+				Description: "Username to authenticate to SDDC Manager",
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUsername, nil),
 			},
 			"sddc_manager_password": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "SDDC Manager password.",
-				DefaultFunc: schema.EnvDefaultFunc(constants.VCF_TEST_PASSWORD, nil),
+				Description: "Password to authenticate to SDDC Manager",
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestPassword, nil),
 			},
 			"sddc_manager_host": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "SDDC Manager host.",
-				DefaultFunc: schema.EnvDefaultFunc(constants.VCF_TEST_URL, nil),
+				Description: "Fully qualified domain name or IP address of the SDDC Manager",
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUrl, nil),
 			},
 		},
 
-		DataSourcesMap: map[string]*schema.Resource{},
+		DataSourcesMap: map[string]*schema.Resource{
+			"vcf_domain": DataSourceDomain(),
+		},
 
 		ResourcesMap: map[string]*schema.Resource{
 			"vcf_user":         ResourceUser(),
 			"vcf_network_pool": ResourceNetworkPool(),
 			"vcf_ceip":         ResourceCeip(),
 			"vcf_host":         ResourceHost(),
+			"vcf_domain":       ResourceDomain(),
+			"vcf_cluster":      ResourceCluster(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
@@ -56,6 +60,9 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 	}
 
 	var newClient = NewSddcManagerClient(username.(string), password.(string), hostName.(string))
-	newClient.Connect()
+	err := newClient.Connect()
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
 	return newClient, nil
 }

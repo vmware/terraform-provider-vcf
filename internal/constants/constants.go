@@ -3,23 +3,63 @@
 
 package constants
 
+import "time"
+
 const (
+	DefaultVcfApiCallTimeout = 2 * time.Minute
 
-	// VCF_TEST_URL URL of a VCF instance, used for Acceptance tests.
-	VCF_TEST_URL = "VCF_TEST_URL"
-	// VCF_TEST_USERNAME username of SSO user, used for Acceptance tests.
-	VCF_TEST_USERNAME = "VCF_TEST_USERNAME"
-	// VCF_TEST_PASSWORD passowrd of SSO user, used for Acceptance tests.
-	VCF_TEST_PASSWORD = "VCF_TEST_PASSWORD"
+	// VcfTestUrl URL of a VCF instance, used for Acceptance tests.
+	VcfTestUrl = "VCF_TEST_URL"
+	// VcfTestUsername username of SSO user, used for Acceptance tests.
+	VcfTestUsername = "VCF_TEST_USERNAME"
+	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for Acceptance tests.
+	VcfTestPassword = "VCF_TEST_PASSWORD"
 
-	// VCF_TEST_COMMISSIONED_HOST_FQDN the FQDN of an ESXi host, that has not been commissioned
+	// VcfTestHost1Fqdn the FQDN of the first ESXi host, that has not been commissioned
 	// with the SDDC Manager.
-	VCF_TEST_COMMISSIONED_HOST_FQDN = "VCF_TEST_COMMISSIONED_HOST_FQDN"
+	VcfTestHost1Fqdn = "VCF_TEST_HOST1_FQDN"
 
-	// VCF_TEST_COMMISSIONED_HOST_PASS the SSH pass of an ESXi host, that has not been commissioned
+	// VcfTestHost1Pass the password of the first ESXi host, that has not been commissioned
 	// with the SDDC Manager.
-	VCF_TEST_COMMISSIONED_HOST_PASS = "VCF_TEST_COMMISSIONED_HOST_PASS"
+	VcfTestHost1Pass = "VCF_TEST_HOST1_PASS"
 
-	// VCF_TEST_NETWORK_POOL_NAME used in vcf_network_pool Acceptance tests.
-	VCF_TEST_NETWORK_POOL_NAME = "terraform-test-pool"
+	// VcfTestHost2Fqdn the FQDN of the second ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost2Fqdn = "VCF_TEST_HOST2_FQDN"
+
+	// VcfTestHost2Pass the password of the second ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost2Pass = "VCF_TEST_HOST2_PASS"
+
+	// VcfTestHost3Fqdn the FQDN of the third ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost3Fqdn = "VCF_TEST_HOST3_FQDN"
+
+	// VcfTestHost3Pass the password of the third ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost3Pass = "VCF_TEST_HOST3_PASS"
+
+	// VcfTestHost4Fqdn the FQDN of the forth ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost4Fqdn = "VCF_TEST_HOST4_FQDN"
+
+	// VcfTestHost4Pass the password of the forth ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost4Pass = "VCF_TEST_HOST4_PASS"
+
+	// VcfTestNsxLicenseKey license key for NSX required for domain and cluster acceptance tests.
+	VcfTestNsxLicenseKey = "VCF_TEST_NSX_LICENSE_KEY"
+
+	// VcfTestEsxiLicenseKey license key for vSphere required for workload domain and cluster acceptance tests.
+	VcfTestEsxiLicenseKey = "VCF_TEST_ESXI_LICENSE_KEY"
+
+	// VcfTestVsanLicenseKey license key for vSAN required for workload domain and cluster acceptance tests.
+	VcfTestVsanLicenseKey = "VCF_TEST_VSAN_LICENSE_KEY"
+
+	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.
+	// Typically, the id of management domain is used as it is already created during bringup.
+	VcfTestDomainDataSourceId = "VCF_DOMAIN_DATA_SOURCE_ID"
+
+	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
+	VcfTestNetworkPoolName = "terraform-test-pool"
 )

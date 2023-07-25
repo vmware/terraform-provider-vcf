@@ -5,12 +5,14 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/ceip"
 	"github.com/vmware/vcf-sdk-go/models"
+	"strings"
 
-	"log"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -41,7 +43,10 @@ func ResourceCeip() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "User provided CEIP operation. One among: ENABLED, DISABLED",
-				ValidateFunc: validation.StringInSlice([]string{ENABLED_STATE, DISABLED_STATE}, false),
+				ValidateFunc: validation.StringInSlice([]string{ENABLED_STATE, DISABLED_STATE}, true),
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return oldValue == strings.ToUpper(newValue) || strings.ToUpper(oldValue) == newValue
+				},
 			},
 		},
 	}
@@ -51,12 +56,12 @@ func resourceCeipCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	return resourceCeipUpdate(ctx, d, meta)
 }
 
-func resourceCeipRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)
+	ceipResult, err := apiClient.CEIP.GetCEIPStatus(ceip.NewGetCEIPStatusParamsWithTimeout(constants.DefaultVcfApiCallTimeout))
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
@@ -68,7 +73,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := ceip.NewUpdateCEIPStatusParams()
+	params := ceip.NewUpdateCEIPStatusParamsWithTimeout(2 * time.Minute)
 	updateSpec := models.CEIPUpdateSpec{}
 
 	if status, ok := d.GetOk("status"); ok {
@@ -86,11 +91,11 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	params.CEIPUpdateSpec = &updateSpec
 	_, ceipAccepted, err := apiClient.CEIP.UpdateCEIPStatus(params)
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
-	if vcfClient.WaitForTask(ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
 		return diag.FromErr(err)
 	}
 
@@ -100,7 +105,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 /**
  * Mapping deletion of ceip resource to disabling ceip.
  */
-func resourceCeipDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
@@ -112,11 +117,11 @@ func resourceCeipDelete(_ context.Context, d *schema.ResourceData, meta interfac
 
 	_, ceipAccepted, err := apiClient.CEIP.UpdateCEIPStatus(params)
 	if err != nil {
-		log.Println("error = ", err)
+		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
-	if vcfClient.WaitForTask(ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
 		return diag.FromErr(err)
 	}
 

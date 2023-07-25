@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/network_pools"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
@@ -95,10 +96,11 @@ func ResourceNetworkPool() *schema.Resource {
 	}
 }
 
-func resourceNetworkPoolCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkPoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	createParams := network_pools.NewCreateNetworkPoolParams()
+	createParams := network_pools.NewCreateNetworkPoolParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	networkPool := models.NetworkPool{}
 
 	if name, ok := d.GetOk("name"); ok {
@@ -147,10 +149,11 @@ func resourceNetworkPoolCreate(_ context.Context, d *schema.ResourceData, meta i
 	return nil
 }
 
-func resourceNetworkPoolRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	params := network_pools.NewGetNetworkPoolParams()
+	params := network_pools.NewGetNetworkPoolParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	params.ID = d.Id()
 
 	networkPoolPayload, err := apiClient.NetworkPools.GetNetworkPool(params)
@@ -164,10 +167,11 @@ func resourceNetworkPoolRead(_ context.Context, d *schema.ResourceData, meta int
 	return nil
 }
 
-func resourceNetworkPoolDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceNetworkPoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*SddcManagerClient).ApiClient
 
-	params := network_pools.NewDeleteNetworkPoolParams()
+	params := network_pools.NewDeleteNetworkPoolParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	params.ID = d.Id()
 
 	log.Println(params)
