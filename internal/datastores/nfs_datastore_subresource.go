@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -65,18 +65,18 @@ func TryConvertToNfsDatastoreSpec(object map[string]interface{}) (*models.NfsDat
 	result.DatastoreName = &datastoreName
 	result.NasVolume = &models.NasVolumeSpec{}
 	result.NasVolume.Path = &path
-	if readOnly, ok := object["read_only"]; ok && !validation_utils.IsEmpty(readOnly) {
+	if readOnly, ok := object["read_only"]; ok && !validationutils.IsEmpty(readOnly) {
 		result.NasVolume.ReadOnly = toBoolPointer(readOnly)
 	} else {
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, read_only is required")
 	}
-	if serverName, ok := object["server_name"]; ok && !validation_utils.IsEmpty(serverName) {
+	if serverName, ok := object["server_name"]; ok && !validationutils.IsEmpty(serverName) {
 		result.NasVolume.ServerName = []string{}
 		result.NasVolume.ServerName = append(result.NasVolume.ServerName, serverName.(string))
 	} else {
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, server_name is required")
 	}
-	if userTag, ok := object["user_tag"]; ok && !validation_utils.IsEmpty(userTag) {
+	if userTag, ok := object["user_tag"]; ok && !validationutils.IsEmpty(userTag) {
 		result.NasVolume.UserTag = userTag.(string)
 	}
 	return result, nil

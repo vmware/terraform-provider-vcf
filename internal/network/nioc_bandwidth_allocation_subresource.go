@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strings"
 )
@@ -82,21 +82,21 @@ func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*mo
 	}
 	result.Type = &typeParam
 	result.NiocTrafficResourceAllocation = &models.NiocTrafficResourceAllocation{}
-	if limit, ok := object["limit"]; ok && !validation_utils.IsEmpty(limit) {
+	if limit, ok := object["limit"]; ok && !validationutils.IsEmpty(limit) {
 		limitRef := limit.(int64)
 		result.NiocTrafficResourceAllocation.Limit = &limitRef
 	}
-	if reservation, ok := object["reservation"]; ok && !validation_utils.IsEmpty(reservation) {
+	if reservation, ok := object["reservation"]; ok && !validationutils.IsEmpty(reservation) {
 		reservationRef := reservation.(int64)
 		result.NiocTrafficResourceAllocation.Reservation = &reservationRef
 	}
-	if shares, ok := object["shares"]; ok && !validation_utils.IsEmpty(shares) {
+	if shares, ok := object["shares"]; ok && !validationutils.IsEmpty(shares) {
 		if result.NiocTrafficResourceAllocation.SharesInfo == nil {
 			result.NiocTrafficResourceAllocation.SharesInfo = &models.SharesInfo{}
 		}
 		result.NiocTrafficResourceAllocation.SharesInfo.Shares = shares.(int32)
 	}
-	if sharesLevel, ok := object["shares_level"]; ok && !validation_utils.IsEmpty(sharesLevel) {
+	if sharesLevel, ok := object["shares_level"]; ok && !validationutils.IsEmpty(sharesLevel) {
 		if result.NiocTrafficResourceAllocation.SharesInfo == nil {
 			result.NiocTrafficResourceAllocation.SharesInfo = &models.SharesInfo{}
 		}

@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -40,7 +40,7 @@ func HostSpecSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Description:  "IPv4 address of the ESXi host",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
 			"license_key": {
 				Type:      schema.TypeString,
@@ -109,31 +109,31 @@ func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, erro
 		return nil, fmt.Errorf("cannot convert to HostSpec, id is required")
 	}
 	result.ID = &id
-	if hostName, ok := object["host_name"]; ok && !validation_utils.IsEmpty(hostName) {
+	if hostName, ok := object["host_name"]; ok && !validationutils.IsEmpty(hostName) {
 		result.HostName = hostName.(string)
 	}
-	if availabilityZoneName, ok := object["availability_zone_name"]; ok && !validation_utils.IsEmpty(availabilityZoneName) {
+	if availabilityZoneName, ok := object["availability_zone_name"]; ok && !validationutils.IsEmpty(availabilityZoneName) {
 		result.AzName = availabilityZoneName.(string)
 	}
-	if ipAddress, ok := object["ip_address"]; ok && !validation_utils.IsEmpty(ipAddress) {
+	if ipAddress, ok := object["ip_address"]; ok && !validationutils.IsEmpty(ipAddress) {
 		result.IPAddress = ipAddress.(string)
 	}
-	if licenseKey, ok := object["license_key"]; ok && !validation_utils.IsEmpty(licenseKey) {
+	if licenseKey, ok := object["license_key"]; ok && !validationutils.IsEmpty(licenseKey) {
 		result.LicenseKey = licenseKey.(string)
 	}
-	if userName, ok := object["username"]; ok && !validation_utils.IsEmpty(userName) {
+	if userName, ok := object["username"]; ok && !validationutils.IsEmpty(userName) {
 		result.Username = userName.(string)
 	}
-	if password, ok := object["password"]; ok && !validation_utils.IsEmpty(password) {
+	if password, ok := object["password"]; ok && !validationutils.IsEmpty(password) {
 		result.Password = password.(string)
 	}
-	if serialNumber, ok := object["serial_number"]; ok && !validation_utils.IsEmpty(serialNumber) {
+	if serialNumber, ok := object["serial_number"]; ok && !validationutils.IsEmpty(serialNumber) {
 		result.SerialNumber = serialNumber.(string)
 	}
-	if sshThumbprint, ok := object["ssh_thumbprint"]; ok && !validation_utils.IsEmpty(sshThumbprint) {
+	if sshThumbprint, ok := object["ssh_thumbprint"]; ok && !validationutils.IsEmpty(sshThumbprint) {
 		result.SSHThumbprint = sshThumbprint.(string)
 	}
-	if vmNicsRaw, ok := object["vmnic"]; ok && !validation_utils.IsEmpty(vmNicsRaw) {
+	if vmNicsRaw, ok := object["vmnic"]; ok && !validationutils.IsEmpty(vmNicsRaw) {
 		vmNicsList := vmNicsRaw.([]interface{})
 		if len(vmNicsList) > 0 {
 			result.HostNetworkSpec = &models.HostNetworkSpec{}

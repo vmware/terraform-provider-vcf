@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -55,13 +55,13 @@ func TryConvertToVmNic(object map[string]interface{}) (*models.VMNic, error) {
 	}
 	result := &models.VMNic{}
 	result.ID = id
-	if moveToNvds, ok := object["move_to_nvds"]; ok && !validation_utils.IsEmpty(moveToNvds) {
+	if moveToNvds, ok := object["move_to_nvds"]; ok && !validationutils.IsEmpty(moveToNvds) {
 		result.MoveToNvds = moveToNvds.(bool)
 	}
-	if uplink, ok := object["uplink"]; ok && !validation_utils.IsEmpty(uplink) {
+	if uplink, ok := object["uplink"]; ok && !validationutils.IsEmpty(uplink) {
 		result.Uplink = uplink.(string)
 	}
-	if vdsName, ok := object["vds_name"]; ok && !validation_utils.IsEmpty(vdsName) {
+	if vdsName, ok := object["vds_name"]; ok && !validationutils.IsEmpty(vdsName) {
 		result.VdsName = vdsName.(string)
 	}
 	return result, nil

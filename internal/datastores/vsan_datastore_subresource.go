@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -56,10 +56,10 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSAND
 	result.DatastoreName = &datastoreName
 	licenseKey := object["license_key"].(string)
 	result.LicenseKey = licenseKey
-	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validation_utils.IsEmpty(dedupAndCompressionEnabled) {
+	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validationutils.IsEmpty(dedupAndCompressionEnabled) {
 		result.DedupAndCompressionEnabled = dedupAndCompressionEnabled.(bool)
 	}
-	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validation_utils.IsEmpty(failuresToTolerate) {
+	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validationutils.IsEmpty(failuresToTolerate) {
 		failuresToTolerateInt := int32(failuresToTolerate.(int))
 		result.FailuresToTolerate = &failuresToTolerateInt
 	}

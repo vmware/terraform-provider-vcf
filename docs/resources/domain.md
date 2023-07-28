@@ -31,7 +31,7 @@ Prerequisites for creating a workload domain:
     * ID of the vmNic host to be associated with VDS, once added to cluster
 * Datastore details
 
-The Create a Domain workflow automatically:
+The Create Domain workflow automatically:
 
 * Deploys an additional vCenter Server Appliance for the new domain within the management domain.
 * By leveraging a separate vCenter Server instance per domain, software updates can be applied without impacting other domains. It also allows for each domain to have additional isolation as needed.

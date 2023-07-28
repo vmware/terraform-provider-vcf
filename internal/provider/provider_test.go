@@ -59,10 +59,28 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal(constants.VcfTestHost3Pass + " must be set for acceptance tests")
 	}
 	if v := os.Getenv(constants.VcfTestHost4Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost2Fqdn + " must be set for acceptance tests")
+		t.Fatal(constants.VcfTestHost4Fqdn + " must be set for acceptance tests")
 	}
 	if v := os.Getenv(constants.VcfTestHost4Pass); v == "" {
-		t.Fatal(constants.VcfTestHost2Pass + " must be set for acceptance tests")
+		t.Fatal(constants.VcfTestHost4Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost5Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost5Fqdn + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost5Pass); v == "" {
+		t.Fatal(constants.VcfTestHost5Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost6Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost6Fqdn + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost6Pass); v == "" {
+		t.Fatal(constants.VcfTestHost6Pass + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost7Fqdn); v == "" {
+		t.Fatal(constants.VcfTestHost7Fqdn + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestHost7Pass); v == "" {
+		t.Fatal(constants.VcfTestHost7Pass + " must be set for acceptance tests")
 	}
 	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
 		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
