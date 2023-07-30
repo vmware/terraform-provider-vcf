@@ -260,7 +260,7 @@ func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta 
 	clusterUpdateSpec, _ := cluster.CreateClusterUpdateSpec(data, true)
 	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
 
-	acceptedUpdateTask, _, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	_, acceptedUpdateTask, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -274,15 +274,12 @@ func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta 
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	clusterDeleteParams.ID = data.Id()
 
-	acceptedDeleteTask, acceptedDeleteTask2, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
+	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	if acceptedDeleteTask != nil {
 		taskId = acceptedDeleteTask.Payload.ID
-	}
-	if acceptedDeleteTask2 != nil {
-		taskId = acceptedDeleteTask2.Payload.ID
 	}
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {

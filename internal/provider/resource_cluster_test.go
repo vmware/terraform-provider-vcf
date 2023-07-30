@@ -14,6 +14,7 @@ import (
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"log"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -183,7 +184,7 @@ func testCheckVcfClusterDestroy(state *terraform.State) error {
 		getClusterParams.ID = clusterId
 
 		clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), "CLUSTER_NOT_FOUND") {
 			log.Println("error = ", err)
 			return nil
 		}

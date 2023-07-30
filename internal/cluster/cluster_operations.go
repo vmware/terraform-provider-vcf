@@ -36,7 +36,7 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 		newHostsListRaw := newHostsValue.([]interface{})
 
 		if len(newHostsListRaw) == len(oldHostsListRaw) {
-			return nil, fmt.Errorf("hosts can only be added or removed at the same time")
+			return nil, fmt.Errorf("adding and removing hosts is not supported in a single configuration change. Apply each change separately")
 		}
 
 		isAddingHosts := len(newHostsListRaw) > len(oldHostsListRaw)
