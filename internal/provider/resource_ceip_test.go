@@ -50,9 +50,9 @@ func testVerifyVcfCeip(enabledState string) error {
 }
 
 func testCheckVcfCeipCreate(_ *terraform.State) error {
-	return testVerifyVcfCeip(ENABLED_STATE)
+	return testVerifyVcfCeip(EnabledState)
 }
 
 func testCheckVcfCeipDestroy(_ *terraform.State) error {
-	return testVerifyVcfCeip(DISABLED_STATE)
+	return testVerifyVcfCeip(DisabledState)
 }

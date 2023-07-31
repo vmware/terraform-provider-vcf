@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -22,7 +22,7 @@ func NsxSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "Virtual IP (VIP) for the NSX Manager cluster",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
 			"vip_fqdn": {
 				Type:         schema.TypeString,
@@ -48,14 +48,14 @@ func NsxSchema() *schema.Resource {
 				Required:     true,
 				Sensitive:    true,
 				Description:  "NSX Manager admin user password",
-				ValidateFunc: validation_utils.ValidatePassword,
+				ValidateFunc: validationutils.ValidatePassword,
 			},
 			"nsx_manager_audit_password": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Sensitive:    true,
 				Description:  "NSX Manager audit user password",
-				ValidateFunc: validation_utils.ValidatePassword,
+				ValidateFunc: validationutils.ValidatePassword,
 			},
 			"nsx_manager_node": {
 				Type:        schema.TypeList,
@@ -68,6 +68,9 @@ func NsxSchema() *schema.Resource {
 }
 
 // TODO support IpPoolSpecs.
+
+// TryConvertToNsxSpec is a convenience method that converts a map[string]interface{}
+// // received from the Terraform SDK to an API struct, used in VCF API calls.
 func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, object is nil")
@@ -98,11 +101,11 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 	result.NsxManagerAdminPassword = nsxManagerAdminPassword
 	result.LicenseKey = licenseKey
 
-	if formFactor, ok := object["form_factor"]; ok && !validation_utils.IsEmpty(formFactor) {
+	if formFactor, ok := object["form_factor"]; ok && !validationutils.IsEmpty(formFactor) {
 		result.FormFactor = formFactor.(string)
 	}
 
-	if nsxManagerAuditPassword, ok := object["nsx_manager_audit_password"]; ok && !validation_utils.IsEmpty(nsxManagerAuditPassword) {
+	if nsxManagerAuditPassword, ok := object["nsx_manager_audit_password"]; ok && !validationutils.IsEmpty(nsxManagerAuditPassword) {
 		result.NsxManagerAuditPassword = nsxManagerAuditPassword.(string)
 	}
 	nsxManagerList := object["nsx_manager_node"].([]interface{})

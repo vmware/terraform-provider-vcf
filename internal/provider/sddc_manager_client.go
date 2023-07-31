@@ -29,17 +29,19 @@ type SddcManagerClient struct {
 	SddcManagerHost     string
 	AccessToken         *string
 	ApiClient           *vcfclient.VcfClient
+	allowUnverifiedTls  bool
 	lastRefreshTime     time.Time
 	isRefreshing        bool
 	getTaskRetries      int
 }
 
 // NewSddcManagerClient constructs new Client instance with vcf credentials.
-func NewSddcManagerClient(username, password, host string) *SddcManagerClient {
+func NewSddcManagerClient(username, password, host string, allowUnverifiedTls bool) *SddcManagerClient {
 	return &SddcManagerClient{
 		SddcManagerUsername: username,
 		SddcManagerPassword: password,
 		SddcManagerHost:     host,
+		allowUnverifiedTls:  allowUnverifiedTls,
 		lastRefreshTime:     time.Now(),
 		isRefreshing:        false,
 		getTaskRetries:      0,
@@ -91,7 +93,8 @@ func (c *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 func (sddcManagerClient *SddcManagerClient) Connect() error {
 	sddcManagerClient.isRefreshing = true
 	// Disable cert checks
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: sddcManagerClient.allowUnverifiedTls}
 
 	cfg := vcfclient.DefaultTransportConfig()
 	openApiClient := openapiclient.New(sddcManagerClient.SddcManagerHost, cfg.BasePath, cfg.Schemes)

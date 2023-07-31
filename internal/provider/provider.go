@@ -32,6 +32,12 @@ func Provider() *schema.Provider {
 				Description: "Fully qualified domain name or IP address of the SDDC Manager",
 				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestUrl, nil),
 			},
+			"allow_unverified_tls": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "If set, VMware VCF client will permit unverifiable TLS certificates.",
+				DefaultFunc: schema.EnvDefaultFunc(constants.VcfTestAllowUnverifiedTls, false),
+			},
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
@@ -58,8 +64,8 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 	if !isSetUsername || !isSetPassword || !isSetHost {
 		return nil, diag.Errorf("SDDC Manager username, password, and host must be provided")
 	}
-
-	var newClient = NewSddcManagerClient(username.(string), password.(string), hostName.(string))
+	allowUnverifiedTls := data.Get("allow_unverified_tls")
+	var newClient = NewSddcManagerClient(username.(string), password.(string), hostName.(string), allowUnverifiedTls.(bool))
 	err := newClient.Connect()
 	if err != nil {
 		return nil, diag.FromErr(err)

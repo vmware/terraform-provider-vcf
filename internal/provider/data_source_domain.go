@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/cluster"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/vcf-sdk-go/client"
@@ -143,7 +144,7 @@ func setClustersDataToDomainDataSource(domainClusterRefs []*models.ClusterRefere
 			return err
 		}
 		clusterRef := clusterResult.Payload
-		flattenedClusters[i] = *FlattenCluster(clusterRef)
+		flattenedClusters[i] = *cluster.FlattenCluster(clusterRef)
 
 	}
 	_ = data.Set("cluster", flattenedClusters)

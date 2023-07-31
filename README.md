@@ -12,7 +12,7 @@ Terraform to work with [VMware Cloud Foundation](https://www.vmware.com/products
 
 # Building the Provider
 
-The instructions outlined below are specific to Mac OS or Linux OS only.
+The instructions outlined below are specific to macOS or Linux OS only.
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (please check the [requirements](https://github.com/vmware/terraform-provider-vcf#requirements) before proceeding).
 

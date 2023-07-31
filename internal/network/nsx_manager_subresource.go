@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -28,7 +28,7 @@ func NsxManagerNodeSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "IPv4 address of the NSX Manager appliance",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
 			"dns_name": {
 				Type:         schema.TypeString,
@@ -40,13 +40,13 @@ func NsxManagerNodeSchema() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "IPv4 subnet mask for the NSX Manager appliance",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
 			"gateway": {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "IPv4 gateway the NSX Manager appliance",
-				ValidateFunc: validation_utils.ValidateIPv4AddressSchema,
+				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
 		},
 	}
@@ -69,13 +69,13 @@ func TryConvertToNsxManagerNodeSpec(object map[string]interface{}) (models.NsxMa
 	result.NetworkDetailsSpec = &models.NetworkDetailsSpec{
 		IPAddress: &ipAddress,
 	}
-	if dnsName, ok := object["dns_name"]; ok && !validation_utils.IsEmpty(dnsName) {
+	if dnsName, ok := object["dns_name"]; ok && !validationutils.IsEmpty(dnsName) {
 		result.NetworkDetailsSpec.DNSName = dnsName.(string)
 	}
-	if subnetMask, ok := object["subnet_mask"]; ok && !validation_utils.IsEmpty(subnetMask) {
+	if subnetMask, ok := object["subnet_mask"]; ok && !validationutils.IsEmpty(subnetMask) {
 		result.NetworkDetailsSpec.SubnetMask = subnetMask.(string)
 	}
-	if gateway, ok := object["gateway"]; ok && !validation_utils.IsEmpty(gateway) {
+	if gateway, ok := object["gateway"]; ok && !validationutils.IsEmpty(gateway) {
 		result.NetworkDetailsSpec.Gateway = gateway.(string)
 	}
 	return result, nil

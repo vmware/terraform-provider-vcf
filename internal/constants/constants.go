@@ -15,6 +15,10 @@ const (
 	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for Acceptance tests.
 	VcfTestPassword = "VCF_TEST_PASSWORD"
 
+	// VcfTestAllowUnverifiedTls allows VCF environments with self-signed certificates
+	// to be used in Acceptance tests.
+	VcfTestAllowUnverifiedTls = "VCF_TEST_ALLOW_UNVERIFIED_TLS"
+
 	// VcfTestHost1Fqdn the FQDN of the first ESXi host, that has not been commissioned
 	// with the SDDC Manager.
 	VcfTestHost1Fqdn = "VCF_TEST_HOST1_FQDN"
@@ -46,6 +50,30 @@ const (
 	// VcfTestHost4Pass the password of the forth ESXi host, that has not been commissioned
 	// with the SDDC Manager.
 	VcfTestHost4Pass = "VCF_TEST_HOST4_PASS"
+
+	// VcfTestHost5Fqdn the FQDN of the fifth ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost5Fqdn = "VCF_TEST_HOST5_FQDN"
+
+	// VcfTestHost5Pass the password of the fifth ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost5Pass = "VCF_TEST_HOST5_PASS"
+
+	// VcfTestHost6Fqdn the FQDN of the sixth ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost6Fqdn = "VCF_TEST_HOST6_FQDN"
+
+	// VcfTestHost6Pass the password of the sixth ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost6Pass = "VCF_TEST_HOST6_PASS"
+
+	// VcfTestHost7Fqdn the FQDN of the seventh ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost7Fqdn = "VCF_TEST_HOST7_FQDN"
+
+	// VcfTestHost7Pass the password of the seventh ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost7Pass = "VCF_TEST_HOST7_PASS"
 
 	// VcfTestNsxLicenseKey license key for NSX required for domain and cluster acceptance tests.
 	VcfTestNsxLicenseKey = "VCF_TEST_NSX_LICENSE_KEY"

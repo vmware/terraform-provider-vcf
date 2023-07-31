@@ -5,16 +5,18 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/cluster"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strings"
+	"time"
 )
 
 func ResourceCluster() *schema.Resource {
@@ -32,23 +34,13 @@ func ResourceCluster() *schema.Resource {
 		UpdateContext: resourceClusterUpdate,
 		DeleteContext: resourceClusterDelete,
 		Schema:        clusterResourceSchema,
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(2 * time.Hour),
+			Read:   schema.DefaultTimeout(20 * time.Minute),
+			Update: schema.DefaultTimeout(2 * time.Hour),
+			Delete: schema.DefaultTimeout(30 * time.Minute),
+		},
 	}
-}
-
-func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	return nil
-}
-
-func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	return nil
-}
-
-func resourceClusterRead(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	return nil
-}
-
-func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, i interface{}) diag.Diagnostics {
-	return nil
 }
 
 // clusterSubresourceSchema this helper function extracts the Cluster schema, so that
@@ -186,195 +178,155 @@ func clusterSubresourceSchema() *schema.Resource {
 	}
 }
 
-// TODO implement support for VxRailDetails.
-func tryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec, error) {
-	if object == nil {
-		return nil, fmt.Errorf("cannot convert to ClusterSpec, object is nil")
-	}
-	name := object["name"].(string)
-	if len(name) == 0 {
-		return nil, fmt.Errorf("cannot convert to ClusterSpec, name is required")
-	}
-	result := &models.ClusterSpec{}
-	result.Name = &name
-	if clusterImageId, ok := object["cluster_image_id"]; ok && !validation_utils.IsEmpty(clusterImageId) {
-		result.ClusterImageID = clusterImageId.(string)
-	}
-	if evcMode, ok := object["evc_mode"]; ok && len(evcMode.(string)) > 0 {
-		if result.AdvancedOptions == nil {
-			result.AdvancedOptions = &models.AdvancedOptions{}
-		}
-		result.AdvancedOptions.EvcMode = evcMode.(string)
-	}
-	if highAvailabilityEnabled, ok := object["high_availability_enabled"]; ok && !validation_utils.IsEmpty(highAvailabilityEnabled) {
-		if result.AdvancedOptions == nil {
-			result.AdvancedOptions = &models.AdvancedOptions{}
-		}
-		result.AdvancedOptions.HighAvailability = &models.HighAvailability{
-			Enabled: toBoolPointer(highAvailabilityEnabled),
-		}
-	}
+func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	vcfClient := meta.(*SddcManagerClient)
 
-	result.NetworkSpec = &models.NetworkSpec{}
-	result.NetworkSpec.NsxClusterSpec = &models.NsxClusterSpec{}
-	result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec = &models.NsxTClusterSpec{}
-
-	if geneveVlanId, ok := object["geneve_vlan_id"]; ok && !validation_utils.IsEmpty(geneveVlanId) {
-		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = int32(geneveVlanId.(int))
-	}
-
-	if hostsRaw, ok := object["host"]; ok {
-		hostsList := hostsRaw.([]interface{})
-		if len(hostsList) > 0 {
-			result.HostSpecs = []*models.HostSpec{}
-			for _, hostListEntry := range hostsList {
-				hostSpec, err := cluster.TryConvertToHostSpec(hostListEntry.(map[string]interface{}))
-				if err != nil {
-					return nil, err
-				}
-				result.HostSpecs = append(result.HostSpecs, hostSpec)
-			}
-		} else {
-			return nil, fmt.Errorf("cannot convert to ClusterSpec, hosts list is empty")
-		}
-	} else {
-		return nil, fmt.Errorf("cannot convert to ClusterSpec, hosts list is not set")
-	}
-
-	if vdsRaw, ok := object["vds"]; ok {
-		vdsList := vdsRaw.([]interface{})
-		if len(vdsList) > 0 {
-			result.NetworkSpec.VdsSpecs = []*models.VdsSpec{}
-			for _, vdsListEntry := range vdsList {
-				vdsSpec, err := network.TryConvertToVdsSpec(vdsListEntry.(map[string]interface{}))
-				if err != nil {
-					return nil, err
-				}
-				result.NetworkSpec.VdsSpecs = append(result.NetworkSpec.VdsSpecs, vdsSpec)
-			}
-		} else {
-			return nil, fmt.Errorf("cannot convert to ClusterSpec, vds list is empty")
-		}
-	} else {
-		return nil, fmt.Errorf("cannot convert to ClusterSpec, vds list is not set")
-	}
-
-	datastoreSpec, err := tryConvertToClusterDatastoreSpec(object, name)
+	clusterSpec, err := cluster.TryConvertResourceDataToClusterSpec(data)
 	if err != nil {
-		return nil, err
-	} else {
-		result.DatastoreSpec = datastoreSpec
+		return diag.FromErr(err)
+	}
+	clusterId, diagnostics := createCluster(ctx, data.Get("domain_id").(string),
+		clusterSpec, vcfClient)
+	if diagnostics != nil {
+		return diagnostics
 	}
 
-	return result, nil
+	data.SetId(clusterId)
+
+	return resourceClusterRead(ctx, data, meta)
 }
 
-func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName string) (*models.DatastoreSpec, error) {
-	result := &models.DatastoreSpec{}
-	atLeastOneTypeOfDatastoreConfigured := false
-	if vsanDatastoreRaw, ok := object["vsan_datastore"]; ok && !validation_utils.IsEmpty(vsanDatastoreRaw) {
-		if len(vsanDatastoreRaw.([]interface{})) > 1 {
-			return nil, fmt.Errorf("more than one vsan_datastore config for cluster %q", clusterName)
-		}
-		vsanDatastoreListEntry := vsanDatastoreRaw.([]interface{})[0]
-		vsanDatastoreSpec, err := datastores.TryConvertToVsanDatastoreSpec(vsanDatastoreListEntry.(map[string]interface{}))
-		if err != nil {
-			return nil, err
-		}
-		atLeastOneTypeOfDatastoreConfigured = true
-		result.VSANDatastoreSpec = vsanDatastoreSpec
-	}
-	if vmfsDatastoreRaw, ok := object["vmfs_datastore"]; ok && !validation_utils.IsEmpty(vmfsDatastoreRaw) {
-		if len(vmfsDatastoreRaw.([]interface{})) > 1 {
-			return nil, fmt.Errorf("more than one vmfs_datastore config for cluster %q", clusterName)
-		}
-		vmfsDatastoreListEntry := vmfsDatastoreRaw.([]interface{})[0]
-		vmfsDatastoreSpec, err := datastores.TryConvertToVmfsDatastoreSpec(vmfsDatastoreListEntry.(map[string]interface{}))
-		if err != nil {
-			return nil, err
-		}
-		atLeastOneTypeOfDatastoreConfigured = true
-		result.VmfsDatastoreSpec = vmfsDatastoreSpec
-	}
-	if vsanRemoteDatastoreClusterRaw, ok := object["vsan_remote_datastore_cluster"]; ok && !validation_utils.IsEmpty(vsanRemoteDatastoreClusterRaw) {
-		if len(vsanRemoteDatastoreClusterRaw.([]interface{})) > 1 {
-			return nil, fmt.Errorf("more than one vsan_remote_datastore_cluster config for cluster %q", clusterName)
-		}
-		vsanRemoteDatastoreClusterListEntry := vsanRemoteDatastoreClusterRaw.([]interface{})[0]
-		vsanRemoteDatastoreClusterSpec, err := datastores.TryConvertToVSANRemoteDatastoreClusterSpec(
-			vsanRemoteDatastoreClusterListEntry.(map[string]interface{}))
-		if err != nil {
-			return nil, err
-		}
-		atLeastOneTypeOfDatastoreConfigured = true
-		result.VSANRemoteDatastoreClusterSpec = vsanRemoteDatastoreClusterSpec
-	}
-	if nfsDatastoresRaw, ok := object["nfs_datastores"]; ok && !validation_utils.IsEmpty(nfsDatastoresRaw) {
-		nfsDatastoresList := nfsDatastoresRaw.([]interface{})
-		if len(nfsDatastoresList) > 0 {
-			result.NfsDatastoreSpecs = []*models.NfsDatastoreSpec{}
-			for _, nfsDatastoreListEntry := range nfsDatastoresList {
-				nfsDatastoreSpec, err := datastores.TryConvertToNfsDatastoreSpec(
-					nfsDatastoreListEntry.(map[string]interface{}))
-				if err != nil {
-					return nil, err
-				}
-				result.NfsDatastoreSpecs = append(result.NfsDatastoreSpecs, nfsDatastoreSpec)
-			}
-			atLeastOneTypeOfDatastoreConfigured = true
-		}
-	}
-	if vvolDatastoresRaw, ok := object["vvol_datastores"]; ok && !validation_utils.IsEmpty(vvolDatastoresRaw) {
-		vvolDatastoresList := vvolDatastoresRaw.([]interface{})
-		if len(vvolDatastoresList) > 0 {
-			result.VvolDatastoreSpecs = []*models.VvolDatastoreSpec{}
-			for _, vvolDatastoreListEntry := range vvolDatastoresList {
-				vvolDatastoreSpec, err := datastores.TryConvertToVvolDatastoreSpec(
-					vvolDatastoreListEntry.(map[string]interface{}))
-				if err != nil {
-					return nil, err
-				}
-				result.VvolDatastoreSpecs = append(result.VvolDatastoreSpecs, vvolDatastoreSpec)
-			}
-			atLeastOneTypeOfDatastoreConfigured = true
-		}
-	}
-	if !atLeastOneTypeOfDatastoreConfigured {
-		return nil, fmt.Errorf("at least one type of datastore configuration required for cluster %q", clusterName)
-	}
+func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	vcfClient := meta.(*SddcManagerClient)
+	apiClient := vcfClient.ApiClient
 
-	return result, nil
+	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	getClusterParams.ID = data.Id()
+
+	clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	clusterObj := clusterResult.Payload
+
+	_ = data.Set("primary_datastore_name", clusterObj.PrimaryDatastoreName)
+	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
+	_ = data.Set("is_default", clusterObj.IsDefault)
+	_ = data.Set("is_stretched", clusterObj.IsStretched)
+
+	return nil
 }
 
-func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
-	result := make(map[string]interface{})
-	if clusterObj == nil {
-		return &result
+func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	vcfClient := meta.(*SddcManagerClient)
+	apiClient := vcfClient.ApiClient
+
+	clusterUpdateSpec, err := cluster.CreateClusterUpdateSpec(data, false)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	result["id"] = clusterObj.ID
-	result["name"] = clusterObj.Name
-	result["primary_datastore_name"] = clusterObj.PrimaryDatastoreName
-	result["primary_datastore_type"] = clusterObj.PrimaryDatastoreType
-	result["primary_datastore_type"] = clusterObj.PrimaryDatastoreType
-	result["is_default"] = clusterObj.IsDefault
-	result["is_stretched"] = clusterObj.IsStretched
-
-	// TODO typically the VCF 4.5.1 returns only the IDs for the hosts inside models.Cluster
-	// consider getting the fqdn, ip and az name with an additional GET request
-	flattenedHosts := make([]map[string]interface{}, len(clusterObj.Hosts))
-	for j, host := range clusterObj.Hosts {
-		flattenedHosts[j] = *cluster.FlattenHost(host)
+	validationDiagnostics := cluster.ValidateClusterUpdateOperation(ctx, clusterUpdateSpec, apiClient)
+	if validationDiagnostics != nil {
+		return validationDiagnostics
 	}
-	result["host"] = flattenedHosts
 
-	return &result
+	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterUpdateParams.ID = data.Id()
+	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
+
+	acceptedUpdateTask, _, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	taskId := acceptedUpdateTask.Payload.ID
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return resourceClusterRead(ctx, data, meta)
 }
 
-func toBoolPointer(object interface{}) *bool {
-	if object == nil {
-		return nil
+func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	vcfClient := meta.(*SddcManagerClient)
+	apiClient := vcfClient.ApiClient
+
+	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterUpdateParams.ID = data.Id()
+	clusterUpdateSpec, _ := cluster.CreateClusterUpdateSpec(data, true)
+	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
+
+	_, acceptedUpdateTask, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	if err != nil {
+		return diag.FromErr(err)
 	}
-	objectAsBool := object.(bool)
-	return &objectAsBool
+	taskId := acceptedUpdateTask.Payload.ID
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	clusterDeleteParams := clusters.NewDeleteClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterDeleteParams.ID = data.Id()
+
+	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if acceptedDeleteTask != nil {
+		taskId = acceptedDeleteTask.Payload.ID
+	}
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
+}
+
+func createCluster(ctx context.Context, domainId string, clusterSpec *models.ClusterSpec,
+	vcfClient *SddcManagerClient) (string, diag.Diagnostics) {
+	apiClient := vcfClient.ApiClient
+	clusterCreationSpec := models.ClusterCreationSpec{
+		ComputeSpec: &models.ComputeSpec{
+			ClusterSpecs: []*models.ClusterSpec{clusterSpec},
+		},
+		DomainID: cluster.ToStringPointer(domainId),
+	}
+
+	validateClusterSpec := clusters.NewValidateClustersOperationsParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	validateClusterSpec.ClusterCreationSpec = &clusterCreationSpec
+
+	validateResponse, err := apiClient.Clusters.ValidateClustersOperations(validateClusterSpec)
+	if err != nil {
+		return "", validationUtils.ConvertVcfErrorToDiag(err)
+	}
+	if validationUtils.HasValidationFailed(validateResponse.Payload) {
+		return "", validationUtils.ConvertValidationResultToDiag(validateResponse.Payload)
+	}
+
+	clusterCreateParams := clusters.NewCreateClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterCreateParams.ClusterCreationSpec = &clusterCreationSpec
+
+	_, accepted, err := apiClient.Clusters.CreateCluster(clusterCreateParams)
+	if err != nil {
+		return "", validationUtils.ConvertVcfErrorToDiag(err)
+	}
+	taskId := accepted.Payload.ID
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	if err != nil {
+		return "", diag.FromErr(err)
+	}
+	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Cluster")
+	if err != nil {
+		return "", diag.FromErr(err)
+	}
+	return clusterId, nil
 }

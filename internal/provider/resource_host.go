@@ -113,6 +113,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
 		*commissionSpec.Fqdn, accepted.Payload.ID))
 
+	// TODO check out if the ID(UUID) of the host is present in the resources associated with the task
 	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())

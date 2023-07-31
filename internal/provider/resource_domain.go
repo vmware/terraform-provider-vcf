@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/cluster"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -26,6 +27,7 @@ func ResourceDomain() *schema.Resource {
 		ReadContext:   resourceDomainRead,
 		UpdateContext: resourceDomainUpdate,
 		DeleteContext: resourceDomainDelete,
+		// TODO implement wld import, but fail import of Management domain
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(4 * time.Hour),
 			Read:   schema.DefaultTimeout(20 * time.Minute),
@@ -297,18 +299,18 @@ func readAndSetClustersDataToDomainResource(domainClusterRefs []*models.ClusterR
 	allClusters := clustersResult.Payload.Elements
 	for _, domainClusterRaw := range domainClusterDataList {
 		domainCluster := domainClusterRaw.(map[string]interface{})
-		for _, cluster := range allClusters {
-			_, ok := clusterIdsInTheCurrentDomain[cluster.ID]
+		for _, clusterObj := range allClusters {
+			_, ok := clusterIdsInTheCurrentDomain[clusterObj.ID]
 			// go over clusters that are in the domain, skip the rest
 			if !ok {
 				continue
 			}
-			if domainCluster["name"] == cluster.Name {
-				domainCluster["id"] = cluster.ID
-				domainCluster["primary_datastore_name"] = cluster.PrimaryDatastoreName
-				domainCluster["primary_datastore_type"] = cluster.PrimaryDatastoreType
-				domainCluster["is_default"] = cluster.IsDefault
-				domainCluster["is_stretched"] = cluster.IsStretched
+			if domainCluster["name"] == clusterObj.Name {
+				domainCluster["id"] = clusterObj.ID
+				domainCluster["primary_datastore_name"] = clusterObj.PrimaryDatastoreName
+				domainCluster["primary_datastore_type"] = clusterObj.PrimaryDatastoreType
+				domainCluster["is_default"] = clusterObj.IsDefault
+				domainCluster["is_stretched"] = clusterObj.IsStretched
 			}
 		}
 	}
@@ -365,7 +367,7 @@ func generateComputeSpecFromResourceData(data *schema.ResourceData) (*models.Com
 		result := new(models.ComputeSpec)
 		var clusterSpecs []*models.ClusterSpec
 		for _, clusterConfigListEntry := range clusterConfigList {
-			clusterSpec, err := tryConvertToClusterSpec(clusterConfigListEntry.(map[string]interface{}))
+			clusterSpec, err := cluster.TryConvertToClusterSpec(clusterConfigListEntry.(map[string]interface{}))
 			if err != nil {
 				return nil, err
 			}

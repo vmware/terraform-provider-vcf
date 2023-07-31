@@ -43,7 +43,7 @@ BIOS, HBA, SSD, HDD, etc. of the host must match the VMware Hardware Compatibili
 ### Required
 
 - `fqdn` (String) FQDN of the host
-- `network_pool_id` (String) Id of the network pool to associate the host with
+- `network_pool_id` (String) ID of the network pool to associate the host with
 - `password` (String, Sensitive) Password of the host
 - `storage_type` (String) Storage Type. One among: VSAN, VSAN_REMOTE, NFS, VMFS_FC, VVOL
 - `username` (String) Username of the host

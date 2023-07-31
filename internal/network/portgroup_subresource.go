@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strings"
 )
@@ -57,11 +57,11 @@ func tryConvertToPortgroupSpec(object map[string]interface{}) (*models.Portgroup
 		return nil, fmt.Errorf("cannot convert to PortgroupSpec, name is required")
 	}
 	result.Name = &name
-	if transportType, ok := object["transport_type"]; ok && !validation_utils.IsEmpty(transportType) {
+	if transportType, ok := object["transport_type"]; ok && !validationutils.IsEmpty(transportType) {
 		transportTypeString := transportType.(string)
 		result.TransportType = &transportTypeString
 	}
-	if activeUplinks, ok := object["active_uplinks"].([]string); ok && !validation_utils.IsEmpty(activeUplinks) {
+	if activeUplinks, ok := object["active_uplinks"].([]string); ok && !validationutils.IsEmpty(activeUplinks) {
 		result.ActiveUplinks = []string{}
 		result.ActiveUplinks = append(result.ActiveUplinks, activeUplinks...)
 	}

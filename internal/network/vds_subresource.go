@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -60,10 +60,10 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error)
 		return nil, fmt.Errorf("cannot convert to VdsSpec, name is required")
 	}
 	result.Name = &name
-	if isUsedByNsx, ok := object["is_used_by_nsx"]; ok && !validation_utils.IsEmpty(isUsedByNsx) {
+	if isUsedByNsx, ok := object["is_used_by_nsx"]; ok && !validationutils.IsEmpty(isUsedByNsx) {
 		result.IsUsedByNSXT = isUsedByNsx.(bool)
 	}
-	if portgroupsRaw, ok := object["portgroup"]; ok && !validation_utils.IsEmpty(portgroupsRaw) {
+	if portgroupsRaw, ok := object["portgroup"]; ok && !validationutils.IsEmpty(portgroupsRaw) {
 		portgroupsList := portgroupsRaw.([]interface{})
 		if len(portgroupsList) > 0 {
 			result.PortGroupSpecs = []*models.PortgroupSpec{}
@@ -76,7 +76,7 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error)
 			}
 		}
 	}
-	if niocBandwidthAllocationsRaw, ok := object["nioc_bandwidth_allocations"]; ok && !validation_utils.IsEmpty(niocBandwidthAllocationsRaw) {
+	if niocBandwidthAllocationsRaw, ok := object["nioc_bandwidth_allocations"]; ok && !validationutils.IsEmpty(niocBandwidthAllocationsRaw) {
 		niocBandwidthAllocationsList := niocBandwidthAllocationsRaw.([]interface{})
 		if len(niocBandwidthAllocationsList) > 0 {
 			result.NiocBandwidthAllocationSpecs = []*models.NiocBandwidthAllocationSpec{}
