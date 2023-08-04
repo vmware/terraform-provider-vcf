@@ -34,7 +34,67 @@ func TestAccResourceVcfCluster(t *testing.T) {
 					os.Getenv(constants.VcfTestHost7Fqdn),
 					os.Getenv(constants.VcfTestHost7Pass),
 					os.Getenv(constants.VcfTestEsxiLicenseKey),
-					os.Getenv(constants.VcfTestVsanLicenseKey)),
+					os.Getenv(constants.VcfTestVsanLicenseKey),
+					"",
+					""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_default"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.2.id"),
+				),
+			},
+			{
+				// add another host to the cluster
+				Config: testAccVcfClusterResourceConfig(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestHost5Fqdn),
+					os.Getenv(constants.VcfTestHost5Pass),
+					os.Getenv(constants.VcfTestHost6Fqdn),
+					os.Getenv(constants.VcfTestHost6Pass),
+					os.Getenv(constants.VcfTestHost7Fqdn),
+					os.Getenv(constants.VcfTestHost7Pass),
+					os.Getenv(constants.VcfTestEsxiLicenseKey),
+					os.Getenv(constants.VcfTestVsanLicenseKey),
+					testAccVcfHostCommissionConfig(
+						"host4",
+						os.Getenv(constants.VcfTestHost8Fqdn),
+						os.Getenv(constants.VcfTestHost8Pass)),
+					testAccVcfHostInClusterConfig("host4",
+						os.Getenv(constants.VcfTestEsxiLicenseKey))),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_default"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.2.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.3.id"),
+				),
+			},
+			{
+				// remove the added host
+				Config: testAccVcfClusterResourceConfig(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestHost5Fqdn),
+					os.Getenv(constants.VcfTestHost5Pass),
+					os.Getenv(constants.VcfTestHost6Fqdn),
+					os.Getenv(constants.VcfTestHost6Pass),
+					os.Getenv(constants.VcfTestHost7Fqdn),
+					os.Getenv(constants.VcfTestHost7Pass),
+					os.Getenv(constants.VcfTestEsxiLicenseKey),
+					os.Getenv(constants.VcfTestVsanLicenseKey),
+					testAccVcfHostCommissionConfig(
+						"host4",
+						os.Getenv(constants.VcfTestHost8Fqdn),
+						os.Getenv(constants.VcfTestHost8Pass)),
+					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_name"),
@@ -50,8 +110,38 @@ func TestAccResourceVcfCluster(t *testing.T) {
 	})
 }
 
+func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey string) string {
+	return fmt.Sprintf(`
+	host {
+		id = vcf_host.%s.host_id
+		license_key = %q
+		vmnic {
+			id = "vmnic0"
+			vds_name = "sfo-m01-cl01-vds01"
+		}
+		vmnic {
+			id = "vmnic1"
+			vds_name = "sfo-m01-cl01-vds01"
+		}
+	}	
+	`, hostResourceId, esxLicenseKey)
+}
+
+func testAccVcfHostCommissionConfig(hostResourceId, hostFqdn, hostPass string) string {
+	return fmt.Sprintf(`
+	resource "vcf_host" %q {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+	`, hostResourceId, hostFqdn, hostPass)
+}
+
 func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, host2Pass,
-	host3Fqdn, host3Pass, esxLicenseKey, vsanLicenseKey string) string {
+	host3Fqdn, host3Pass, esxLicenseKey, vsanLicenseKey,
+	additionalCommissionHostConfig, additionalHostInClusterConfig string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "domain_pool" {
 		name    = "cluster-pool"
@@ -102,7 +192,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		network_pool_id = vcf_network_pool.domain_pool.id
 		storage_type = "VSAN"
 	}
-
+	%s
 	resource "vcf_cluster" "cluster1" {
 		domain_id = %q
 		name = "sfo-m01-cl01"
@@ -142,6 +232,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 				vds_name = "sfo-m01-cl01-vds01"
 			}
 		}
+		%s
 		vds {
 			name = "sfo-m01-cl01-vds01"
 			portgroup {
@@ -164,8 +255,8 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		}
 		geneve_vlan_id = 3
 	}
-	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, domainId,
-		esxLicenseKey, esxLicenseKey, esxLicenseKey, vsanLicenseKey)
+	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, additionalCommissionHostConfig, domainId,
+		esxLicenseKey, esxLicenseKey, esxLicenseKey, additionalHostInClusterConfig, vsanLicenseKey)
 }
 
 func testCheckVcfClusterDestroy(state *terraform.State) error {

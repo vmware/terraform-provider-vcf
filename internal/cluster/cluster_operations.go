@@ -84,11 +84,12 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 	}
 }
 
-func ValidateClusterUpdateOperation(ctx context.Context, clusterUpdateSpec *models.ClusterUpdateSpec,
-	apiClient *client.VcfClient) diag.Diagnostics {
+func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
+	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
 	validateClusterSpec := clusters.NewValidateClusterOperationsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	validateClusterSpec.ClusterUpdateSpec = clusterUpdateSpec
+	validateClusterSpec.ID = clusterId
 
 	validateResponse, err := apiClient.Clusters.ValidateClusterOperations(validateClusterSpec)
 	if err != nil {
