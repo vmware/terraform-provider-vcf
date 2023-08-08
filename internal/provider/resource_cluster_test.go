@@ -65,7 +65,8 @@ func TestAccResourceVcfCluster(t *testing.T) {
 						os.Getenv(constants.VcfTestHost8Fqdn),
 						os.Getenv(constants.VcfTestHost8Pass)),
 					testAccVcfHostInClusterConfig("host4",
-						os.Getenv(constants.VcfTestEsxiLicenseKey))),
+						os.Getenv(constants.VcfTestEsxiLicenseKey),
+						"sfo-m01-cl01")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_name"),
@@ -110,21 +111,21 @@ func TestAccResourceVcfCluster(t *testing.T) {
 	})
 }
 
-func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey string) string {
-	return fmt.Sprintf(`
-	host {
+func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey, clusterName string) string {
+	return fmt.Sprintf(
+		`host {
 		id = vcf_host.%s.host_id
 		license_key = %q
 		vmnic {
 			id = "vmnic0"
-			vds_name = "sfo-m01-cl01-vds01"
+			vds_name = "%s-vds01"
 		}
 		vmnic {
 			id = "vmnic1"
-			vds_name = "sfo-m01-cl01-vds01"
+			vds_name = "%s-vds01"
 		}
 	}	
-	`, hostResourceId, esxLicenseKey)
+	`, hostResourceId, esxLicenseKey, clusterName, clusterName)
 }
 
 func testAccVcfHostCommissionConfig(hostResourceId, hostFqdn, hostPass string) string {
