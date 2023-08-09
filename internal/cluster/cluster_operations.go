@@ -13,6 +13,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
@@ -32,72 +33,63 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 	// TODO support vSAN stretch/unstretch operations by adding a "witness" attribute to vcf_cluster and checking for change on it.
 	if data.HasChange("host") {
 		oldHostsValue, newHostsValue := data.GetChange("host")
-		oldHostsListRaw := oldHostsValue.([]interface{})
-		newHostsListRaw := newHostsValue.([]interface{})
-
-		if len(newHostsListRaw) == len(oldHostsListRaw) {
-			return nil, fmt.Errorf("adding and removing hosts is not supported in a single configuration change. Apply each change separately")
+		resultUpdated, err := SetExpansionOrContractionSpec(result,
+			oldHostsValue.([]interface{}), newHostsValue.([]interface{}))
+		if err != nil {
+			return nil, err
 		}
-
-		isAddingHosts := len(newHostsListRaw) > len(oldHostsListRaw)
-		if isAddingHosts {
-			oldHostsMap := CreateIdToObjectMap(oldHostsListRaw)
-			var addedHosts []map[string]interface{}
-			for _, newHostListEntryRaw := range newHostsListRaw {
-				newHostListEntry := newHostListEntryRaw.(map[string]interface{})
-				newHostEntryId := newHostListEntry["id"].(string)
-				_, currentHostAlreadyPresent := oldHostsMap[newHostEntryId]
-				if !currentHostAlreadyPresent {
-					addedHosts = append(addedHosts, newHostListEntry)
-				}
-			}
-			var hostSpecs []*models.HostSpec
-			for _, addedHostRaw := range addedHosts {
-				hostSpec, err := TryConvertToHostSpec(addedHostRaw)
-				if err != nil {
-					return nil, err
-				}
-				hostSpecs = append(hostSpecs, hostSpec)
-			}
-			clusterExpansionSpec := &models.ClusterExpansionSpec{
-				HostSpecs: hostSpecs,
-			}
-			result.ClusterExpansionSpec = clusterExpansionSpec
-			return result, nil
-		} else {
-			newHostsMap := CreateIdToObjectMap(newHostsListRaw)
-			var removedHosts []map[string]interface{}
-			for _, oldHostListEntryRaw := range oldHostsListRaw {
-				oldHostListEntry := oldHostListEntryRaw.(map[string]interface{})
-				oldHostEntryId := oldHostListEntry["id"].(string)
-				_, currentHostAlreadyPresent := newHostsMap[oldHostEntryId]
-				if !currentHostAlreadyPresent {
-					removedHosts = append(removedHosts, oldHostListEntry)
-				}
-			}
-			var hostRefs []*models.HostReference
-			for _, removedHostRaw := range removedHosts {
-				hostRef := &models.HostReference{
-					ID: removedHostRaw["id"].(string),
-				}
-				hostRefs = append(hostRefs, hostRef)
-			}
-			clusterContractionSpec := &models.ClusterCompactionSpec{
-				Hosts: hostRefs,
-			}
-			result.ClusterCompactionSpec = clusterContractionSpec
-			return result, nil
-		}
+		return resultUpdated, nil
 	}
 
 	return result, nil
 }
 
-func ValidateClusterUpdateOperation(ctx context.Context, clusterUpdateSpec *models.ClusterUpdateSpec,
-	apiClient *client.VcfClient) diag.Diagnostics {
+// SetExpansionOrContractionSpec sets ClusterExpansionSpec or ClusterContractionSpec to a provided
+// ClusterUpdateSpec depending on weather hosts are being added or removed.
+func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
+	oldHostsList, newHostsList []interface{}) (*models.ClusterUpdateSpec, error) {
+
+	if len(newHostsList) == len(oldHostsList) {
+		return nil, fmt.Errorf("adding and removing hosts is not supported in a single configuration change. Apply each change separately")
+	}
+
+	addedHosts, removedHosts := resource_utils.CalculateAddedRemovedResources(newHostsList, oldHostsList)
+	if len(removedHosts) == 0 {
+		var hostSpecs []*models.HostSpec
+		for _, addedHostRaw := range addedHosts {
+			hostSpec, err := TryConvertToHostSpec(addedHostRaw)
+			if err != nil {
+				return nil, err
+			}
+			hostSpecs = append(hostSpecs, hostSpec)
+		}
+		clusterExpansionSpec := &models.ClusterExpansionSpec{
+			HostSpecs: hostSpecs,
+		}
+		updateSpec.ClusterExpansionSpec = clusterExpansionSpec
+		return updateSpec, nil
+	} else {
+		var hostRefs []*models.HostReference
+		for _, removedHostRaw := range removedHosts {
+			hostRef := &models.HostReference{
+				ID: removedHostRaw["id"].(string),
+			}
+			hostRefs = append(hostRefs, hostRef)
+		}
+		clusterContractionSpec := &models.ClusterCompactionSpec{
+			Hosts: hostRefs,
+		}
+		updateSpec.ClusterCompactionSpec = clusterContractionSpec
+		return updateSpec, nil
+	}
+}
+
+func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
+	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
 	validateClusterSpec := clusters.NewValidateClusterOperationsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	validateClusterSpec.ClusterUpdateSpec = clusterUpdateSpec
+	validateClusterSpec.ID = clusterId
 
 	validateResponse, err := apiClient.Clusters.ValidateClusterOperations(validateClusterSpec)
 	if err != nil {
@@ -154,7 +146,7 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 			result.AdvancedOptions = &models.AdvancedOptions{}
 		}
 		result.AdvancedOptions.HighAvailability = &models.HighAvailability{
-			Enabled: ToBoolPointer(highAvailabilityEnabled),
+			Enabled: resource_utils.ToBoolPointer(highAvailabilityEnabled),
 		}
 	}
 
@@ -311,32 +303,4 @@ func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
 	result["host"] = flattenedHosts
 
 	return &result
-}
-
-// CreateIdToObjectMap Creates a Map with string ID index to Object.
-func CreateIdToObjectMap(objectsList []interface{}) map[string]interface{} {
-	// crete a map of new host id -> host
-	result := make(map[string]interface{})
-	for _, listEntryRaw := range objectsList {
-		listEntry := listEntryRaw.(map[string]interface{})
-		id := listEntry["id"].(string)
-		result[id] = listEntry
-	}
-	return result
-}
-
-func ToBoolPointer(object interface{}) *bool {
-	if object == nil {
-		return nil
-	}
-	objectAsBool := object.(bool)
-	return &objectAsBool
-}
-
-func ToStringPointer(object interface{}) *string {
-	if object == nil {
-		return nil
-	}
-	objectAsString := object.(string)
-	return &objectAsString
 }

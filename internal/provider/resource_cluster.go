@@ -12,6 +12,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -34,11 +35,12 @@ func ResourceCluster() *schema.Resource {
 		UpdateContext: resourceClusterUpdate,
 		DeleteContext: resourceClusterDelete,
 		Schema:        clusterResourceSchema,
+		// TODO implement cluster import scenario
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Hour),
-			Read:   schema.DefaultTimeout(20 * time.Minute),
+			Read:   schema.DefaultTimeout(10 * time.Minute),
 			Update: schema.DefaultTimeout(2 * time.Hour),
-			Delete: schema.DefaultTimeout(30 * time.Minute),
+			Delete: schema.DefaultTimeout(1 * time.Hour),
 		},
 	}
 }
@@ -193,7 +195,7 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 
 	data.SetId(clusterId)
 
-	return resourceClusterRead(ctx, data, meta)
+	return nil
 }
 
 func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -220,70 +222,26 @@ func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta in
 
 func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
-	apiClient := vcfClient.ApiClient
 
 	clusterUpdateSpec, err := cluster.CreateClusterUpdateSpec(data, false)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	validationDiagnostics := cluster.ValidateClusterUpdateOperation(ctx, clusterUpdateSpec, apiClient)
-	if validationDiagnostics != nil {
-		return validationDiagnostics
+	diagnostics := updateCluster(ctx, data.Id(), clusterUpdateSpec, vcfClient)
+	if diagnostics != nil {
+		return diagnostics
 	}
 
-	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterUpdateParams.ID = data.Id()
-	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
-
-	acceptedUpdateTask, _, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	taskId := acceptedUpdateTask.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return resourceClusterRead(ctx, data, meta)
+	return nil
 }
 
 func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
-	apiClient := vcfClient.ApiClient
 
-	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterUpdateParams.ID = data.Id()
-	clusterUpdateSpec, _ := cluster.CreateClusterUpdateSpec(data, true)
-	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
-
-	_, acceptedUpdateTask, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	taskId := acceptedUpdateTask.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	clusterDeleteParams := clusters.NewDeleteClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterDeleteParams.ID = data.Id()
-
-	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if acceptedDeleteTask != nil {
-		taskId = acceptedDeleteTask.Payload.ID
-	}
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
-	if err != nil {
-		return diag.FromErr(err)
+	diagnostics := deleteCluster(ctx, data.Id(), vcfClient)
+	if diagnostics != nil {
+		return diagnostics
 	}
 
 	return nil
@@ -296,7 +254,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec *models.Clu
 		ComputeSpec: &models.ComputeSpec{
 			ClusterSpecs: []*models.ClusterSpec{clusterSpec},
 		},
-		DomainID: cluster.ToStringPointer(domainId),
+		DomainID: resource_utils.ToStringPointer(domainId),
 	}
 
 	validateClusterSpec := clusters.NewValidateClustersOperationsParamsWithContext(ctx).
@@ -329,4 +287,77 @@ func createCluster(ctx context.Context, domainId string, clusterSpec *models.Clu
 		return "", diag.FromErr(err)
 	}
 	return clusterId, nil
+}
+
+func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec *models.ClusterUpdateSpec,
+	vcfClient *SddcManagerClient) diag.Diagnostics {
+	apiClient := vcfClient.ApiClient
+	validationDiagnostics := cluster.ValidateClusterUpdateOperation(ctx, clusterId, clusterUpdateSpec, apiClient)
+	if validationDiagnostics != nil {
+		return validationDiagnostics
+	}
+
+	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterUpdateParams.ID = clusterId
+	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
+
+	acceptedUpdateTask, acceptedUpdateTask2, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	var taskId string
+	if acceptedUpdateTask != nil {
+		taskId = acceptedUpdateTask.Payload.ID
+	}
+	if acceptedUpdateTask2 != nil {
+		taskId = acceptedUpdateTask2.Payload.ID
+	}
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	return nil
+}
+
+func deleteCluster(ctx context.Context, clusterId string, vcfClient *SddcManagerClient) diag.Diagnostics {
+	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterUpdateParams.ID = clusterId
+	clusterUpdateSpec, _ := cluster.CreateClusterUpdateSpec(nil, true)
+	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
+
+	apiClient := vcfClient.ApiClient
+	acceptedUpdateTask, acceptedUpdateTask2, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	var taskId string
+	if acceptedUpdateTask != nil {
+		taskId = acceptedUpdateTask.Payload.ID
+	}
+	if acceptedUpdateTask2 != nil {
+		taskId = acceptedUpdateTask2.Payload.ID
+	}
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	clusterDeleteParams := clusters.NewDeleteClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	clusterDeleteParams.ID = clusterId
+
+	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if acceptedDeleteTask != nil {
+		taskId = acceptedDeleteTask.Payload.ID
+	}
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	return nil
 }

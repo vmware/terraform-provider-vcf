@@ -51,7 +51,7 @@ func NewSddcManagerClient(username, password, host string, allowUnverifiedTls bo
 var accessToken *string
 
 const maxGetTaskRetries int = 10
-const maxTaskRetries int = 3
+const maxTaskRetries int = 6
 
 func newTransport(sddcManagerClient *SddcManagerClient) *customTransport {
 	return &customTransport{
@@ -188,6 +188,8 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 			} else {
 				return errors.New(errorMsg)
 			}
+			time.Sleep(20 * time.Second)
+			continue
 		}
 
 		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, task.Status, task.CompletionTimestamp)

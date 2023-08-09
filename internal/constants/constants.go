@@ -75,6 +75,14 @@ const (
 	// with the SDDC Manager.
 	VcfTestHost7Pass = "VCF_TEST_HOST7_PASS"
 
+	// VcfTestHost8Fqdn the FQDN of the eight ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost8Fqdn = "VCF_TEST_HOST8_FQDN"
+
+	// VcfTestHost8Pass the password of the eight ESXi host, that has not been commissioned
+	// with the SDDC Manager.
+	VcfTestHost8Pass = "VCF_TEST_HOST8_PASS"
+
 	// VcfTestNsxLicenseKey license key for NSX required for domain and cluster acceptance tests.
 	VcfTestNsxLicenseKey = "VCF_TEST_NSX_LICENSE_KEY"
 

@@ -6,18 +6,21 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/cluster"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
+	"reflect"
 	"time"
 )
 
@@ -183,7 +186,6 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 	apiClient := vcfClient.ApiClient
 
 	// Domain Update API supports only changes to domain name and Cluster Import
-	// TODO implement cluster import scenario
 	if data.HasChange("name") {
 		domainUpdateSpec := createDomainUpdateSpec(data, false)
 		domainUpdateParams := domains.NewUpdateDomainParamsWithContext(ctx).
@@ -202,7 +204,89 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		}
 	}
 
-	return resourceDomainRead(ctx, data, meta)
+	if data.HasChange("cluster") {
+		oldClustersValue, newClustersValue := data.GetChange("cluster")
+		oldClustersList := oldClustersValue.([]interface{})
+		newClustersList := newClustersValue.([]interface{})
+		if len(oldClustersList) == len(newClustersList) {
+			diags := handleClusterUpdateInDomain(ctx, oldClustersList, newClustersList, vcfClient)
+			if diags != nil {
+				return diags
+			}
+		} else {
+			diags := handleClusterAddRemoveToDomain(ctx, data.Id(), oldClustersList, newClustersList, vcfClient)
+			if diags != nil {
+				return diags
+			}
+		}
+	}
+
+	return nil
+}
+
+func handleClusterAddRemoveToDomain(ctx context.Context, domainId string, newClustersList, oldClustersList []interface{},
+	vcfClient *SddcManagerClient) diag.Diagnostics {
+	addedClustersList, removedClustersList := resource_utils.CalculateAddedRemovedResources(newClustersList, oldClustersList)
+	for _, addedCluster := range addedClustersList {
+		clusterSpec, err := cluster.TryConvertToClusterSpec(addedCluster)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		// subsequent domain read will set the cluster ID, so we can discard it here
+		_, diags := createCluster(ctx, domainId, clusterSpec, vcfClient)
+		if diags != nil {
+			return diags
+		}
+	}
+
+	for _, removedCluster := range removedClustersList {
+		clusterId := removedCluster["id"].(string)
+		diags := deleteCluster(ctx, clusterId, vcfClient)
+		if diags != nil {
+			return diags
+		}
+	}
+
+	return nil
+}
+
+func handleClusterUpdateInDomain(ctx context.Context, oldClustersStateList []interface{},
+	newClustersStateList []interface{}, vcfClient *SddcManagerClient) diag.Diagnostics {
+	if len(oldClustersStateList) != len(newClustersStateList) {
+		return diag.FromErr(fmt.Errorf("expecting old and new cluster list to have the same length"))
+	}
+	for i, newClusterState := range newClustersStateList {
+		// skip the clusters that have no changes
+		if reflect.DeepEqual(newClusterState, oldClustersStateList[i]) {
+			continue
+		}
+		oldClusterStateMap := oldClustersStateList[i].(map[string]interface{})
+		newClusterStateMap := newClusterState.(map[string]interface{})
+		// sanity check that we're comparing the same clusters for changes to their hosts
+		newClusterStateId := newClusterStateMap["id"].(string)
+		oldClusterStateId := oldClusterStateMap["id"].(string)
+		if newClusterStateId != oldClusterStateId {
+			return diag.FromErr(fmt.Errorf("cluster order has changed, updating hosts in cluster not supported"))
+		}
+		oldHostsList := oldClusterStateMap["host"].([]interface{})
+		newHostsList := newClusterStateMap["host"].([]interface{})
+		if reflect.DeepEqual(oldHostsList, newHostsList) {
+			tflog.Warn(ctx, "only expand/contract cluster update is supported")
+			continue
+		}
+
+		clusterUpdateSpec := new(models.ClusterUpdateSpec)
+		populatedClusterUpdateSpec, err := cluster.SetExpansionOrContractionSpec(clusterUpdateSpec, oldHostsList, newHostsList)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		diags := updateCluster(ctx, newClusterStateId, populatedClusterUpdateSpec, vcfClient)
+		if diags != nil {
+			return diags
+		}
+	}
+	return nil
 }
 
 func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -329,7 +413,7 @@ func createDomainUpdateSpec(data *schema.ResourceData, markForDeletion bool) *mo
 		result.Name = data.Get("name").(string)
 	}
 
-	// TODO implement support for IPPoolSpecs in NsxTSpec, then implement this "Cluster_Import" scenario
+	// TODO implement support for IPPoolSpecs in NsxTSpec
 	// by placing the added cluster spec in the DomainUpdateSpec
 	//nsxtSpec, err := generateNsxSpecFromResourceData(data)
 	//if err == nil {

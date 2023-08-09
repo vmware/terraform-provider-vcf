@@ -38,3 +38,7 @@ provider "vcf" {
 - `sddc_manager_host` (String) Fully qualified domain name or IP address of the SDDC Manager
 - `sddc_manager_password` (String) Password to authenticate to SDDC Manager
 - `sddc_manager_username` (String) Username to authenticate to SDDC Manager
+
+### Optional
+
+- `allow_unverified_tls` (Boolean) If set, VMware VCF client will permit unverifiable TLS certificates.
