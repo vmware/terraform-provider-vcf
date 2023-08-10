@@ -100,4 +100,7 @@ func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
 		t.Fatal(constants.VcfTestDomainDataSourceId + " must be set for acceptance tests")
 	}
+	if v := os.Getenv(constants.VcfTestClusterDataSourceId); v == "" {
+		t.Fatal(constants.VcfTestClusterDataSourceId + " must be set for acceptance tests")
+	}
 }

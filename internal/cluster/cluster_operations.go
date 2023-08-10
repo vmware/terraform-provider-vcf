@@ -17,6 +17,7 @@ import (
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
+	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -298,9 +299,51 @@ func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
 	// consider getting the fqdn, ip and az name with an additional GET request
 	flattenedHosts := make([]map[string]interface{}, len(clusterObj.Hosts))
 	for j, host := range clusterObj.Hosts {
-		flattenedHosts[j] = *FlattenHost(host)
+		flattenedHosts[j] = *FlattenHostReference(host)
 	}
 	result["host"] = flattenedHosts
 
 	return &result
+}
+
+func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) ([]*schema.ResourceData, error) {
+	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout)
+	getClusterParams.ID = data.Get("cluster_id").(string)
+	clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
+	if err != nil {
+		return nil, err
+	}
+	clusterObj := clusterResult.Payload
+
+	data.SetId(clusterObj.ID)
+	_ = data.Set("name", clusterObj.Name)
+	_ = data.Set("primary_datastore_name", clusterObj.PrimaryDatastoreName)
+	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
+	_ = data.Set("is_default", clusterObj.IsDefault)
+	_ = data.Set("is_stretched", clusterObj.IsStretched)
+	flattenedVdsSpecs := *new([]map[string]interface{})
+	vdsSpecs := clusterObj.VdsSpecs
+	for _, vdsSpec := range vdsSpecs {
+		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))
+	}
+	_ = data.Set("vds", flattenedVdsSpecs)
+
+	// The HostRef is supposed to have all the relevant information, but the backend returns
+	// everything as nil except the host ID which forces us to make a separate request
+	// to get some useful info about the hosts in the cluster.
+	flattenedHostSpecs := *new([]map[string]interface{})
+	for _, hostRef := range clusterObj.Hosts {
+		getHostParams := hosts.NewGetHostParamsWithContext(ctx).
+			WithTimeout(constants.DefaultVcfApiCallTimeout)
+		getHostParams.ID = hostRef.ID
+		getHostResult, err := apiClient.Hosts.GetHost(getHostParams)
+		if err != nil {
+			return nil, err
+		}
+		hostObj := getHostResult.Payload
+		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(hostObj))
+	}
+	_ = data.Set("host", flattenedHostSpecs)
+	return []*schema.ResourceData{data}, nil
 }

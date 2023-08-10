@@ -41,7 +41,8 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"vcf_domain": DataSourceDomain(),
+			"vcf_domain":  DataSourceDomain(),
+			"vcf_cluster": DataSourceCluster(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{

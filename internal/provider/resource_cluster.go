@@ -34,8 +34,14 @@ func ResourceCluster() *schema.Resource {
 		ReadContext:   resourceClusterRead,
 		UpdateContext: resourceClusterUpdate,
 		DeleteContext: resourceClusterDelete,
-		Schema:        clusterResourceSchema,
-		// TODO implement cluster import scenario
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				vcfClient := meta.(*SddcManagerClient)
+				apiClient := vcfClient.ApiClient
+				return cluster.ImportCluster(ctx, data, apiClient)
+			},
+		},
+		Schema: clusterResourceSchema,
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Hour),
 			Read:   schema.DefaultTimeout(10 * time.Minute),

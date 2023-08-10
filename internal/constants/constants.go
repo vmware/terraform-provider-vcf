@@ -96,6 +96,11 @@ const (
 	// Typically, the id of management domain is used as it is already created during bringup.
 	VcfTestDomainDataSourceId = "VCF_DOMAIN_DATA_SOURCE_ID"
 
+	// VcfTestClusterDataSourceId id of cluster used in cluster data source acceptance test.
+	// Typically, the id of the default cluster in the management domain is used as it is
+	// already created during bringup.
+	VcfTestClusterDataSourceId = "VCF_CLUSTER_DATA_SOURCE_ID"
+
 	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
 	VcfTestNetworkPoolName = "terraform-test-pool"
 )

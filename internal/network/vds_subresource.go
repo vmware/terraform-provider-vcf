@@ -94,3 +94,31 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error)
 
 	return result, nil
 }
+
+func FlattenVdsSpec(vdsSpec *models.VdsSpec) map[string]interface{} {
+	result := make(map[string]interface{})
+	if vdsSpec == nil {
+		return result
+	}
+	result["name"] = *vdsSpec.Name
+	result["is_used_by_nsx"] = vdsSpec.IsUsedByNSXT
+	flattenedNiocBandwidthAllocationSpecs := *new([]map[string]interface{})
+	for _, niocBandwidthAllocationSpec := range vdsSpec.NiocBandwidthAllocationSpecs {
+		if niocBandwidthAllocationSpec != nil {
+			flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
+				flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
+		}
+	}
+	result["nioc_bandwidth_allocations"] = flattenedNiocBandwidthAllocationSpecs
+
+	flattenedPortgroupSpecs := *new([]map[string]interface{})
+	for _, portgroupSpec := range vdsSpec.PortGroupSpecs {
+		if portgroupSpec != nil {
+			flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,
+				flattenPortgroupSpec(portgroupSpec))
+		}
+	}
+	result["portgroup"] = flattenedPortgroupSpecs
+
+	return result
+}
