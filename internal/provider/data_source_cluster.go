@@ -42,7 +42,6 @@ func DataSourceCluster() *schema.Resource {
 			"vds": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				MinItems:    1,
 				Description: "vSphere Distributed Switches to add to the Cluster",
 				Elem:        network.VdsSchema(),
 			},

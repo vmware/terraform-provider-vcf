@@ -19,6 +19,7 @@ import (
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
+	"sort"
 )
 
 func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*models.ClusterUpdateSpec, error) {
@@ -324,6 +325,11 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
 	flattenedVdsSpecs := *new([]map[string]interface{})
 	vdsSpecs := clusterObj.VdsSpecs
+	// Since backend API returns objects in random order sort VDSSpec list to ensure
+	// import is reproducible
+	sort.SliceStable(vdsSpecs, func(i, j int) bool {
+		return *vdsSpecs[i].Name < *vdsSpecs[j].Name
+	})
 	for _, vdsSpec := range vdsSpecs {
 		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))
 	}
@@ -333,7 +339,12 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 	// everything as nil except the host ID which forces us to make a separate request
 	// to get some useful info about the hosts in the cluster.
 	flattenedHostSpecs := *new([]map[string]interface{})
-	for _, hostRef := range clusterObj.Hosts {
+	hostRefs := clusterObj.Hosts
+	// Sort for reproducibility
+	sort.SliceStable(hostRefs, func(i, j int) bool {
+		return hostRefs[i].ID < hostRefs[j].ID
+	})
+	for _, hostRef := range hostRefs {
 		getHostParams := hosts.NewGetHostParamsWithContext(ctx).
 			WithTimeout(constants.DefaultVcfApiCallTimeout)
 		getHostParams.ID = hostRef.ID
