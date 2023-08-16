@@ -86,7 +86,7 @@ func HostSpecSchema() *schema.Resource {
 	}
 }
 
-func FlattenHost(host *models.HostReference) *map[string]interface{} {
+func FlattenHostReference(host *models.HostReference) *map[string]interface{} {
 	result := make(map[string]interface{})
 	if host == nil {
 		return &result
@@ -95,6 +95,20 @@ func FlattenHost(host *models.HostReference) *map[string]interface{} {
 	result["host_name"] = host.Fqdn
 	result["ip_address"] = host.IPAddress
 	result["availability_zone_name"] = host.AzName
+
+	return &result
+}
+
+func FlattenHost(host *models.Host) *map[string]interface{} {
+	result := make(map[string]interface{})
+	if host == nil {
+		return &result
+	}
+	result["id"] = host.ID
+	result["host_name"] = host.Fqdn
+	if len(host.IPAddresses) > 0 && host.IPAddresses[0] != nil {
+		result["ip_address"] = host.IPAddresses[0].IPAddress
+	}
 
 	return &result
 }

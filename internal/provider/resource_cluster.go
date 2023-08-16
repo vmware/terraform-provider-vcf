@@ -34,8 +34,14 @@ func ResourceCluster() *schema.Resource {
 		ReadContext:   resourceClusterRead,
 		UpdateContext: resourceClusterUpdate,
 		DeleteContext: resourceClusterDelete,
-		Schema:        clusterResourceSchema,
-		// TODO implement cluster import scenario
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				vcfClient := meta.(*SddcManagerClient)
+				apiClient := vcfClient.ApiClient
+				return cluster.ImportCluster(ctx, data, apiClient)
+			},
+		},
+		Schema: clusterResourceSchema,
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(2 * time.Hour),
 			Read:   schema.DefaultTimeout(10 * time.Minute),
@@ -65,7 +71,7 @@ func clusterSubresourceSchema() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				Description: "List of ESXi host information from the free pool to consume in a workload domain",
-				MinItems:    1,
+				MinItems:    2,
 				Elem:        cluster.HostSpecSchema(),
 			},
 			"cluster_image_id": {

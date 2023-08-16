@@ -89,7 +89,6 @@ Read-Only:
 Read-Only:
 
 - `id` (String) ESXI host vmnic ID associated with a VDS
-- `move_to_nvds` (Boolean)  This flag determines if the vmnic is on N-VDS
 - `uplink` (String) Uplink associated with vmnic
 - `vds_name` (String) Name of the VDS associated with the ESXi host
 
