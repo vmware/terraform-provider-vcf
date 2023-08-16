@@ -19,7 +19,7 @@ The following data is prerequisite for creation:
      * ID of the host (UUID)
      * License key for the host
      * List of VDS names to associate with host
-     * ID of the vmNic host to be associated with VDS / N-VDS, once added to cluster
+     * ID of the vmNic host to be associated with VDS, once added to cluster
   * Datastore details:
   **Note :** Only one of “vsan_datastore” (For VSAN), “nfs_datastores” (For NFS) or “vmfs_datastore” (For VMFS on FC) or "vvol_datastores" (For VVOL) or "vsan_remote_datastore_cluster" (For vSAN HCI Mesh Remote Datastore) must be specified.
   * Network Details
@@ -32,9 +32,8 @@ The following data is prerequisite for creation:
       * VLAN ID of the Geneve
       * (**not yet supported**) IP address pool spec if the TEP IP assignment is done from IP pool For DHCP
     * Network pool must be configured.
-  * Logical VMware Cloud Foundation container (Workload Domain) must be provisioned. **Note:** NSX-T management cluster is configured when the domain is created.
+  * Workload Domain must already exist. **Note:** NSX-T management cluster is configured when the domain is created.
   * Prerequisites for vSAN, NFS or VMFS on FC or VVOL must be met.
-  * License key details may be provisioned in vCenter.
   * Host configuration must have minimum two active vmNics.
   * There must be at least three hosts available in the VMware Cloud Foundation inventory.
   * Ensure that the hosts you want to add to the cluster are in UNASSIGNED_USEABLE state.
@@ -48,7 +47,7 @@ The following data is prerequisite for creation:
 ### Required
 
 - `domain_id` (String) The ID of a workload domain that the cluster belongs to
-- `host` (Block List, Min: 1) List of ESXi host information from the free pool to consume in a workload domain (see [below for nested schema](#nestedblock--host))
+- `host` (Block List, Min: 2) List of ESXi host information from the free pool to consume in a workload domain/ The minimum of 3 hosts is required for vSAN based clusters. For external storage, 2 host clusters are also supported. (see [below for nested schema](#nestedblock--host))
 - `name` (String) Name of the cluster to add to the workload domain
 - `vds` (Block List, Min: 1) vSphere Distributed Switches to add to the cluster (see [below for nested schema](#nestedblock--vds))
 
@@ -101,7 +100,6 @@ Required:
 
 Optional:
 
-- `move_to_nvds` (Boolean) This flag determines if the vmnic must be on N-VDS
 - `uplink` (String) Uplink to be associated with vmnic
 - `vds_name` (String) Name of the VDS to associate with the ESXi host
 

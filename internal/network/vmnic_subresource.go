@@ -24,11 +24,6 @@ func VMNicSchema() *schema.Resource {
 				Description:  "ESXI host vmnic ID to be associated with a VDS, once added to cluster",
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"move_to_nvds": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "This flag determines if the vmnic must be on N-VDS",
-			},
 			"uplink": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -55,9 +50,6 @@ func TryConvertToVmNic(object map[string]interface{}) (*models.VMNic, error) {
 	}
 	result := &models.VMNic{}
 	result.ID = id
-	if moveToNvds, ok := object["move_to_nvds"]; ok && !validationutils.IsEmpty(moveToNvds) {
-		result.MoveToNvds = moveToNvds.(bool)
-	}
 	if uplink, ok := object["uplink"]; ok && !validationutils.IsEmpty(uplink) {
 		result.Uplink = uplink.(string)
 	}

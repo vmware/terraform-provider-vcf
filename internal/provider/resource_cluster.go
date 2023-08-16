@@ -71,7 +71,7 @@ func clusterSubresourceSchema() *schema.Resource {
 				Type:        schema.TypeList,
 				Required:    true,
 				Description: "List of ESXi host information from the free pool to consume in a workload domain",
-				MinItems:    1,
+				MinItems:    2,
 				Elem:        cluster.HostSpecSchema(),
 			},
 			"cluster_image_id": {
