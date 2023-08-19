@@ -177,6 +177,10 @@ func IsEmpty(object interface{}) bool {
 	if object == nil {
 		return true
 	}
+	_, ok := object.(bool)
+	if ok {
+		return false
+	}
 	objectStr, ok := object.(string)
 	if ok {
 		if len(objectStr) > 0 {
