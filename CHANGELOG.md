@@ -2,7 +2,7 @@
 
 ## [v0.3.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.3.0)
 
-> Release Date: Jul 22nd 2023
+> Release Date: Aug 22nd 2023
 
 FEATURES:
 * Add support for workload domain cluster resource: read, add, update, delete [\#32](https://github.com/vmware/terraform-provider-vcf/issues/32)
