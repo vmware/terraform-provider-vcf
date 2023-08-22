@@ -206,22 +206,22 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 
 	if data.HasChange("cluster") {
 		oldClustersValue, newClustersValue := data.GetChange("cluster")
-		oldClustersList := oldClustersValue.([]interface{})
 		newClustersList := newClustersValue.([]interface{})
+		oldClustersList := oldClustersValue.([]interface{})
 		if len(oldClustersList) == len(newClustersList) {
-			diags := handleClusterUpdateInDomain(ctx, oldClustersList, newClustersList, vcfClient)
+			diags := handleClusterUpdateInDomain(ctx, newClustersList, oldClustersList, vcfClient)
 			if diags != nil {
 				return diags
 			}
 		} else {
-			diags := handleClusterAddRemoveToDomain(ctx, data.Id(), oldClustersList, newClustersList, vcfClient)
+			diags := handleClusterAddRemoveToDomain(ctx, data.Id(), newClustersList, oldClustersList, vcfClient)
 			if diags != nil {
 				return diags
 			}
 		}
 	}
 
-	return nil
+	return resourceDomainRead(ctx, data, meta)
 }
 
 func handleClusterAddRemoveToDomain(ctx context.Context, domainId string, newClustersList, oldClustersList []interface{},
@@ -250,8 +250,8 @@ func handleClusterAddRemoveToDomain(ctx context.Context, domainId string, newClu
 	return nil
 }
 
-func handleClusterUpdateInDomain(ctx context.Context, oldClustersStateList []interface{},
-	newClustersStateList []interface{}, vcfClient *SddcManagerClient) diag.Diagnostics {
+func handleClusterUpdateInDomain(ctx context.Context, newClustersStateList, oldClustersStateList []interface{},
+	vcfClient *SddcManagerClient) diag.Diagnostics {
 	if len(oldClustersStateList) != len(newClustersStateList) {
 		return diag.FromErr(fmt.Errorf("expecting old and new cluster list to have the same length"))
 	}
