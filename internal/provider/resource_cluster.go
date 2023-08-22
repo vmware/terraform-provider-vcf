@@ -201,7 +201,7 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 
 	data.SetId(clusterId)
 
-	return nil
+	return resourceClusterRead(ctx, data, meta)
 }
 
 func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -239,7 +239,7 @@ func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta 
 		return diagnostics
 	}
 
-	return nil
+	return resourceClusterRead(ctx, data, meta)
 }
 
 func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {

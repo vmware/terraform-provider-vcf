@@ -24,6 +24,7 @@ func TestAccResourceVcfDomain(t *testing.T) {
 		CheckDestroy:      testCheckVcfDomainDestroy,
 		Steps: []resource.TestStep{
 			{
+				// Initial config: 1 network pool, 3 commissioned hosts, Domain with cluster with those 3 hosts
 				Config: testAccVcfDomainConfig(
 					testGenerateCommissionHostConfigs(
 						3,
@@ -184,6 +185,117 @@ func TestAccResourceVcfDomain(t *testing.T) {
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.host.3.id"),
 				),
 			},
+			{
+				//remove  additional host in the second cluster in the domain
+				Config: testAccVcfDomainConfig(
+					testGenerateCommissionHostConfigs(
+						7,
+						os.Getenv(constants.VcfTestHost2Fqdn),
+						os.Getenv(constants.VcfTestHost2Pass),
+						os.Getenv(constants.VcfTestHost3Fqdn),
+						os.Getenv(constants.VcfTestHost3Pass),
+						os.Getenv(constants.VcfTestHost4Fqdn),
+						os.Getenv(constants.VcfTestHost4Pass),
+						os.Getenv(constants.VcfTestHost5Fqdn),
+						os.Getenv(constants.VcfTestHost5Pass),
+						os.Getenv(constants.VcfTestHost6Fqdn),
+						os.Getenv(constants.VcfTestHost6Pass),
+						os.Getenv(constants.VcfTestHost7Fqdn),
+						os.Getenv(constants.VcfTestHost7Pass),
+						os.Getenv(constants.VcfTestHost8Fqdn),
+						os.Getenv(constants.VcfTestHost8Pass)),
+					os.Getenv(constants.VcfTestNsxLicenseKey),
+					testAccVcfClusterInDomainConfig(
+						"sfo-w01-cl01",
+						testGenerateHostsInClusterInDomainConfig(
+							os.Getenv(constants.VcfTestEsxiLicenseKey),
+							"sfo-w01-cl01",
+							"host1", "host2", "host3"),
+						os.Getenv(constants.VcfTestVsanLicenseKey)),
+					testAccVcfClusterInDomainConfig(
+						"sfo-w01-cl02",
+						testGenerateHostsInClusterInDomainConfig(
+							os.Getenv(constants.VcfTestEsxiLicenseKey),
+							"sfo-w01-cl02",
+							"host4", "host5", "host6"),
+						os.Getenv(constants.VcfTestVsanLicenseKey))),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_default"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.2.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.is_default"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.1.host.2.id"),
+					resource.TestCheckNoResourceAttr("vcf_domain.domain1", "cluster.1.host.3.id"),
+				),
+			},
+			{
+				// Remove additional cluster
+				Config: testAccVcfDomainConfig(
+					testGenerateCommissionHostConfigs(
+						7,
+						os.Getenv(constants.VcfTestHost2Fqdn),
+						os.Getenv(constants.VcfTestHost2Pass),
+						os.Getenv(constants.VcfTestHost3Fqdn),
+						os.Getenv(constants.VcfTestHost3Pass),
+						os.Getenv(constants.VcfTestHost4Fqdn),
+						os.Getenv(constants.VcfTestHost4Pass),
+						os.Getenv(constants.VcfTestHost5Fqdn),
+						os.Getenv(constants.VcfTestHost5Pass),
+						os.Getenv(constants.VcfTestHost6Fqdn),
+						os.Getenv(constants.VcfTestHost6Pass),
+						os.Getenv(constants.VcfTestHost7Fqdn),
+						os.Getenv(constants.VcfTestHost7Pass),
+						os.Getenv(constants.VcfTestHost8Fqdn),
+						os.Getenv(constants.VcfTestHost8Pass)),
+					os.Getenv(constants.VcfTestNsxLicenseKey),
+					testAccVcfClusterInDomainConfig(
+						"sfo-w01-cl01",
+						testGenerateHostsInClusterInDomainConfig(
+							os.Getenv(constants.VcfTestEsxiLicenseKey),
+							"sfo-w01-cl01",
+							"host1", "host2", "host3"),
+						os.Getenv(constants.VcfTestVsanLicenseKey)),
+					""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_default"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.2.id"),
+					resource.TestCheckNoResourceAttr("vcf_domain.domain1", "cluster.1.id"),
+				),
+			},
 		},
 	})
 }
@@ -228,7 +340,7 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 			name            = "test-vcenter"
 			datacenter_name = "test-datacenter"
 			root_password   = "S@mpleP@ss123!"
-			vm_size         = "medium"
+			vm_size         = "small"
 			storage_size    = "lstorage"
 			ip_address      = "10.0.0.43"
 			subnet_mask     = "255.255.255.0"
