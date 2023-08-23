@@ -26,6 +26,7 @@ Provides read-only access to preexisting vSphere cluster, deployed within a Doma
 
 - `host` (List of Object) List of ESXi host information present in the Cluster (see [below for nested schema](#nestedatt--host))
 - `id` (String) The ID of this resource.
+- `domain_id` (String) The ID of a workload domain that the cluster belongs to
 - `is_default` (Boolean) Status of the cluster if default or not
 - `is_stretched` (Boolean) Status of the cluster if stretched or not
 - `name` (String) Name of the domain

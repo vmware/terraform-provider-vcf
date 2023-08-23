@@ -24,8 +24,15 @@ func TestAccResourceVcfHost(t *testing.T) {
 					os.Getenv(constants.VcfTestHost1Fqdn),
 					os.Getenv(constants.VcfTestHost1Pass)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_host.host1", "host_id"),
+					resource.TestCheckResourceAttrSet("vcf_host.host1", "id"),
 				),
+			},
+			{
+				ResourceName:      "vcf_host.host1",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// The GetHost API returns empty string for "CompatibleStorageType"
+				ImportStateVerifyIgnore: []string{"storage_type"},
 			},
 		},
 	})

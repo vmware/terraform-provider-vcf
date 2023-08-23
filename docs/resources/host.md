@@ -54,8 +54,7 @@ BIOS, HBA, SSD, HDD, etc. of the host must match the VMware Hardware Compatibili
 
 ### Read-Only
 
-- `host_id` (String) UUID of the host. Known after commissioning.
-- `id` (String) The ID of this resource.
+- `id` (String) UUID of the host. Known after commissioning.
 - `status` (String) Assignable status of the host.
 
 <a id="nestedblock--timeouts"></a>

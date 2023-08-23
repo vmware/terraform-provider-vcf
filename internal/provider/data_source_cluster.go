@@ -33,6 +33,11 @@ func DataSourceCluster() *schema.Resource {
 				Computed:    true,
 				Description: "Name of the domain",
 			},
+			"domain_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The ID of a workload domain that the cluster belongs to",
+			},
 			"host": {
 				Type:        schema.TypeList,
 				Computed:    true,
@@ -72,7 +77,8 @@ func DataSourceCluster() *schema.Resource {
 func dataSourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
-	_, err := cluster.ImportCluster(ctx, data, apiClient)
+	clusterId := data.Get("cluster_id").(string)
+	_, err := cluster.ImportCluster(ctx, data, apiClient, clusterId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
