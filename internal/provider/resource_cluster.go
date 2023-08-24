@@ -16,6 +16,7 @@ import (
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
+	"log"
 	"strings"
 	"time"
 )
@@ -335,6 +336,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *SddcManager
 	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
 
 	apiClient := vcfClient.ApiClient
+	log.Printf("Marking Cluster %s for deletion", clusterId)
 	acceptedUpdateTask, acceptedUpdateTask2, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
 	if err != nil {
 		return diag.FromErr(err)
@@ -355,6 +357,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *SddcManager
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	clusterDeleteParams.ID = clusterId
 
+	log.Printf("Deleting Cluster %s", clusterId)
 	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
 	if err != nil {
 		return diag.FromErr(err)

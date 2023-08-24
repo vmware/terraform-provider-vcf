@@ -193,7 +193,8 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	log.Printf("%s: Decommission task initiated. Task id %s", d.Id(), accepted.Payload.ID)
+	log.Printf("%s %s: Decommission task initiated. Task id %s",
+		d.Get("fqdn").(string), d.Id(), accepted.Payload.ID)
 	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())

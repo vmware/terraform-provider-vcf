@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [v0.4.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.4.0)
+
+> Release Date: Aug X 2023
+
+BREAKING CHANGES:
+
+* Removed the attribute "host_id" from the "vcf_host" resource and replaced it with just "id" as per Terraform standard practice. This way users can refer to the Host UUID (in cluster host spec for example) in the standard way, e.g. "vcf_host.host1.id"
+
+FEATURES:
+* Extend support for host resource: import [\#36](https://github.com/vmware/terraform-provider-vcf/issues/36)
+
+BUG FIXES:
+* Include "domain_id" attribute to both imported cluster and cluster datasource [\#49](https://github.com/vmware/terraform-provider-vcf/issues/49)
+
 ## [v0.3.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.3.0)
 
 > Release Date: Aug 22nd 2023
