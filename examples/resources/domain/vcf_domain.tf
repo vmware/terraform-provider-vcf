@@ -104,7 +104,7 @@ resource "vcf_domain" "domain1" {
   cluster {
     name = "sfo-w01-cl01"
     host {
-      id = vcf_host.host1.host_id
+      id = vcf_host.host1.id
       license_key = var.esx_license_key
       vmnic {
         id = "vmnic0"
@@ -116,7 +116,7 @@ resource "vcf_domain" "domain1" {
       }
     }
     host {
-      id = vcf_host.host2.host_id
+      id = vcf_host.host2.id
       license_key = var.esx_license_key
       vmnic {
         id = "vmnic0"
@@ -128,7 +128,7 @@ resource "vcf_domain" "domain1" {
       }
     }
     host {
-      id = vcf_host.host3.host_id
+      id = vcf_host.host3.id
       license_key = var.esx_license_key
       vmnic {
         id = "vmnic0"

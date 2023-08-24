@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"log"
 	"os"
@@ -47,6 +48,11 @@ func TestAccResourceVcfCluster(t *testing.T) {
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.1.id"),
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.2.id"),
 				),
+			},
+			{
+				ResourceName:     "vcf_cluster.cluster1",
+				ImportState:      true,
+				ImportStateCheck: clusterImportStateCheck,
 			},
 			{
 				// add another host to the cluster
@@ -114,7 +120,7 @@ func TestAccResourceVcfCluster(t *testing.T) {
 func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey, clusterName string) string {
 	return fmt.Sprintf(
 		`host {
-		id = vcf_host.%s.host_id
+		id = vcf_host.%s.id
 		license_key = %q
 		vmnic {
 			id = "vmnic0"
@@ -198,7 +204,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		domain_id = %q
 		name = "sfo-m01-cl01"
 		host {
-			id = vcf_host.host1.host_id
+			id = vcf_host.host1.id
 			license_key = %q
 			vmnic {
 				id = "vmnic0"
@@ -210,7 +216,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 			}
 		}
 		host {
-			id = vcf_host.host2.host_id
+			id = vcf_host.host2.id
 			license_key = %q
 			vmnic {
 				id = "vmnic0"
@@ -222,7 +228,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 			}
 		}
 		host {
-			id = vcf_host.host3.host_id
+			id = vcf_host.host3.id
 			license_key = %q
 			vmnic {
 				id = "vmnic0"
@@ -288,4 +294,62 @@ func testCheckVcfClusterDestroy(state *terraform.State) error {
 
 	// Did not find the cluster
 	return nil
+}
+
+func clusterImportStateCheck(states []*terraform.InstanceState) error {
+	for _, state := range states {
+		if state.Ephemeral.Type != "vcf_cluster" {
+			continue
+		}
+		if state.Attributes["domain_id"] != os.Getenv(constants.VcfTestDomainDataSourceId) {
+			return fmt.Errorf("cluster has wrong domain_id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["id"]) {
+			return fmt.Errorf("cluster has no id attribute set")
+		}
+		if state.Attributes["name"] != "sfo-m01-cl01" {
+			return fmt.Errorf("cluster has wrong name attribute set")
+		}
+		if state.Attributes["primary_datastore_name"] != "sfo-m01-cl01-ds-vsan01" {
+			return fmt.Errorf("cluster has wrong primary_datastore_name attribute set")
+		}
+		if state.Attributes["primary_datastore_type"] != "VSAN" {
+			return fmt.Errorf("cluster has wrong primary_datastore_type attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["is_default"]) {
+			return fmt.Errorf("cluster has no is_default attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["is_stretched"]) {
+			return fmt.Errorf("cluster has no is_stretched attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.0.id"]) {
+			return fmt.Errorf("cluster has no host.0.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.1.id"]) {
+			return fmt.Errorf("cluster has no host.1.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.2.id"]) {
+			return fmt.Errorf("cluster has no host.2.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.0.ip_address"]) {
+			return fmt.Errorf("cluster has no host.0.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.1.ip_address"]) {
+			return fmt.Errorf("cluster has no host.1.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.2.ip_address"]) {
+			return fmt.Errorf("cluster has no host.2.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.0.host_name"]) {
+			return fmt.Errorf("cluster has no host.0.host_name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.1.host_name"]) {
+			return fmt.Errorf("cluster has no host.1.host_name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["host.2.host_name"]) {
+			return fmt.Errorf("cluster has no host.2.host_name attribute set")
+		}
+		return nil
+	}
+	return fmt.Errorf("cluster InstanceState not found! Import failed")
 }

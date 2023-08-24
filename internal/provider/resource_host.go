@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/client/credentials"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
 
@@ -57,11 +59,6 @@ func ResourceHost() *schema.Resource {
 				Sensitive:   true,
 				Description: "Password to authenticate to the ESXi host",
 			},
-			"host_id": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "UUID of the host. Known after commissioning.",
-			},
 			"status": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -109,19 +106,22 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
+	taskId := accepted.Payload.ID
 
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
-		*commissionSpec.Fqdn, accepted.Payload.ID))
+		*commissionSpec.Fqdn, taskId))
 
-	// TODO check out if the ID(UUID) of the host is present in the resources associated with the task
-	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
+	hostId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Esxi")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	// Task complete, save the fqdn as id (required to decommission the commissionSpec)
-	d.SetId(*commissionSpec.Fqdn)
+	d.SetId(hostId)
 
 	return resourceHostRead(ctx, d, meta)
 }
@@ -130,53 +130,45 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	// ID is the fqdn, but GET api needs uuid
-	hostFqdn := d.Id()
-	hostUuid := ""
-	if hostIdVal, ok := d.GetOk("host_id"); ok {
-		hostUuid = hostIdVal.(string)
+	hostId := d.Id()
+
+	getHostParams := hosts.NewGetHostParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
+	getHostParams.ID = hostId
+
+	hostResponse, err := apiClient.Hosts.GetHost(getHostParams)
+	if err != nil {
+		tflog.Error(ctx, err.Error())
+		return diag.FromErr(err)
+	}
+	host := hostResponse.Payload
+
+	_ = d.Set("network_pool_id", host.Networkpool.ID)
+	_ = d.Set("fqdn", host.Fqdn)
+	_ = d.Set("status", host.Status)
+
+	getHostCredentialsParams := credentials.NewGetCredentialsParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout).WithResourceName(&host.Fqdn)
+	getCredentialsResponse, err := apiClient.Credentials.GetCredentials(getHostCredentialsParams)
+	if err != nil {
+		tflog.Error(ctx, err.Error())
+		return diag.FromErr(err)
+	}
+	for _, credential := range getCredentialsResponse.Payload.Elements {
+		if credential == nil {
+			continue
+		}
+		// we're interested in the SSH credentials, not service account
+		if *credential.AccountType != "USER" || *credential.CredentialType != "SSH" {
+			continue
+		}
+		if *credential.Resource.ResourceID != hostId {
+			return diag.FromErr(fmt.Errorf("hostId doesn't match host FQDN when requesting credentials"))
+		}
+		_ = d.Set("username", *credential.Username)
+		_ = d.Set("password", credential.Password)
 	}
 
-	if hostUuid == "" {
-		// Get all hosts and match the fqdn
-		ok, err := apiClient.Hosts.GetHosts(hosts.NewGetHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout))
-		if err != nil {
-			tflog.Error(ctx, err.Error())
-			diag.FromErr(err)
-		}
-
-		// Check if the resource with the known hostFqdn exists
-		for _, host := range ok.Payload.Elements {
-			if host.Fqdn == hostFqdn {
-				_ = d.Set("host_id", host.ID)
-				// storage_type is not returned by the VCF API ?!?
-				_ = d.Set("network_pool_id", host.Networkpool.ID)
-				_ = d.Set("fqdn", host.Fqdn)
-				_ = d.Set("status", host.Status)
-				return nil
-			}
-		}
-
-		// Did not find the resource, set ID to ""
-		tflog.Warn(ctx, "did not find host with FQDN "+hostFqdn)
-		d.SetId("")
-		return nil
-	} else {
-		// Get a single host using UUID
-		params := hosts.NewGetHostParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
-		params.ID = hostUuid
-
-		host, err := apiClient.Hosts.GetHost(params)
-		if err != nil {
-			tflog.Error(ctx, err.Error())
-			return diag.FromErr(err)
-		}
-		_ = d.Set("host_id", host.Payload.ID)
-		_ = d.Set("network_pool_id", host.Payload.Networkpool.ID)
-		_ = d.Set("fqdn", host.Payload.Fqdn)
-		_ = d.Set("status", host.Payload.Status)
-		return nil
-	}
+	return nil
 }
 
 // There is no update method for commissioned hosts.
@@ -190,20 +182,19 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 
 	params := hosts.NewDecommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
 	decommissionSpec := models.HostDecommissionSpec{}
-	id := d.Id()
-	decommissionSpec.Fqdn = &id
+	decommissionSpec.Fqdn = resource_utils.ToStringPointer(d.Get("fqdn"))
 	params.HostDecommissionSpecs = []*models.HostDecommissionSpec{&decommissionSpec}
 
 	log.Println(params)
 
-	// DecommissionHosts(params *DecommissionHostsParams, opts ...ClientOption) (*DecommissionHostsOK, *DecommissionHostsAccepted, error)
 	_, accepted, err := apiClient.Hosts.DecommissionHosts(params)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
-	log.Printf("%s: Decommission task initiated. Task id %s", d.Id(), accepted.Payload.ID)
+	log.Printf("%s %s: Decommission task initiated. Task id %s",
+		d.Get("fqdn").(string), d.Id(), accepted.Payload.ID)
 	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())

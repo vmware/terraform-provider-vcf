@@ -16,6 +16,7 @@ import (
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
+	"log"
 	"strings"
 	"time"
 )
@@ -38,7 +39,8 @@ func ResourceCluster() *schema.Resource {
 			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				vcfClient := meta.(*SddcManagerClient)
 				apiClient := vcfClient.ApiClient
-				return cluster.ImportCluster(ctx, data, apiClient)
+				clusterId := data.Id()
+				return cluster.ImportCluster(ctx, data, apiClient, clusterId)
 			},
 		},
 		Schema: clusterResourceSchema,
@@ -334,6 +336,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *SddcManager
 	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
 
 	apiClient := vcfClient.ApiClient
+	log.Printf("Marking Cluster %s for deletion", clusterId)
 	acceptedUpdateTask, acceptedUpdateTask2, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
 	if err != nil {
 		return diag.FromErr(err)
@@ -354,6 +357,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *SddcManager
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	clusterDeleteParams.ID = clusterId
 
+	log.Printf("Deleting Cluster %s", clusterId)
 	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
 	if err != nil {
 		return diag.FromErr(err)

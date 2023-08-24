@@ -17,6 +17,7 @@ import (
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
+	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
 	"sort"
@@ -307,10 +308,10 @@ func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
 	return &result
 }
 
-func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) ([]*schema.ResourceData, error) {
+func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient, clusterId string) ([]*schema.ResourceData, error) {
 	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	getClusterParams.ID = data.Get("cluster_id").(string)
+	getClusterParams.ID = clusterId
 	clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
 	if err != nil {
 		return nil, err
@@ -356,5 +357,23 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(hostObj))
 	}
 	_ = data.Set("host", flattenedHostSpecs)
+
+	//get all domains and find our cluster to set the "domain_id" attribute, because
+	// cluster API doesn't provide parent domain ID.
+	getDomainsParams := domains.NewGetDomainsParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
+		WithContext(ctx)
+	domainsResult, err := apiClient.Domains.GetDomains(getDomainsParams)
+	if err != nil {
+		return nil, err
+	}
+	allDomains := domainsResult.Payload.Elements
+	for _, domain := range allDomains {
+		for _, clusterRef := range domain.Clusters {
+			if *clusterRef.ID == clusterId {
+				_ = data.Set("domain_id", domain.ID)
+			}
+		}
+	}
+
 	return []*schema.ResourceData{data}, nil
 }

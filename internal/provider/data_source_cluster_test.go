@@ -23,6 +23,7 @@ func TestAccDataSourceVcfCluster(t *testing.T) {
 					os.Getenv(constants.VcfTestClusterDataSourceId)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "name"),
+					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "domain_id"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "primary_datastore_name"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "primary_datastore_type"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "is_default"),
