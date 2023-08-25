@@ -28,20 +28,19 @@ storage (vSAN/NFS/VMFS on FC/VVOL) and networking (NSX) into a single consumable
 - `id` (String) The ID of this resource.
 - `is_management_sso_domain` (Boolean) Shows whether the domain is joined to the management domain SSO
 - `name` (String) Name of the domain
-- `nsx_cluster_ref` (List of Object) Represents NSX Manager cluster references associated with the domain (see [below for nested schema](#nestedatt--nsx_cluster_ref))
+- `nsx_configuration` (List of Object) Represents NSX Manager cluster references associated with the domain (see [below for nested schema](#nestedatt--nsx_configuration))
 - `sso_id` (String) ID of the SSO domain associated with the workload domain
 - `sso_name` (String) Name of the SSO domain associated with the workload domain
 - `status` (String) Status of the workload domain
 - `type` (String) Type of the workload domain
-- `vcenter_fqdn` (String) Fully qualified domain name of the vCenter Server instance
-- `vcenter_id` (String) ID of the vCenter Server instance
+- `vcenter` (List of Object) Specification describing vCenter Server instance settings (see [below for nested schema](#nestedatt--vcenter))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `read` (String) 
+- `read` (String)
 
 
 <a id="nestedatt--cluster"></a>
@@ -177,15 +176,28 @@ Read-Only:
 - `user_id` (String) UUID of the VASA storage user
 - `vasa_provider_id` (String) UUID of the VASA storage provider
 
-
-
-<a id="nestedatt--nsx_cluster_ref"></a>
-### Nested Schema for `nsx_cluster_ref`
-
 Read-Only:
 
 - `id` (String) NSX Manager cluster ID
+- `nsx_manager_node` (List of Object) (see [below for nested schema](#nestedobjatt--nsx_configuration--nsx_manager_node))
 - `vip` (String) Virtual IP (VIP) for the NSX Manager cluster
 - `vip_fqdn` (String) Fully qualified domain name of the NSX Manager cluster VIP
 
+<a id="nestedobjatt--nsx_configuration--nsx_manager_node"></a>
+### Nested Schema for `nsx_configuration.nsx_manager_node`
 
+Read-Only:
+
+- `dns_name` (String) Fully qualified domain name of the NSX Manager appliance, e.g., sfo-w01-nsx01a.sfo.rainpole.io
+- `ip_address` (String) IPv4 address of the NSX Manager appliance
+- `name` (String) Name of the NSX Manager appliance, e.g., sfo-w01-nsx01
+
+
+
+<a id="nestedatt--vcenter"></a>
+### Nested Schema for `vcenter`
+
+Read-Only:
+
+- `fqdn` (String) Fully qualified domain name of the vCenter Server instance
+- `id` (String) ID of the vCenter Server instance

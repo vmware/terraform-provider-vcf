@@ -22,8 +22,8 @@ func TestAccDataSourceVcfDomain(t *testing.T) {
 				Config: testAccVcfDomainDataSourceConfig(
 					os.Getenv(constants.VcfTestDomainDataSourceId)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "vcenter_id"),
-					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "vcenter_fqdn"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "vcenter.0.id"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "vcenter.0.fqdn"),
 					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "sso_id"),
@@ -38,6 +38,12 @@ func TestAccDataSourceVcfDomain(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "cluster.0.host.1.id"),
 					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "cluster.0.host.2.id"),
 					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "cluster.0.host.3.id"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "nsx_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "nsx_configuration.0.vip"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "nsx_configuration.0.vip_fqdn"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "nsx_configuration.0.nsx_manager_node.0.name"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "nsx_configuration.0.nsx_manager_node.0.ip_address"),
+					resource.TestCheckResourceAttrSet("data.vcf_domain.domain1", "nsx_configuration.0.nsx_manager_node.0.dns_name"),
 				),
 			},
 		},

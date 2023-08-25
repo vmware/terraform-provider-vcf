@@ -41,6 +41,7 @@ To use a released provider in your Terraform environment, run [`terraform init`]
 
 To instead use a custom-built provider in your Terraform environment (e.g. the provider binary from the build instructions above), follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-plugins) After placing the custom-built provider into your plugins directory,  run `terraform init` to initialize it.
 
+**NOTE:** The provider doesn't currently support VCF on VxRail
 
 ## Controlling the Provider Version
 

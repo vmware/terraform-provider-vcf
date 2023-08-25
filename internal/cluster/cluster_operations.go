@@ -284,10 +284,10 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 	return result, nil
 }
 
-func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
+func FlattenCluster(ctx context.Context, clusterObj *models.Cluster, apiClient *client.VcfClient) (*map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	if clusterObj == nil {
-		return &result
+		return &result, nil
 	}
 
 	result["id"] = clusterObj.ID
@@ -297,18 +297,20 @@ func FlattenCluster(clusterObj *models.Cluster) *map[string]interface{} {
 	result["is_default"] = clusterObj.IsDefault
 	result["is_stretched"] = clusterObj.IsStretched
 
-	// TODO typically the VCF 4.5.1 returns only the IDs for the hosts inside models.Cluster
-	// consider getting the fqdn, ip and az name with an additional GET request
-	flattenedHosts := make([]map[string]interface{}, len(clusterObj.Hosts))
-	for j, host := range clusterObj.Hosts {
-		flattenedHosts[j] = *FlattenHostReference(host)
-	}
-	result["host"] = flattenedHosts
+	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
+	result["vds"] = flattenedVdsSpecs
 
-	return &result
+	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
+	if err != nil {
+		return nil, err
+	}
+	result["host"] = flattenedHostSpecs
+
+	return &result, nil
 }
 
-func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient, clusterId string) ([]*schema.ResourceData, error) {
+func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient,
+	clusterId string) ([]*schema.ResourceData, error) {
 	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	getClusterParams.ID = clusterId
@@ -324,37 +326,12 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
 	_ = data.Set("is_default", clusterObj.IsDefault)
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
-	flattenedVdsSpecs := *new([]map[string]interface{})
-	vdsSpecs := clusterObj.VdsSpecs
-	// Since backend API returns objects in random order sort VDSSpec list to ensure
-	// import is reproducible
-	sort.SliceStable(vdsSpecs, func(i, j int) bool {
-		return *vdsSpecs[i].Name < *vdsSpecs[j].Name
-	})
-	for _, vdsSpec := range vdsSpecs {
-		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))
-	}
+	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
 	_ = data.Set("vds", flattenedVdsSpecs)
 
-	// The HostRef is supposed to have all the relevant information, but the backend returns
-	// everything as nil except the host ID which forces us to make a separate request
-	// to get some useful info about the hosts in the cluster.
-	flattenedHostSpecs := *new([]map[string]interface{})
-	hostRefs := clusterObj.Hosts
-	// Sort for reproducibility
-	sort.SliceStable(hostRefs, func(i, j int) bool {
-		return hostRefs[i].ID < hostRefs[j].ID
-	})
-	for _, hostRef := range hostRefs {
-		getHostParams := hosts.NewGetHostParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout)
-		getHostParams.ID = hostRef.ID
-		getHostResult, err := apiClient.Hosts.GetHost(getHostParams)
-		if err != nil {
-			return nil, err
-		}
-		hostObj := getHostResult.Payload
-		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(hostObj))
+	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
+	if err != nil {
+		return nil, err
 	}
 	_ = data.Set("host", flattenedHostSpecs)
 
@@ -376,4 +353,41 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 	}
 
 	return []*schema.ResourceData{data}, nil
+}
+
+// getFlattenedHostSpecsForRefs The HostRef is supposed to have all the relevant information,
+// but the backend returns everything as nil except the host ID which forces us to make a separate request
+// to get some useful info about the hosts in the cluster.
+func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []*models.HostReference,
+	apiClient *client.VcfClient) ([]map[string]interface{}, error) {
+	flattenedHostSpecs := *new([]map[string]interface{})
+	// Sort for reproducibility
+	sort.SliceStable(hostRefs, func(i, j int) bool {
+		return hostRefs[i].ID < hostRefs[j].ID
+	})
+	for _, hostRef := range hostRefs {
+		getHostParams := hosts.NewGetHostParamsWithContext(ctx).
+			WithTimeout(constants.DefaultVcfApiCallTimeout)
+		getHostParams.ID = hostRef.ID
+		getHostResult, err := apiClient.Hosts.GetHost(getHostParams)
+		if err != nil {
+			return nil, err
+		}
+		hostObj := getHostResult.Payload
+		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(hostObj))
+	}
+	return flattenedHostSpecs, nil
+}
+
+func getFlattenedVdsSpecsForRefs(vdsSpecs []*models.VdsSpec) []map[string]interface{} {
+	flattenedVdsSpecs := *new([]map[string]interface{})
+	// Since backend API returns objects in random order sort VDSSpec list to ensure
+	// import is reproducible
+	sort.SliceStable(vdsSpecs, func(i, j int) bool {
+		return *vdsSpecs[i].Name < *vdsSpecs[j].Name
+	})
+	for _, vdsSpec := range vdsSpecs {
+		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))
+	}
+	return flattenedVdsSpecs
 }

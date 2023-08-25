@@ -78,7 +78,7 @@ The result is a workload-ready SDDC environment.
 
 Required:
 
-- `host` (Block List, Min: 2) List of ESXi host information from the free pool to consume in a workload domain. The minimum of 3 hosts is required for vSAN based clusters. For external storage, 2 host clusters are also supported. (see [below for nested schema](#nestedblock--cluster--host))
+- `host` (Block List, Min: 2) List of ESXi host information from the free pool to consume in a workload domain (see [below for nested schema](#nestedblock--cluster--host))
 - `name` (String) Name of the cluster to add to the workload domain
 - `vds` (Block List, Min: 1) vSphere Distributed Switches to add to the cluster (see [below for nested schema](#nestedblock--cluster--vds))
 
@@ -297,5 +297,3 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
-
-
