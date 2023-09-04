@@ -26,7 +26,7 @@ func NsxSchema() *schema.Resource {
 			"id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of the NSX-T cluster",
+				Description: "ID of the NSX Manager cluster",
 			},
 			"vip": {
 				Type:         schema.TypeString,
