@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+	"strings"
 )
 
 // NsxSchema this helper function extracts the NSX schema, which
@@ -40,8 +41,13 @@ func NsxSchema() *schema.Resource {
 			"form_factor": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "Form factor for the NSX Manager appliance",
-				ValidateFunc: validation.NoZeroValues,
+				Description:  "Form factor for the NSX Manager appliance. One among: large, medium, small",
+				ValidateFunc: validation.StringInSlice([]string{
+					"large", "medium", "small",
+				}, true),
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return oldValue == strings.ToUpper(newValue) || strings.ToUpper(oldValue) == newValue
+				},
 			},
 			"nsx_manager_admin_password": {
 				Type:         schema.TypeString,

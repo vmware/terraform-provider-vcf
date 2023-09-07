@@ -272,7 +272,7 @@ Required:
 
 Optional:
 
-- `form_factor` (String) Form factor for the NSX Manager appliance
+- `form_factor` (String) Form factor for the NSX Manager appliance. One among: large, medium, small
 - `nsx_manager_audit_password` (String, Sensitive) NSX Manager audit user password
 
 <a id="nestedblock--nsx_configuration--nsx_manager_node"></a>
