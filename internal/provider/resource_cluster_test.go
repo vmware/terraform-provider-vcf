@@ -19,7 +19,41 @@ import (
 	"testing"
 )
 
-func TestAccResourceVcfCluster(t *testing.T) {
+func TestAccResourceVcfClusterCreate(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testCheckVcfClusterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfClusterResourceConfig(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestHost5Fqdn),
+					os.Getenv(constants.VcfTestHost5Pass),
+					os.Getenv(constants.VcfTestHost6Fqdn),
+					os.Getenv(constants.VcfTestHost6Pass),
+					os.Getenv(constants.VcfTestHost7Fqdn),
+					os.Getenv(constants.VcfTestHost7Pass),
+					os.Getenv(constants.VcfTestEsxiLicenseKey),
+					os.Getenv(constants.VcfTestVsanLicenseKey),
+					"",
+					""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_default"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "host.2.id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceVcfClusterFull(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -253,6 +287,21 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 			portgroup {
 				name = "sfo-m01-cl01-vds01-pg-vmotion"
 				transport_type = "VMOTION"
+			}
+		}
+		ip_address_pool {
+			name = "static-ip-pool-01"
+			subnet {
+				cidr = "10.0.11.0/24"
+				gateway = "10.0.11.250"
+				ip_address_pool_range {
+					start = "10.0.11.50"
+					end = "10.0.11.70"
+				}
+				ip_address_pool_range {
+					start = "10.0.11.80"
+					end = "10.0.11.150"
+				}
 			}
 		}
 		vsan_datastore {

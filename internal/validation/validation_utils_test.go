@@ -101,3 +101,29 @@ func TestValidateIpv4Address(t *testing.T) {
 		}
 	})
 }
+
+func TestIsEmpty(t *testing.T) {
+	t.Run("is object empty", func(t *testing.T) {
+		var nonEmptyMap = make(map[string]interface{})
+		nonEmptyMap["name"] = "SlavaZSU"
+		var isEmptyTests = []struct {
+			object         interface{}
+			expectedResult bool
+		}{
+			{"some string", false},
+			{nil, true},
+			{true, false},
+			{new([]interface{}), true},
+			{make(map[string]interface{}), true},
+			{append(make([]interface{}, 0), "first", "second"), false},
+			{nonEmptyMap, false},
+		}
+
+		for _, emptyTest := range isEmptyTests {
+			result := IsEmpty(emptyTest.object)
+			if emptyTest.expectedResult != result {
+				t.Errorf("%s test failed", emptyTest.object)
+			}
+		}
+	})
+}

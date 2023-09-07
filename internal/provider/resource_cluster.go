@@ -157,6 +157,14 @@ func clusterSubresourceSchema() *schema.Resource {
 				Description:  "VLAN ID use for NSX Geneve in the workload domain",
 				ValidateFunc: validation.IntBetween(0, 4095),
 			},
+			"ip_address_pool": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Description: "Contains the parameters required to create or reuse an IP address pool. Omit for DHCP, " +
+					"provide name only to reuse existing IP Pool, if subnets are provided a new IP Pool will be created",
+				Elem: network.IpAddressPoolSchema(),
+			},
 			"vds": {
 				Type:        schema.TypeList,
 				Required:    true,
