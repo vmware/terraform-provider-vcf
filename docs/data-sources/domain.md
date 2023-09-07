@@ -33,7 +33,7 @@ storage (vSAN/NFS/VMFS on FC/VVOL) and networking (NSX) into a single consumable
 - `sso_name` (String) Name of the SSO domain associated with the workload domain
 - `status` (String) Status of the workload domain
 - `type` (String) Type of the workload domain
-- `vcenter` (List of Object) Specification describing vCenter Server instance settings (see [below for nested schema](#nestedatt--vcenter))
+- `vcenter_configuration` (List of Object) Specification describing vCenter Server instance settings (see [below for nested schema](#nestedatt--vcenter_configuration))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
@@ -188,14 +188,14 @@ Read-Only:
 
 Read-Only:
 
-- `dns_name` (String) Fully qualified domain name of the NSX Manager appliance, e.g., sfo-w01-nsx01a.sfo.rainpole.io
+- `fqdn` (String) Fully qualified domain name of the NSX Manager appliance, e.g., sfo-w01-nsx01a.sfo.rainpole.io
 - `ip_address` (String) IPv4 address of the NSX Manager appliance
 - `name` (String) Name of the NSX Manager appliance, e.g., sfo-w01-nsx01
 
 
 
-<a id="nestedatt--vcenter"></a>
-### Nested Schema for `vcenter`
+<a id="nestedatt--vcenter_configuration"></a>
+### Nested Schema for `vcenter_configuration`
 
 Read-Only:
 

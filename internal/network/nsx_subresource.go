@@ -166,7 +166,7 @@ func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef *models.NsxTCluste
 		nsxtManagersNodeRaw := make(map[string]interface{})
 		nsxtManagersNodeRaw["name"] = nsxtManagerNode.Name
 		nsxtManagersNodeRaw["ip_address"] = nsxtManagerNode.IPAddress
-		nsxtManagersNodeRaw["dns_name"] = nsxtManagerNode.Fqdn
+		nsxtManagersNodeRaw["fqdn"] = nsxtManagerNode.Fqdn
 		nsxtManagersNodesRaw = append(nsxtManagersNodesRaw, nsxtManagersNodeRaw)
 	}
 

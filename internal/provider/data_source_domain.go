@@ -46,7 +46,7 @@ func DataSourceDomain() *schema.Resource {
 				Description: "Represents NSX Manager cluster references associated with the domain",
 				Elem:        network.NsxSchema(),
 			},
-			"vcenter": {
+			"vcenter_configuration": {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Description: "Specification describing vCenter Server instance settings",

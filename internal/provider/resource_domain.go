@@ -58,7 +58,7 @@ func ResourceDomain() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(3, 20),
 				Description:  "Organization name of the workload domain",
 			},
-			"vcenter": {
+			"vcenter_configuration": {
 				Type:        schema.TypeList,
 				Required:    true,
 				Description: "Specification describing vCenter Server instance settings",

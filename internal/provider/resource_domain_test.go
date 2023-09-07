@@ -11,13 +11,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client/domains"
 	"log"
 	"os"
 	"testing"
 )
 
-func TestAccResourceVcfDomain(t *testing.T) {
+func TestAccResourceVcfDomainCreate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -45,8 +46,62 @@ func TestAccResourceVcfDomain(t *testing.T) {
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_name"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.primary_datastore_type"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_default"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.1.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "cluster.0.host.2.id"),
+				),
+			},
+			{
+				ResourceName:     "vcf_domain.domain1",
+				ImportState:      true,
+				ImportStateCheck: domainImportStateCheck,
+			},
+		},
+	})
+}
+
+func TestAccResourceVcfDomainFull(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testCheckVcfDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Initial config: 1 network pool, 3 commissioned hosts, Domain with cluster with those 3 hosts
+				Config: testAccVcfDomainConfig(
+					testGenerateCommissionHostConfigs(
+						3,
+						os.Getenv(constants.VcfTestHost2Fqdn),
+						os.Getenv(constants.VcfTestHost2Pass),
+						os.Getenv(constants.VcfTestHost3Fqdn),
+						os.Getenv(constants.VcfTestHost3Pass),
+						os.Getenv(constants.VcfTestHost4Fqdn),
+						os.Getenv(constants.VcfTestHost4Pass)),
+					os.Getenv(constants.VcfTestNsxLicenseKey),
+					testAccVcfClusterInDomainConfig(
+						"sfo-w01-cl01",
+						testGenerateHostsInClusterInDomainConfig(
+							os.Getenv(constants.VcfTestEsxiLicenseKey),
+							"sfo-w01-cl01",
+							"host1", "host2", "host3"),
+						os.Getenv(constants.VcfTestVsanLicenseKey)),
+					""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.fqdn"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
@@ -96,8 +151,8 @@ func TestAccResourceVcfDomain(t *testing.T) {
 						os.Getenv(constants.VcfTestVsanLicenseKey))),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.fqdn"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
@@ -158,8 +213,8 @@ func TestAccResourceVcfDomain(t *testing.T) {
 						os.Getenv(constants.VcfTestVsanLicenseKey))),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.fqdn"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
@@ -221,8 +276,8 @@ func TestAccResourceVcfDomain(t *testing.T) {
 						os.Getenv(constants.VcfTestVsanLicenseKey))),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.fqdn"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
@@ -278,8 +333,8 @@ func TestAccResourceVcfDomain(t *testing.T) {
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.id"),
-					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter.0.fqdn"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
+					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.fqdn"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "status"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "type"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "sso_id"),
@@ -336,7 +391,7 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 
 	resource "vcf_domain" "domain1" {
 		name                    = "sfo-w01-vc01"
-		vcenter {
+		vcenter_configuration {
 			name            = "test-vcenter"
 			datacenter_name = "test-datacenter"
 			root_password   = "S@mpleP@ss123!"
@@ -345,7 +400,7 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 			ip_address      = "10.0.0.43"
 			subnet_mask     = "255.255.255.0"
 			gateway         = "10.0.0.250"
-			dns_name        = "sfo-w01-vc01.sfo.rainpole.io"
+			fqdn            = "sfo-w01-vc01.sfo.rainpole.io"
 		}
 		nsx_configuration {
 			vip        					= "10.0.0.66"
@@ -356,21 +411,21 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01a"
 				ip_address  = "10.0.0.62"
-				dns_name    = "sfo-w01-nsx01a.sfo.rainpole.io"
+				fqdn    = "sfo-w01-nsx01a.sfo.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01b"
 				ip_address  = "10.0.0.63"
-				dns_name    = "sfo-w01-nsx01b.sfo.rainpole.io"
+				fqdn    = "sfo-w01-nsx01b.sfo.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01c"
 				ip_address  = "10.0.0.64"
-				dns_name    = "sfo-w01-nsx01c.sfo.rainpole.io"
+				fqdn    = "sfo-w01-nsx01c.sfo.rainpole.io"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
@@ -466,4 +521,74 @@ func testCheckVcfDomainDestroy(state *terraform.State) error {
 
 	// Did not find the domain
 	return nil
+}
+
+func domainImportStateCheck(states []*terraform.InstanceState) error {
+	for _, state := range states {
+		if state.Ephemeral.Type != "vcf_domain" {
+			continue
+		}
+		if validationUtils.IsEmpty(state.Attributes["id"]) {
+			return fmt.Errorf("domain has no id attribute set")
+		}
+		if state.Attributes["name"] != "sfo-w01-vc01" {
+			return fmt.Errorf("domain has wrong name attribute set")
+		}
+		if state.Attributes["vcenter_configuration.0.fqdn"] != "sfo-w01-vc01.sfo.rainpole.io" {
+			return fmt.Errorf("domain has wrong name attribute set")
+		}
+		if state.Attributes["cluster.0.name"] != "sfo-w01-cl01" {
+			return fmt.Errorf("domain has wrong cluster.0.name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["vcenter_configuration.0.id"]) {
+			return fmt.Errorf("domain has no vcenter_configuration.0.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.0.id"]) {
+			return fmt.Errorf("domain has no cluster.0.host.0.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.1.id"]) {
+			return fmt.Errorf("domain has no cluster.0.host.1.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.2.id"]) {
+			return fmt.Errorf("domain has no cluster.0.host.2.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.0.ip_address"]) {
+			return fmt.Errorf("domain has no cluster.0.host.0.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.1.ip_address"]) {
+			return fmt.Errorf("domain has no cluster.0.host.1.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.2.ip_address"]) {
+			return fmt.Errorf("domain has no cluster.0.host.2.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.0.host_name"]) {
+			return fmt.Errorf("domain has no cluster.0.host.0.host_name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.1.host_name"]) {
+			return fmt.Errorf("domain has no cluster.0.host.1.host_name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["cluster.0.host.2.host_name"]) {
+			return fmt.Errorf("domain has no cluster.0.host.2.host_name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["nsx_configuration.0.id"]) {
+			return fmt.Errorf("domain has no nsx_configuration.0.id attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["nsx_configuration.0.vip"]) {
+			return fmt.Errorf("domain has no nsx_configuration.0.vip attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["nsx_configuration.0.vip_fqdn"]) {
+			return fmt.Errorf("domain has no nsx_configuration.0.vip_fqdn attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["nsx_configuration.0.nsx_manager_node.0.name"]) {
+			return fmt.Errorf("domain has no nsx_configuration.0.nsx_manager_node.0.name attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["nsx_configuration.0.nsx_manager_node.0.ip_address"]) {
+			return fmt.Errorf("domain has no nsx_configuration.0.nsx_manager_node.0.ip_address attribute set")
+		}
+		if validationUtils.IsEmpty(state.Attributes["nsx_configuration.0.nsx_manager_node.0.fqdn"]) {
+			return fmt.Errorf("domain has no nsx_configuration.0.nsx_manager_node.0.fqdn attribute set")
+		}
+		return nil
+	}
+	return fmt.Errorf("domain InstanceState not found! Import failed")
 }

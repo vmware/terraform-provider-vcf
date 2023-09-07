@@ -114,7 +114,7 @@ func SetBasicDomainAttributes(ctx context.Context, domainId string, data *schema
 	if len(domain.VCENTERS) < 1 {
 		return nil, fmt.Errorf("no vCenter Server instance found for domain %q", domainId)
 	}
-	vcenterConfigAttribute, vcenterConfigExists := data.GetOk("vcenter")
+	vcenterConfigAttribute, vcenterConfigExists := data.GetOk("vcenter_configuration")
 	var vcenterConfigRaw []interface{}
 	if vcenterConfigExists {
 		vcenterConfigRaw = vcenterConfigAttribute.([]interface{})
@@ -125,7 +125,7 @@ func SetBasicDomainAttributes(ctx context.Context, domainId string, data *schema
 	vcenterConfig := vcenterConfigRaw[0].(map[string]interface{})
 	vcenterConfig["id"] = domain.VCENTERS[0].ID
 	vcenterConfig["fqdn"] = domain.VCENTERS[0].Fqdn
-	_ = data.Set("vcenter", vcenterConfigRaw)
+	_ = data.Set("vcenter_configuration", vcenterConfigRaw)
 
 	return domain, nil
 }
@@ -214,7 +214,7 @@ func generateNsxSpecFromResourceData(data *schema.ResourceData) (*models.NsxTSpe
 }
 
 func generateVcenterSpecFromResourceData(data *schema.ResourceData) (*models.VcenterSpec, error) {
-	if vcenterConfigRaw, ok := data.GetOk("vcenter"); ok && len(vcenterConfigRaw.([]interface{})) > 0 {
+	if vcenterConfigRaw, ok := data.GetOk("vcenter_configuration"); ok && len(vcenterConfigRaw.([]interface{})) > 0 {
 		vcenterConfigList := vcenterConfigRaw.([]interface{})
 		vcenterConfigListEntry := vcenterConfigList[0].(map[string]interface{})
 		vcenterSpec, err := vcenter.TryConvertToVcenterSpec(vcenterConfigListEntry)

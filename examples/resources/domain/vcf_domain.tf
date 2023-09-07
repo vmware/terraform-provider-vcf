@@ -62,7 +62,7 @@ resource "vcf_host" "host3" {
 }
 resource "vcf_domain" "domain1" {
   name                    = "sfo-w01-vc01"
-  vcenter {
+  vcenter_configuration {
     name            = "test-vcenter"
     datacenter_name = "test-datacenter"
     root_password   = var.vcenter_root_password
@@ -71,7 +71,7 @@ resource "vcf_domain" "domain1" {
     ip_address      = "10.0.0.43"
     subnet_mask     = "255.255.255.0"
     gateway         = "10.0.0.250"
-    dns_name        = "sfo-w01-vc01.sfo.rainpole.io"
+    fqdn            = "sfo-w01-vc01.sfo.rainpole.io"
   }
   nsx_configuration {
     vip        					= "10.0.0.66"
@@ -82,21 +82,21 @@ resource "vcf_domain" "domain1" {
     nsx_manager_node {
       name        = "sfo-w01-nsx01a"
       ip_address  = "10.0.0.62"
-      dns_name    = "sfo-w01-nsx01a.sfo.rainpole.io"
+      fqdn    = "sfo-w01-nsx01a.sfo.rainpole.io"
       subnet_mask = "255.255.255.0"
       gateway     = "10.0.0.250"
     }
     nsx_manager_node {
       name        = "sfo-w01-nsx01b"
       ip_address  = "10.0.0.63"
-      dns_name    = "sfo-w01-nsx01b.sfo.rainpole.io"
+      fqdn    = "sfo-w01-nsx01b.sfo.rainpole.io"
       subnet_mask = "255.255.255.0"
       gateway     = "10.0.0.250"
     }
     nsx_manager_node {
       name        = "sfo-w01-nsx01c"
       ip_address  = "10.0.0.64"
-      dns_name    = "sfo-w01-nsx01c.sfo.rainpole.io"
+      fqdn    = "sfo-w01-nsx01c.sfo.rainpole.io"
       subnet_mask = "255.255.255.0"
       gateway     = "10.0.0.250"
     }
