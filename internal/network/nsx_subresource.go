@@ -49,9 +49,9 @@ func NsxSchema() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"form_factor": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Description:  "Form factor for the NSX Manager appliance. One among: large, medium, small",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Form factor for the NSX Manager appliance. One among: large, medium, small",
 				ValidateFunc: validation.StringInSlice([]string{
 					"large", "medium", "small",
 				}, true),
