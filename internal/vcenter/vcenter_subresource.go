@@ -25,9 +25,10 @@ func VCSubresourceSchema() *schema.Resource {
 				Description: "ID of the vCenter Server instance",
 			},
 			"fqdn": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Fully qualified domain name of the vCenter Server instance",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Fully qualified domain name of the vCenter Server instance",
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"name": {
 				Type:         schema.TypeString,
@@ -88,12 +89,6 @@ func VCSubresourceSchema() *schema.Resource {
 				Description:  "IPv4 gateway of the vCenter Server instance",
 				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
-			"dns_name": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Fully qualified domain name of the vCenter Server instance",
-				ValidateFunc: validation.NoZeroValues,
-			},
 		},
 	}
 }
@@ -126,9 +121,9 @@ func TryConvertToVcenterSpec(object map[string]interface{}) (*models.VcenterSpec
 	if len(gateway) == 0 {
 		return nil, fmt.Errorf("cannot convert to VcenterSpec, gateway is required")
 	}
-	dnsName := object["dns_name"].(string)
-	if len(dnsName) == 0 {
-		return nil, fmt.Errorf("cannot convert to VcenterSpec, dns_name is required")
+	fqdn := object["fqdn"].(string)
+	if len(fqdn) == 0 {
+		return nil, fmt.Errorf("cannot convert to VcenterSpec, fqdn is required")
 	}
 	vcenterStorageSize, ok := object["storage_size"].(string)
 	if !ok {
@@ -141,7 +136,7 @@ func TryConvertToVcenterSpec(object map[string]interface{}) (*models.VcenterSpec
 	networkDetailsSpec := new(models.NetworkDetailsSpec)
 	networkDetailsSpec.IPAddress = &ipAddress
 	networkDetailsSpec.SubnetMask = subnetMask
-	networkDetailsSpec.DNSName = dnsName
+	networkDetailsSpec.DNSName = fqdn
 	networkDetailsSpec.Gateway = gateway
 
 	return &models.VcenterSpec{

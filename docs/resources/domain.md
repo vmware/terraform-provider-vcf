@@ -56,7 +56,7 @@ The result is a workload-ready SDDC environment.
 
 - `cluster` (Block List, Min: 1) Specification representing the clusters to be added to the workload domain (see [below for nested schema](#nestedblock--cluster))
 - `name` (String) Name of the domain (from 3 to 20 characters)
-- `vcenter` (Block List, Min: 1, Max: 1) Specification describing vCenter Server instance settings (see [below for nested schema](#nestedblock--vcenter))
+- `vcenter_configuration` (Block List, Min: 1, Max: 1) Specification describing vCenter Server instance settings (see [below for nested schema](#nestedblock--vcenter_configuration))
 
 ### Optional
 
@@ -78,7 +78,7 @@ The result is a workload-ready SDDC environment.
 
 Required:
 
-- `host` (Block List, Min: 2) List of ESXi host information from the free pool to consume in a workload domain. The minimum of 3 hosts is required for vSAN based clusters. For external storage, 2 host clusters are also supported. (see [below for nested schema](#nestedblock--cluster--host))
+- `host` (Block List, Min: 2) List of ESXi host information from the free pool to consume in a workload domain (see [below for nested schema](#nestedblock--cluster--host))
 - `name` (String) Name of the cluster to add to the workload domain
 - `vds` (Block List, Min: 1) vSphere Distributed Switches to add to the cluster (see [below for nested schema](#nestedblock--cluster--vds))
 
@@ -235,13 +235,13 @@ Required:
 
 
 
-<a id="nestedblock--vcenter"></a>
-### Nested Schema for `vcenter`
+<a id="nestedblock--vcenter_configuration"></a>
+### Nested Schema for `vcenter_configuration`
 
 Required:
 
 - `datacenter_name` (String) vSphere datacenter name
-- `dns_name` (String) Fully qualified domain name of the vCenter Server instance
+- `fqdn` (String) Fully qualified domain name of the vCenter Server instance
 - `gateway` (String) IPv4 gateway of the vCenter Server instance
 - `ip_address` (String) IPv4 address of the vCenter virtual machine
 - `name` (String) Name of the vCenter Server Appliance virtual machine to be created for the workload domain
@@ -255,7 +255,6 @@ Optional:
 
 Read-Only:
 
-- `fqdn` (String) Fully qualified domain name of the vCenter Server instance
 - `id` (String) ID of the vCenter Server instance
 
 
@@ -280,7 +279,7 @@ Optional:
 
 Required:
 
-- `dns_name` (String) Fully qualified domain name of the NSX Manager appliance, e.g., sfo-w01-nsx01a.sfo.rainpole.io
+- `fqdn` (String) Fully qualified domain name of the NSX Manager appliance, e.g., sfo-w01-nsx01a.sfo.rainpole.io
 - `gateway` (String) IPv4 gateway the NSX Manager appliance
 - `ip_address` (String) IPv4 address of the NSX Manager appliance
 - `name` (String) Name of the NSX Manager appliance, e.g., sfo-w01-nsx01
@@ -297,5 +296,3 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
-
-

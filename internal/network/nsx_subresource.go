@@ -6,11 +6,16 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/client"
+	"github.com/vmware/vcf-sdk-go/client/nsxt_clusters"
 	"github.com/vmware/vcf-sdk-go/models"
+	"sort"
 )
 
 // NsxSchema this helper function extracts the NSX schema, which
@@ -18,6 +23,11 @@ import (
 func NsxSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "ID of the NSX Manager cluster",
+			},
 			"vip": {
 				Type:         schema.TypeString,
 				Required:     true,
@@ -127,38 +137,42 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 	return result, nil
 }
 
-// NsxClusterRefSchema this helper function extracts the NSX Cluster Reference schema, which
-// contains information provided by the domain data source.
-func NsxClusterRefSchema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "ID of the NSX Manager cluster",
-			},
-			"vip": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Virtual IP address (VIP) of the NSX Manager cluster",
-			},
-			"vip_fqdn": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Fully qualified domain name of the NSX Manager cluster VIP",
-			},
-		},
+func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef *models.NsxTClusterReference,
+	apiClient *client.VcfClient) (*[]interface{}, error) {
+	flattenedNsxCluster := make(map[string]interface{})
+	if nsxtClusterRef == nil {
+		return new([]interface{}), nil
 	}
-}
+	flattenedNsxCluster["id"] = nsxtClusterRef.ID
+	flattenedNsxCluster["vip"] = nsxtClusterRef.Vip
+	flattenedNsxCluster["vip_fqdn"] = nsxtClusterRef.VipFqdn
 
-func FlattenNsxClusterRef(nsxClusterRef *models.NsxTClusterReference) *map[string]interface{} {
-	result := make(map[string]interface{})
-	if nsxClusterRef == nil {
-		return &result
+	getNsxTClusterParams := nsxt_clusters.NewGetNSXTClusterParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(nsxtClusterRef.ID)
+
+	nsxtClusterResponse, err := apiClient.NSXTClusters.GetNSXTCluster(getNsxTClusterParams)
+	if err != nil {
+		return nil, err
 	}
-	result["id"] = nsxClusterRef.ID
-	result["vip"] = nsxClusterRef.Vip
-	result["vip_fqdn"] = nsxClusterRef.VipFqdn
+	nsxtCluster := nsxtClusterResponse.Payload
+	nsxtManagerNodes := nsxtCluster.Nodes
+	// Since backend API returns objects in random order sort nsxtManagerNodes list to ensure
+	// import is reproducible
+	sort.SliceStable(nsxtManagerNodes, func(i, j int) bool {
+		return nsxtManagerNodes[i].ID < nsxtManagerNodes[j].ID
+	})
+	nsxtManagersNodesRaw := *new([]map[string]interface{})
+	for _, nsxtManagerNode := range nsxtManagerNodes {
+		nsxtManagersNodeRaw := make(map[string]interface{})
+		nsxtManagersNodeRaw["name"] = nsxtManagerNode.Name
+		nsxtManagersNodeRaw["ip_address"] = nsxtManagerNode.IPAddress
+		nsxtManagersNodeRaw["fqdn"] = nsxtManagerNode.Fqdn
+		nsxtManagersNodesRaw = append(nsxtManagersNodesRaw, nsxtManagersNodeRaw)
+	}
 
-	return &result
+	flattenedNsxCluster["nsx_manager_node"] = nsxtManagersNodesRaw
+	result := *new([]interface{})
+	result = append(result, flattenedNsxCluster)
+
+	return &result, nil
 }

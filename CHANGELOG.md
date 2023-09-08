@@ -2,14 +2,22 @@
 
 ## [v0.4.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.4.0)
 
-> Release Date: Aug X 2023
+> Release Date: Sep 8th 2023
 
 BREAKING CHANGES:
 
 * Removed the attribute "host_id" from the "vcf_host" resource and replaced it with just "id" as per Terraform standard practice. This way users can refer to the Host UUID (in cluster host spec for example) in the standard way, e.g. "vcf_host.host1.id"
+* Replaced attribute "nsx_cluster_ref" from the "vcf_domain" datasource with a richer "nsx_configuration", that additionally contains IPs, Names and DNS Names of NSX-T Manager Nodes
+* Renamed attribute "nsx_configuration.nsx_manager_node.dns_name" in "vcf_domain" to "nsx_configuration.nsx_manager_node.fqdn" for clarity
+* Renamed attribute "vcenter" to "vcenter_configuration" in "vcf_domain" resource and "vcf_domain" datasource
+* Replaced attribute "dns_name" in "vcenter_configuration" in "vcf_domain" resource with "fqdn"
+* Replaced attribute "vcenter_fqdn" and "vcenter_id from the "vcf_domain" datasource with "vcenter_configuration" subresource, that contains "id" and "fqdn" attributes. 
 
 FEATURES:
 * Extend support for host resource: import [\#36](https://github.com/vmware/terraform-provider-vcf/issues/36)
+* Add support for workload domain resource: import [\#35](https://github.com/vmware/terraform-provider-vcf/issues/35)
+
+**Note:** Management domain cannot be imported, but can be used as datasource
 
 BUG FIXES:
 * Include "domain_id" attribute to both imported cluster and cluster datasource [\#49](https://github.com/vmware/terraform-provider-vcf/issues/49)

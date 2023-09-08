@@ -30,7 +30,7 @@ func NsxManagerNodeSchema() *schema.Resource {
 				Description:  "IPv4 address of the NSX Manager appliance",
 				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
-			"dns_name": {
+			"fqdn": {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "Fully qualified domain name of the NSX Manager appliance, e.g., sfo-w01-nsx01a.sfo.rainpole.io",
@@ -69,8 +69,8 @@ func TryConvertToNsxManagerNodeSpec(object map[string]interface{}) (models.NsxMa
 	result.NetworkDetailsSpec = &models.NetworkDetailsSpec{
 		IPAddress: &ipAddress,
 	}
-	if dnsName, ok := object["dns_name"]; ok && !validationutils.IsEmpty(dnsName) {
-		result.NetworkDetailsSpec.DNSName = dnsName.(string)
+	if fqdn, ok := object["fqdn"]; ok && !validationutils.IsEmpty(fqdn) {
+		result.NetworkDetailsSpec.DNSName = fqdn.(string)
 	}
 	if subnetMask, ok := object["subnet_mask"]; ok && !validationutils.IsEmpty(subnetMask) {
 		result.NetworkDetailsSpec.SubnetMask = subnetMask.(string)

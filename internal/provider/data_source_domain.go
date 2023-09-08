@@ -7,18 +7,12 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/terraform-provider-vcf/internal/cluster"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/terraform-provider-vcf/internal/domain"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/clusters"
-	"github.com/vmware/vcf-sdk-go/client/domains"
-	"github.com/vmware/vcf-sdk-go/models"
-	"sort"
+	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
 	"time"
 )
 
@@ -46,21 +40,17 @@ func DataSourceDomain() *schema.Resource {
 				Description: "Specification representing the clusters in the workload domain",
 				Elem:        clusterSubresourceSchema(),
 			},
-			"nsx_cluster_ref": {
+			"nsx_configuration": {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Description: "Represents NSX Manager cluster references associated with the domain",
-				Elem:        network.NsxClusterRefSchema(),
+				Elem:        network.NsxSchema(),
 			},
-			"vcenter_id": {
-				Type:        schema.TypeString,
+			"vcenter_configuration": {
+				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "ID of the vCenter Server instance",
-			},
-			"vcenter_fqdn": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Fully qualified domain name of the vCenter Server instance",
+				Description: "Specification describing vCenter Server instance settings",
+				Elem:        vcenter.VCSubresourceSchema(),
 			},
 			"status": {
 				Type:        schema.TypeString,
@@ -94,60 +84,11 @@ func DataSourceDomain() *schema.Resource {
 func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*SddcManagerClient)
 	apiClient := vcfClient.ApiClient
+	domainId := data.Get("domain_id").(string)
 
-	getDomainParams := domains.NewGetDomainParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	getDomainParams.ID = data.Get("domain_id").(string)
-	domainResult, err := apiClient.Domains.GetDomain(getDomainParams)
+	_, err := domain.ImportDomain(ctx, data, apiClient, domainId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	domain := domainResult.Payload
-
-	data.SetId(domain.ID)
-	_ = data.Set("name", domain.Name)
-	_ = data.Set("status", domain.Status)
-	_ = data.Set("type", domain.Type)
-	_ = data.Set("sso_id", domain.SSOID)
-	_ = data.Set("sso_name", domain.SSOName)
-	_ = data.Set("is_management_sso_domain", domain.IsManagementSSODomain)
-	if len(domain.VCENTERS) < 1 {
-		return diag.FromErr(fmt.Errorf("no vCenter Server instance found for domain %q", data.Id()))
-	}
-	_ = data.Set("vcenter_id", domain.VCENTERS[0].ID)
-	_ = data.Set("vcenter_fqdn", domain.VCENTERS[0].Fqdn)
-
-	err = setClustersDataToDomainDataSource(domain.Clusters, ctx, data, apiClient)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	flattenedNsxClusterRef := make([]map[string]interface{}, 1)
-	flattenedNsxClusterRef[0] = *network.FlattenNsxClusterRef(domain.NSXTCluster)
-	_ = data.Set("nsx_cluster_ref", flattenedNsxClusterRef)
-	return nil
-}
-
-func setClustersDataToDomainDataSource(domainClusterRefs []*models.ClusterReference, ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) error {
-	clusterIds := make([]string, len(domainClusterRefs))
-	for i, clusterReference := range domainClusterRefs {
-		clusterIds[i] = *clusterReference.ID
-	}
-	// Sort the id slice, to have a deterministic order in every run of the domain datasource read
-	sort.Strings(clusterIds)
-
-	flattenedClusters := make([]map[string]interface{}, len(domainClusterRefs))
-	for i, clusterId := range clusterIds {
-		getClusterParams := clusters.GetClusterParams{ID: clusterId}
-		getClusterParams.WithContext(ctx).WithTimeout(constants.DefaultVcfApiCallTimeout)
-		clusterResult, err := apiClient.Clusters.GetCluster(&getClusterParams)
-		if err != nil {
-			return err
-		}
-		clusterRef := clusterResult.Payload
-		flattenedClusters[i] = *cluster.FlattenCluster(clusterRef)
-
-	}
-	_ = data.Set("cluster", flattenedClusters)
-
 	return nil
 }
