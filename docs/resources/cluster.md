@@ -59,6 +59,7 @@ The following data is prerequisite for creation:
 - `evc_mode` (String) EVC mode for new cluster, if needed. One among: INTEL_MEROM, INTEL_PENRYN, INTEL_NEALEM, INTEL_WESTMERE, INTEL_SANDYBRIDGE, INTEL_IVYBRIDGE, INTEL_HASWELL, INTEL_BROADWELL, INTEL_SKYLAKE, INTEL_CASCADELAKE, AMD_REV_E, AMD_REV_F, AMD_GREYHOUND_NO3DNOW, AMD_GREYHOUND, AMD_BULLDOZER, AMD_PILEDRIVER, AMD_STREAMROLLER, AMD_ZEN
 - `geneve_vlan_id` (Number) VLAN ID use for NSX Geneve in the workload domain
 - `high_availability_enabled` (Boolean) vSphere High Availability settings for the cluster
+- `ip_address_pool` (Block List, Max: 1) Contains the parameters required to create or reuse an IP address pool. Omit for DHCP, provide name only to reuse existing IP Pool, if subnets are provided a new IP Pool will be created (see [below for nested schema](#nestedblock--ip_address_pool))
 - `nfs_datastores` (Block List) Cluster storage configuration for NFS (see [below for nested schema](#nestedblock--nfs_datastores))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `vmfs_datastore` (Block List, Max: 1) Cluster storage configuration for VMFS (see [below for nested schema](#nestedblock--vmfs_datastore))
@@ -146,6 +147,42 @@ Required:
 Optional:
 
 - `active_uplinks` (List of String) List of active uplinks associated with portgroup. This is only supported for VxRail.
+
+
+
+<a id="nestedblock--ip_address_pool"></a>
+### Nested Schema for `ip_address_pool`
+
+Required:
+
+- `name` (String) Providing only name of existing IP Address Pool reuses it, while providing a new name with subnets creates a new one
+
+Optional:
+
+- `description` (String) Description of the IP address pool
+- `ignore_unavailable_nsx_cluster` (Boolean) Ignore unavailable NSX cluster(s) during IP pool spec validation
+- `subnet` (Block List) List of IP address pool subnet specifications (see [below for nested schema](#nestedblock--ip_address_pool--subnet))
+
+<a id="nestedblock--ip_address_pool--subnet"></a>
+### Nested Schema for `ip_address_pool.subnet`
+
+Required:
+
+- `cidr` (String) The subnet representation, contains the network address and the prefix length
+- `gateway` (String) The default gateway address of the network
+
+Optional:
+
+- `ip_address_pool_range` (Block List) List of the IP allocation ranges. At least 1 IP address range has to be specified (see [below for nested schema](#nestedblock--ip_address_pool--subnet--ip_address_pool_range))
+
+<a id="nestedblock--ip_address_pool--subnet--ip_address_pool_range"></a>
+### Nested Schema for `ip_address_pool.subnet.ip_address_pool_range`
+
+Required:
+
+- `end` (String) The last IP Address of the IP Address Range
+- `start` (String) The first IP Address of the IP Address Range
+
 
 
 
