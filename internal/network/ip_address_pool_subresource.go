@@ -90,6 +90,7 @@ func TryConvertToIPAddressPoolSpec(object map[string]interface{}) (*models.IPAdd
 	if len(name) == 0 {
 		return nil, fmt.Errorf("cannot convert to IPAddressPoolSpec, name is required")
 	}
+	result.Name = &name
 	if description, ok := object["description"]; ok && !validationutils.IsEmpty(description) {
 		result.Description = description.(string)
 	}
