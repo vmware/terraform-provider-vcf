@@ -2,7 +2,7 @@
 
 ## [v0.4.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.4.0)
 
-> Release Date: Sep 8th 2023
+> Release Date: Sep 11th 2023
 
 BREAKING CHANGES:
 
@@ -16,6 +16,7 @@ BREAKING CHANGES:
 FEATURES:
 * Extend support for host resource: import [\#36](https://github.com/vmware/terraform-provider-vcf/issues/36)
 * Add support for workload domain resource: import [\#35](https://github.com/vmware/terraform-provider-vcf/issues/35)
+* Add support for configuration of NSX host TEP pool (static / DHCP) in r/vcf_domain [\#54](https://github.com/vmware/terraform-provider-vcf/issues/54)
 
 **Note:** Management domain cannot be imported, but can be used as datasource
 

@@ -111,6 +111,7 @@ func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.Clu
 	intermediaryMap["evc_mode"] = data.Get("evc_mode")
 	intermediaryMap["high_availability_enabled"] = data.Get("high_availability_enabled")
 	intermediaryMap["geneve_vlan_id"] = data.Get("geneve_vlan_id")
+	intermediaryMap["ip_address_pool"] = data.Get("ip_address_pool")
 	intermediaryMap["host"] = data.Get("host")
 	intermediaryMap["vds"] = data.Get("vds")
 	intermediaryMap["vsan_datastore"] = data.Get("vsan_datastore")
@@ -159,6 +160,17 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 
 	if geneveVlanId, ok := object["geneve_vlan_id"]; ok && !validationUtils.IsEmpty(geneveVlanId) {
 		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = int32(geneveVlanId.(int))
+	}
+
+	if ipAddressPoolRaw, ok := object["ip_address_pool"]; ok && !validationUtils.IsEmpty(ipAddressPoolRaw) {
+		ipAddressPoolList := ipAddressPoolRaw.([]interface{})
+		if !validationUtils.IsEmpty(ipAddressPoolList[0]) {
+			ipAddressPoolSpec, err := network.TryConvertToIPAddressPoolSpec(ipAddressPoolList[0].(map[string]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.IPAddressPoolSpec = ipAddressPoolSpec
+		}
 	}
 
 	if hostsRaw, ok := object["host"]; ok {

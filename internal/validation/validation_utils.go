@@ -193,6 +193,12 @@ func IsEmpty(object interface{}) bool {
 			return false
 		}
 	}
+	objectAnyMap, ok := object.(map[string]interface{})
+	if ok {
+		if len(objectAnyMap) > 0 {
+			return false
+		}
+	}
 	_, ok = object.(int)
 
 	return !ok
