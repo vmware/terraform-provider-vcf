@@ -165,7 +165,7 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	if ipAddressPoolRaw, ok := object["ip_address_pool"]; ok && !validationUtils.IsEmpty(ipAddressPoolRaw) {
 		ipAddressPoolList := ipAddressPoolRaw.([]interface{})
 		if !validationUtils.IsEmpty(ipAddressPoolList[0]) {
-			ipAddressPoolSpec, err := network.TryConvertToIPAddressPoolSpec(ipAddressPoolList[0].(map[string]interface{}))
+			ipAddressPoolSpec, err := network.GetIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{}))
 			if err != nil {
 				return nil, err
 			}

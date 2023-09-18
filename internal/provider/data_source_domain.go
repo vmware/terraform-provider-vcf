@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/domain"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
@@ -82,7 +83,7 @@ func DataSourceDomain() *schema.Resource {
 }
 
 func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 	domainId := data.Get("domain_id").(string)
 

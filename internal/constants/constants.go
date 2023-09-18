@@ -15,6 +15,13 @@ const (
 	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for Acceptance tests.
 	VcfTestPassword = "VCF_TEST_PASSWORD"
 
+	// CloudBuilderTestUrl URL of a CloudBuilder instance, used for Acceptance tests.
+	CloudBuilderTestUrl = "CLOUDBUILDER_TEST_URL"
+	// CloudBuilderTestUsername username of CloudBuilder user, used for Acceptance tests.
+	CloudBuilderTestUsername = "CLOUDBUILDER_TEST_USERNAME"
+	// CloudBuilderTestPassword an CloudBuilder user, used for Acceptance tests.
+	CloudBuilderTestPassword = "CLOUDBUILDER_TEST_PASSWORD"
+
 	// VcfTestAllowUnverifiedTls allows VCF environments with self-signed certificates
 	// to be used in Acceptance tests.
 	VcfTestAllowUnverifiedTls = "VCF_TEST_ALLOW_UNVERIFIED_TLS"

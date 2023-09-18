@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client/domains"
@@ -494,7 +495,7 @@ func testGenerateCommissionHostConfigs(numberOfCommissionedHosts int, commission
 }
 
 func testCheckVcfDomainDestroy(state *terraform.State) error {
-	vcfClient := testAccProvider.Meta().(*SddcManagerClient)
+	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	for _, rs := range state.RootModule().Resources {

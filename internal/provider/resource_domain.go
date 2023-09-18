@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/cluster"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/domain"
@@ -31,7 +32,7 @@ func ResourceDomain() *schema.Resource {
 		DeleteContext: resourceDomainDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				vcfClient := meta.(*SddcManagerClient)
+				vcfClient := meta.(*api_client.SddcManagerClient)
 				apiClient := vcfClient.ApiClient
 				domainId := data.Id()
 				// NOTE: Management domain cannot be imported, to not allow users to accidentally delete it,
@@ -110,7 +111,7 @@ func ResourceDomain() *schema.Resource {
 }
 
 func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	domainCreationSpec, err := domain.CreateDomainCreationSpec(data)
@@ -153,7 +154,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 }
 
 func resourceDomainRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	domainObj, err := domain.SetBasicDomainAttributes(ctx, data.Id(), data, apiClient)
@@ -174,7 +175,7 @@ func resourceDomainRead(ctx context.Context, data *schema.ResourceData, meta int
 }
 
 func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	// Domain Update API supports only changes to domain name and Cluster Import
@@ -217,7 +218,7 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 }
 
 func handleClusterAddRemoveToDomain(ctx context.Context, domainId string, newClustersList, oldClustersList []interface{},
-	vcfClient *SddcManagerClient) diag.Diagnostics {
+	vcfClient *api_client.SddcManagerClient) diag.Diagnostics {
 	addedClustersList, removedClustersList := resource_utils.CalculateAddedRemovedResources(newClustersList, oldClustersList)
 	for _, addedCluster := range addedClustersList {
 		clusterSpec, err := cluster.TryConvertToClusterSpec(addedCluster)
@@ -243,7 +244,7 @@ func handleClusterAddRemoveToDomain(ctx context.Context, domainId string, newClu
 }
 
 func handleClusterUpdateInDomain(ctx context.Context, newClustersStateList, oldClustersStateList []interface{},
-	vcfClient *SddcManagerClient) diag.Diagnostics {
+	vcfClient *api_client.SddcManagerClient) diag.Diagnostics {
 	if len(oldClustersStateList) != len(newClustersStateList) {
 		return diag.FromErr(fmt.Errorf("expecting old and new cluster list to have the same length"))
 	}
@@ -282,7 +283,7 @@ func handleClusterUpdateInDomain(ctx context.Context, newClustersStateList, oldC
 }
 
 func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	markForDeleteUpdateSpec := domain.CreateDomainUpdateSpec(data, true)

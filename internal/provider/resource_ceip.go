@@ -1,5 +1,7 @@
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+/*
+ *  Copyright 2023 VMware, Inc.
+ *    SPDX-License-Identifier: MPL-2.0
+ */
 
 package provider
 
@@ -8,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/ceip"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -57,7 +60,7 @@ func resourceCeipCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*SddcManagerClient).ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	ceipResult, err := apiClient.CEIP.GetCEIPStatus(ceip.NewGetCEIPStatusParamsWithTimeout(constants.DefaultVcfApiCallTimeout))
 	if err != nil {
@@ -70,7 +73,7 @@ func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	params := ceip.NewUpdateCEIPStatusParamsWithTimeout(2 * time.Minute)
@@ -106,7 +109,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
  * Mapping deletion of ceip resource to disabling ceip.
  */
 func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	params := ceip.NewUpdateCEIPStatusParams()

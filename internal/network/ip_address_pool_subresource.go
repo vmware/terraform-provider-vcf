@@ -81,7 +81,7 @@ func IpAddressPoolSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToIPAddressPoolSpec(object map[string]interface{}) (*models.IPAddressPoolSpec, error) {
+func GetIpAddressPoolSpecFromSchema(object map[string]interface{}) (*models.IPAddressPoolSpec, error) {
 	result := &models.IPAddressPoolSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to IPAddressPoolSpec, object is nil")
@@ -102,7 +102,7 @@ func TryConvertToIPAddressPoolSpec(object map[string]interface{}) (*models.IPAdd
 		if len(subnetsList) > 0 {
 			result.Subnets = []*models.IPAddressPoolSubnetSpec{}
 			for _, subnetsListEntry := range subnetsList {
-				iPAddressPoolSubnetSpec, err := tryConvertToIPAddressPoolSubnetSpec(subnetsListEntry.(map[string]interface{}))
+				iPAddressPoolSubnetSpec, err := getIpAddressPoolSubnetSpecFromSchema(subnetsListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
@@ -114,7 +114,7 @@ func TryConvertToIPAddressPoolSpec(object map[string]interface{}) (*models.IPAdd
 	return result, nil
 }
 
-func tryConvertToIPAddressPoolSubnetSpec(object map[string]interface{}) (*models.IPAddressPoolSubnetSpec, error) {
+func getIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*models.IPAddressPoolSubnetSpec, error) {
 	result := &models.IPAddressPoolSubnetSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to IPAddressPoolSubnetSpec, object is nil")
