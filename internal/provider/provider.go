@@ -91,16 +91,16 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	vcfUsername, isVcfUsernameSet := data.GetOk("sddc_manager_username")
-	allowUnverifiedTls := data.Get("allow_unverified_tls")
+	sddcManagerUsername, isVcfUsernameSet := data.GetOk("sddc_manager_username")
+	allowUnverifiedTLS := data.Get("allow_unverified_tls")
 	if isVcfUsernameSet {
 		password, isSetPassword := data.GetOk("sddc_manager_password")
 		hostName, isSetHost := data.GetOk("sddc_manager_host")
 		if !isVcfUsernameSet || !isSetPassword || !isSetHost {
-			return nil, diag.Errorf("SDDC Manager vcfUsername, password, and URL must be provided")
+			return nil, diag.Errorf("SDDC Manager username, password and host must be provided")
 		}
-		var sddcManagerClient = api_client.NewSddcManagerClient(vcfUsername.(string), password.(string),
-			hostName.(string), allowUnverifiedTls.(bool))
+		var sddcManagerClient = api_client.NewSddcManagerClient(sddcManagerUsername.(string), password.(string),
+			hostName.(string), allowUnverifiedTLS.(bool))
 		err := sddcManagerClient.Connect()
 		if err != nil {
 			return nil, diag.FromErr(err)
@@ -111,10 +111,10 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		password, isSetPassword := data.GetOk("cloud_builder_password")
 		hostName, isSetHost := data.GetOk("cloud_builder_host")
 		if !isCbUsernameSet || !isSetPassword || !isSetHost {
-			return nil, diag.Errorf("CloudBuilder username, password, and URL must be provided")
+			return nil, diag.Errorf("CloudBuilder username, password and host must be provided")
 		}
 		var cloudBuilderClient = api_client.NewCloudBuilderClient(cbUsername.(string), password.(string),
-			hostName.(string), allowUnverifiedTls.(bool))
+			hostName.(string), allowUnverifiedTLS.(bool))
 		return cloudBuilderClient, nil
 	}
 }

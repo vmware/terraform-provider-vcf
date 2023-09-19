@@ -21,7 +21,7 @@ func GetPscSchema() *schema.Schema {
 			Schema: map[string]*schema.Schema{
 				"admin_user_sso_password": {
 					Type:         schema.TypeString,
-					Description:  "Admin user sso passwordPassword needs to be a strong password with at least one Uppercase alphabet, one lowercase alphabet, one digit and one special character specified in braces [!$%^] and 8-20 characters in length,and 3 maximum identical adjacent characters!",
+					Description:  "Admin user sso password. Password needs to be a strong password with at least one Uppercase alphabet, one lowercase alphabet, one digit and one special character specified in braces [!$%^] and 8-20 characters in length,and 3 maximum identical adjacent characters!",
 					Required:     true,
 					ValidateFunc: validation.ValidatePassword,
 				},

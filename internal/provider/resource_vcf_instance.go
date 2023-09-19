@@ -34,7 +34,7 @@ func ResourceVcfInstance() *schema.Resource {
 		UpdateContext: resourceVcfInstanceUpdate,
 		DeleteContext: resourceVcfInstanceDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(12 * time.Hour),
+			Create: schema.DefaultTimeout(4 * time.Hour),
 		},
 		Schema: map[string]*schema.Schema{
 			"ceip_enabled": {
@@ -89,8 +89,7 @@ func ResourceVcfInstance() *schema.Resource {
 					ValidateFunc: validation.IsIPAddress,
 				},
 			},
-			"psc":         sddc.GetPscSchema(),
-			"remote_site": sddc.GetRemoteSiteSchema(),
+			"psc": sddc.GetPscSchema(),
 			"instance_id": {
 				Type:        schema.TypeString,
 				Description: "Client string that identifies an SDDC by name or instance name. Used for management domain name. Can contain only letters, numbers and the following symbols: '-'. Example: \"sfo01-m01\", Length 3-20 characters",
@@ -169,9 +168,6 @@ func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 	if pscSpecs, ok := d.GetOk("psc"); ok {
 		sddcSpec.PscSpecs = sddc.GetPscSpecsFromSchema(pscSpecs.([]interface{}))
-	}
-	if remoteSiteSpec, ok := d.GetOk("remote_site"); ok {
-		sddcSpec.RemoteSiteSpec = sddc.GetRemoteSiteSpecFromSchema(remoteSiteSpec.([]interface{}))
 	}
 	if sddcID, ok := d.GetOk("instance_id"); ok {
 		sddcSpec.SDDCID = utils.ToStringPointer(sddcID)
