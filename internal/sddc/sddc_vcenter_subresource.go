@@ -13,7 +13,7 @@ import (
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
-var vmSizeValues = []string{"xlarge", "large", "medium", "small", "tiny"}
+var vmSizeValues = []string{"tiny", "small", "medium", "large", "xlarge"}
 var storageSizes = []string{"lstorage", "xlstorage"}
 
 func GetVcenterSchema() *schema.Schema {
@@ -32,6 +32,7 @@ func GetVcenterSchema() *schema.Schema {
 					Type:         schema.TypeString,
 					Description:  "vCenter root password. The password must be between 8 characters and 20 characters long. It must also contain at least one uppercase and lowercase letter, one number, and one character from '! \" # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ ` { &Iota; } ~' and all characters must be ASCII. Space is not allowed in password.",
 					Required:     true,
+					Sensitive:    true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
 				"ssh_thumbprint": {
@@ -52,24 +53,18 @@ func GetVcenterSchema() *schema.Schema {
 				},
 				"vcenter_hostname": {
 					Type:        schema.TypeString,
-					Description: "vCenter hostname address",
+					Description: "vCenter Server hostname address. If just the short hostname is provided, then FQDN will be generated using the \"domain\" from dns configuration",
 					Required:    true,
 				},
 				"vcenter_ip": {
 					Type:         schema.TypeString,
-					Description:  "vCenter IP address",
-					Optional:     true,
-					ValidateFunc: validation.IsIPAddress,
-				},
-				"vcenter_netmask": {
-					Type:         schema.TypeString,
-					Description:  "vCenter Netmask",
+					Description:  "vCenter Server IPv4 address",
 					Optional:     true,
 					ValidateFunc: validation.IsIPAddress,
 				},
 				"vm_size": {
 					Type:         schema.TypeString,
-					Description:  "vCenter VM size. One among:xlarge, large, medium, small, tiny",
+					Description:  "vCenter Server Appliance  size. One among: tiny, small, medium, large, xlarge",
 					Optional:     true,
 					ValidateFunc: validation.StringInSlice(vmSizeValues, false),
 				},
@@ -90,7 +85,6 @@ func GetVcenterSpecFromSchema(rawData []interface{}) *models.SDDCVcenterSpec {
 	storageSize := data["storage_size"].(string)
 	vcenterHostname := data["vcenter_hostname"].(string)
 	vcenterIP := data["vcenter_ip"].(string)
-	vcenterNetmask := data["vcenter_netmask"].(string)
 	vmSize := data["vm_size"].(string)
 
 	vcenterSpecBinding := &models.SDDCVcenterSpec{
@@ -101,7 +95,6 @@ func GetVcenterSpecFromSchema(rawData []interface{}) *models.SDDCVcenterSpec {
 		StorageSize:         storageSize,
 		VcenterHostname:     utils.ToStringPointer(vcenterHostname),
 		VcenterIP:           vcenterIP,
-		VcenterNetmask:      vcenterNetmask,
 		VMSize:              vmSize,
 	}
 	return vcenterSpecBinding

@@ -22,31 +22,21 @@ func GetSddcManagerSchema() *schema.Schema {
 			Schema: map[string]*schema.Schema{
 				"hostname": {
 					Type:         schema.TypeString,
-					Description:  "SDDC Manager Hostname, length 3-63",
+					Description:  "SDDC Manager Hostname. If just the short hostname is provided, then FQDN will be generated using the \"domain\" from dns configuration, length 3-63",
 					Optional:     true,
 					ValidateFunc: validation.StringLenBetween(3, 63),
 				},
 				"ip_address": {
 					Type:         schema.TypeString,
-					Description:  "SDDC Manager ip address",
+					Description:  "SDDC Manager IPv4 address",
 					Optional:     true,
 					ValidateFunc: validation.IsIPAddress,
 				},
-				"license_key": {
-					Type:        schema.TypeString,
-					Description: "SDDC Manager license key",
-					Optional:    true,
-				},
 				"local_user_password": {
 					Type:         schema.TypeString,
-					Description:  "The local account is a built-in admin account in VCF that can be used in emergency scenarios. The password of this account must be at least 12 characters long. It also must contain at-least 1 uppercase, 1 lowercase, 1 special character specified in braces [!%@$^#?] and 1 digit. In addition, a character cannot be repeated more than 3 times consecutively.",
+					Description:  "The local account is a built-in admin account (password for the break glass user admin@local) in VCF that can be used in emergency scenarios. The password of this account must be at least 12 characters long. It also must contain at-least 1 uppercase, 1 lowercase, 1 special character specified in braces [!%@$^#?] and 1 digit. In addition, a character cannot be repeated more than 3 times consecutively.",
 					Optional:     true,
 					ValidateFunc: validation_utils.ValidatePassword,
-				},
-				"netmask": {
-					Type:        schema.TypeString,
-					Description: "SDDC Manager netmask",
-					Optional:    true,
 				},
 				"root_user_credentials":   getCredentialsSchema(),
 				"second_user_credentials": getCredentialsSchema(),
@@ -62,16 +52,12 @@ func GetSddcManagerSpecFromSchema(rawData []interface{}) *models.SDDCManagerSpec
 	data := rawData[0].(map[string]interface{})
 	hostname := data["hostname"].(string)
 	ipAddress := data["ip_address"].(string)
-	licenseKey := data["license_key"].(string)
 	localUserPassword := data["local_user_password"].(string)
-	netmask := data["netmask"].(string)
 
 	sddcManagerSpecBinding := &models.SDDCManagerSpec{
 		Hostname:          utils.ToStringPointer(hostname),
 		IPAddress:         utils.ToStringPointer(ipAddress),
-		LicenseKey:        licenseKey,
 		LocalUserPassword: localUserPassword,
-		Netmask:           netmask,
 	}
 	if rootUserCredentialsData := getCredentialsFromSchema(data["root_user_credentials"].([]interface{})); rootUserCredentialsData != nil {
 		sddcManagerSpecBinding.RootUserCredentials = rootUserCredentialsData

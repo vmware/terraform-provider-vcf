@@ -12,8 +12,6 @@ import (
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
-var portGroup = []string{"VSAN", "VMOTION", "PUBLIC", "MANAGEMENT", "NSX_VTEP", "HOSTMANAGEMENT", "CLOUD_VENDOR_API", "REPLICATION"}
-
 func GetSddcHostSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeList,
@@ -33,22 +31,16 @@ func GetSddcHostSchema() *schema.Schema {
 					ValidateFunc: validation.StringLenBetween(3, 63),
 				},
 				"ip_address_private": getIPAllocationSchema(),
-				"key": {
-					Type:        schema.TypeString,
-					Description: "Host key",
-					Optional:    true,
-				},
-				"server_id": {
-					Type:        schema.TypeString,
-					Description: "Host server ID",
-					Optional:    true,
-				},
 				"ssh_thumbprint": {
 					Type:        schema.TypeString,
 					Description: "Host SSH thumbprint (RSA SHA256)",
 					Optional:    true,
 				},
-				"vmknic_specs": getHostVmknicSchema(),
+				"ssl_thumbprint": {
+					Type:        schema.TypeString,
+					Description: "Host SSH thumbprint (RSA SHA256)",
+					Optional:    true,
+				},
 				"vswitch": {
 					Type:     schema.TypeString,
 					Required: true,
@@ -94,55 +86,21 @@ func getIPAllocationSchema() *schema.Schema {
 	}
 }
 
-func getHostVmknicSchema() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
-		Optional: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"ip_address": {
-					Type:         schema.TypeString,
-					Description:  "Vmknic IP address",
-					Optional:     true,
-					ValidateFunc: validation.IsIPAddress,
-				},
-				"mac_address": {
-					Type:         schema.TypeString,
-					Description:  "Vmknic mac address",
-					Optional:     true,
-					ValidateFunc: validation.IsMACAddress,
-				},
-				"port_group": {
-					Type:        schema.TypeList,
-					Description: "Portgroup type. One among: VSAN, VMOTION, PUBLIC, MANAGEMENT, NSX_VTEP, HOSTMANAGEMENT, CLOUD_VENDOR_API, REPLICATION",
-					Required:    true,
-					Elem: &schema.Schema{
-						Type:         schema.TypeString,
-						ValidateFunc: validation.StringInSlice(portGroup, false),
-					},
-				},
-			},
-		},
-	}
-}
-
 func GetSddcHostSpecsFromSchema(rawData []interface{}) []*models.SDDCHostSpec {
 	var hostSpecs []*models.SDDCHostSpec
 	for _, rawListEntity := range rawData {
 		hostSpecRaw := rawListEntity.(map[string]interface{})
 		association := utils.ToStringPointer(hostSpecRaw["association"])
 		hostname := utils.ToStringPointer(hostSpecRaw["hostname"])
-		key := hostSpecRaw["key"].(string)
-		serverID := hostSpecRaw["server_id"].(string)
 		sshThumbprint := hostSpecRaw["ssh_thumbprint"].(string)
+		sslThumbprint := hostSpecRaw["ssl_thumbprint"].(string)
 		vswitch := utils.ToStringPointer(hostSpecRaw["vswitch"])
 
 		hostSpec := &models.SDDCHostSpec{
 			Association:   association,
 			Hostname:      hostname,
-			Key:           key,
-			ServerID:      serverID,
 			SSHThumbprint: sshThumbprint,
+			SSLThumbprint: sslThumbprint,
 			VSwitch:       vswitch,
 		}
 		if credentialsData := getCredentialsFromSchema(hostSpecRaw["credentials"].([]interface{})); credentialsData != nil {
@@ -150,9 +108,6 @@ func GetSddcHostSpecsFromSchema(rawData []interface{}) []*models.SDDCHostSpec {
 		}
 		if ipAllocation := getIPAllocationBindingFromSchema(hostSpecRaw["ip_address_private"].([]interface{})); ipAllocation != nil {
 			hostSpec.IPAddressPrivate = ipAllocation
-		}
-		if vmknicSpecs := getHostVmknicSpecsFromSchema(hostSpecRaw["vmknic_specs"].([]interface{})); len(vmknicSpecs) != 0 {
-			hostSpec.VmknicSpecs = vmknicSpecs
 		}
 		hostSpecs = append(hostSpecs, hostSpec)
 	}
@@ -176,24 +131,4 @@ func getIPAllocationBindingFromSchema(rawData []interface{}) *models.IPAllocatio
 		Subnet:    subnet,
 	}
 	return ipAllocationBinding
-}
-
-func getHostVmknicSpecsFromSchema(rawData []interface{}) []*models.HostVmknicSpec {
-	var hostVmknicSpecs []*models.HostVmknicSpec
-	for _, rawListEntity := range rawData {
-		hostVmknicSpecRaw := rawListEntity.(map[string]interface{})
-		ipAddress := hostVmknicSpecRaw["ip_address"].(string)
-		macAddress := hostVmknicSpecRaw["mac_address"].(string)
-
-		hostVmknicSpec := &models.HostVmknicSpec{
-			IPAddress:  ipAddress,
-			MacAddress: macAddress,
-		}
-		if portGroups, ok := hostVmknicSpecRaw["port_group"].([]interface{}); ok {
-			hostVmknicSpec.Portgroup = utils.ToStringPointer(portGroups)
-		}
-
-		hostVmknicSpecs = append(hostVmknicSpecs, hostVmknicSpec)
-	}
-	return hostVmknicSpecs
 }

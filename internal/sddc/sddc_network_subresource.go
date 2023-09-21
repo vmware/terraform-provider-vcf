@@ -12,12 +12,6 @@ import (
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
-// NetworkSpecNetworkType valid network types enumeration.
-var NetworkSpecNetworkType = []string{"VSAN", "VMOTION", "PUBLIC", "MANAGEMENT", "NSX_VTEP", "HOST_MANAGEMENT",
-	"CLOUD_VENDOR_API", "REPLICATION", "DATACENTER_NETWORK", "NSX_VXLAN", "NON_ROUTABLE", "CLOUD_VENDOR_API",
-	"OOB", "CROSS_VPC", "UPLINK01", "UPLINK02", "STORAGE", "UDLR", "DLR", "X_REGION", "REGION_SPECIFIC",
-	"REMOTE_REGION_SPECIFIC", "COMPUTE", "MANAGEMENT_VM", "NSXT_EDGE_TEP", "NSXT_HOST_OVERLAY"}
-
 var teamingPolicies = []string{"loadbalance_loadbased", "loadbalance_ip", "loadbalance_srcmac", "loadbalance_srcid", "failover_explicit"}
 
 func GetNetworkSpecsSchema() *schema.Schema {
@@ -72,10 +66,9 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					ValidateFunc: validation.StringLenBetween(4, 4),
 				},
 				"network_type": {
-					Type:         schema.TypeString,
-					Description:  "Network Type. One among: VSAN, VMOTION, PUBLIC, MANAGEMENT, NSX_VTEP, HOST_MANAGEMENT, CLOUD_VENDOR_API, REPLICATION, DATACENTER_NETWORK, NSX_VXLAN, NON_ROUTABLE, CLOUD_VENDOR_API, OOB, CROSS_VPC, UPLINK01, UPLINK02, STORAGE, UDLR, DLR, X_REGION, REGION_SPECIFIC, REMOTE_REGION_SPECIFIC, COMPUTE, MANAGEMENT_VM, NSXT_EDGE_TEP, NSXT_HOST_OVERLAY",
-					Required:     true,
-					ValidateFunc: validation.StringInSlice(NetworkSpecNetworkType, false),
+					Type:        schema.TypeString,
+					Description: "Network Type. One among: VSAN, VMOTION, MANAGEMENT, VM_MANAGEMENT or any custom network type",
+					Required:    true,
 				},
 				"port_group_key": {
 					Type:        schema.TypeString,
@@ -126,13 +119,13 @@ func getIncludeIPAddressRangesSchema() *schema.Schema {
 			Schema: map[string]*schema.Schema{
 				"end_ip_address": {
 					Type:         schema.TypeString,
-					Description:  "End IP Address",
+					Description:  "End IPv4 Address",
 					Required:     true,
 					ValidateFunc: validation.IsIPAddress,
 				},
 				"start_ip_address": {
 					Type:         schema.TypeString,
-					Description:  "Start IP Address",
+					Description:  "Start IPv4 Address",
 					Required:     true,
 					ValidateFunc: validation.IsIPAddress,
 				},

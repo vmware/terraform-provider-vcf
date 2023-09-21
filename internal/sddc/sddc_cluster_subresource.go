@@ -40,31 +40,6 @@ func GetSddcClusterSchema() *schema.Schema {
 					Optional:     true,
 					ValidateFunc: validation.IntBetween(0, 3),
 				},
-				"host_profile_compliance_check_hour": {
-					Type:         schema.TypeInt,
-					Description:  "Hour at which the scheduled compliance check runs. In between 0 and 23",
-					Optional:     true,
-					ValidateFunc: validation.IntBetween(0, 23),
-				},
-				"host_profile_compliance_check_minute": {
-					Type:         schema.TypeInt,
-					Description:  "Minute at which the scheduled compliance check run. In between 0 and 59",
-					Optional:     true,
-					ValidateFunc: validation.IntBetween(0, 59),
-				},
-				"host_id": {
-					Type:        schema.TypeList,
-					Description: "vCenter Cluster Host IDs",
-					Optional:    true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-					},
-				},
-				"personality_name": {
-					Type:        schema.TypeString,
-					Description: "Cluster Personality Name",
-					Optional:    true,
-				},
 				"resource_pool": getResourcePoolSchema(),
 				// TODO Implement VM Folders
 				"vm_folders": {
@@ -182,23 +157,12 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *models.SDDCClusterSpec
 	data := rawData[0].(map[string]interface{})
 	clusterEvcMode := data["cluster_evc_mode"].(string)
 	clusterName := utils.ToStringPointer(data["cluster_name"])
-	hostFailuresToTolerate := utils.ToInt32Pointer(data["host_failures_to_tolerate"])
-	hostProfileComplianceCheckHour := utils.ToInt32Pointer(data["host_profile_compliance_check_hour"])
-	hostProfileComplianceCheckMinute := utils.ToInt32Pointer(data["host_profile_compliance_check_minute"])
-	personalityName := data["personality_name"].(string)
 
 	clusterSpecBinding := &models.SDDCClusterSpec{
-		ClusterEvcMode:                   clusterEvcMode,
-		ClusterName:                      clusterName,
-		HostFailuresToTolerate:           hostFailuresToTolerate,
-		HostProfileComplianceCheckHour:   hostProfileComplianceCheckHour,
-		HostProfileComplianceCheckMinute: hostProfileComplianceCheckMinute,
-		PersonalityName:                  personalityName,
+		ClusterEvcMode: clusterEvcMode,
+		ClusterName:    clusterName,
 	}
 
-	if hosts, ok := data["host_id"].([]interface{}); ok {
-		clusterSpecBinding.Hosts = utils.ToStringSlice(hosts)
-	}
 	if resourcePoolSpecs := getResourcePoolSpecsFromSchema(
 		data["resource_pool"].([]interface{})); len(resourcePoolSpecs) > 0 {
 		clusterSpecBinding.ResourcePoolSpecs = resourcePoolSpecs

@@ -58,6 +58,24 @@ func ValidatePassword(v interface{}, k string) (warnings []string, errors []erro
 	return
 }
 
+func ValidateSddcId(v interface{}, k string) (warnings []string, errors []error) {
+	sddcId, ok := v.(string)
+	if !ok {
+		errors = append(errors, fmt.Errorf("expected not nil and type of %q to be string", k))
+		return
+	}
+	if len(sddcId) < 3 || len(sddcId) > 20 {
+		errors = append(errors, fmt.Errorf("sddcId can have length of 3-20 characters"))
+		return
+	}
+	for _, char := range sddcId {
+		if !unicode.IsLetter(char) || !unicode.IsDigit(char) || char != '-' {
+			errors = append(errors, fmt.Errorf("can contain only letters, numbers and the following symbol: '-'"))
+		}
+	}
+	return
+}
+
 func ValidateParsingFloatToInt(v interface{}) (errors []error) {
 	floatNum := v.(float64)
 	var intNum = int(floatNum)

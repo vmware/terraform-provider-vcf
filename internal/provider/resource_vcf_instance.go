@@ -22,10 +22,7 @@ import (
 	"time"
 )
 
-var dvSwitchVersions = []string{"6.0.0", "6.5.0", "7.0.0"}
-var excludedComponents = []string{"Foundation", "VsphereHostProfiles", "LogInsight", "NSX", "VrealizeNetwork", "VSAN", "VSANCleanup",
-	"VROPS", "VRA", "DRDeployment", "DRConfiguration", "ConfigurationBackup", "VRB", "VRSLCM", "Inventory", "UMDS", "EsxThumbprintValidation",
-	"AVN", "CEIP", "Backup", "EBGP"}
+var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3"}
 
 func ResourceVcfInstance() *schema.Resource {
 	return &schema.Resource{
@@ -37,38 +34,38 @@ func ResourceVcfInstance() *schema.Resource {
 			Create: schema.DefaultTimeout(4 * time.Hour),
 		},
 		Schema: map[string]*schema.Schema{
-			"ceip_enabled": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Customer Experience Improvement Program is to be enabled",
+			"instance_id": {
+				Type:         schema.TypeString,
+				Description:  "Client string that identifies an SDDC by name or instance name. Used for management domain name. Can contain only letters, numbers and the following symbols: '-'. Example: \"sfo01-m01\", Length 3-20 characters",
+				Required:     true,
+				ValidateFunc: validation_utils.ValidateSddcId,
 			},
-			"certificates_passphrase": {
+			"status": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Computed: true,
 			},
-			"cluster": sddc.GetSddcClusterSchema(),
 			"creation_timestamp": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"dns": sddc.GetDnsSchema(),
-			"dvs": sddc.GetDvsSchema(),
+			"ceip_enabled": {
+				Type:        schema.TypeBool,
+				Description: "Customer Experience Improvement Program is to be enabled",
+				Optional:    true,
+			},
+			"cluster": sddc.GetSddcClusterSchema(),
+			"dns":     sddc.GetDnsSchema(),
+			"dvs":     sddc.GetDvsSchema(),
 			"dv_switch_version": {
 				Type:         schema.TypeString,
+				Description:  "One among: 7.0.0, 7.0.2, 7.0.3",
 				Required:     true,
 				ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
 			},
 			"esx_license": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"excluded_components": {
-				Type: schema.TypeList,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice(excludedComponents, false),
-				},
-				Optional: true,
+				Type:      schema.TypeString,
+				Sensitive: true,
+				Optional:  true,
 			},
 			"fips_enabled": {
 				Type:     schema.TypeBool,
@@ -89,25 +86,12 @@ func ResourceVcfInstance() *schema.Resource {
 					ValidateFunc: validation.IsIPAddress,
 				},
 			},
-			"psc": sddc.GetPscSchema(),
-			"instance_id": {
-				Type:        schema.TypeString,
-				Description: "Client string that identifies an SDDC by name or instance name. Used for management domain name. Can contain only letters, numbers and the following symbols: '-'. Example: \"sfo01-m01\", Length 3-20 characters",
-				Required:    true,
-			},
+			"psc":          sddc.GetPscSchema(),
 			"sddc_manager": sddc.GetSddcManagerSchema(),
 			"security":     sddc.GetSecuritySchema(),
-			"should_cleanup_vsan": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
 			"skip_esx_thumbprint_validation": {
 				Type:     schema.TypeBool,
 				Required: true,
-			},
-			"status": {
-				Type:     schema.TypeString,
-				Computed: true,
 			},
 			"task_name": {
 				Type:     schema.TypeString,
@@ -128,9 +112,6 @@ func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta
 	if rawCeipEnabled, ok := d.GetOk("ceip_enabled"); ok {
 		ceipEnabled := rawCeipEnabled.(bool)
 		sddcSpec.CEIPEnabled = ceipEnabled
-	}
-	if certificatesPassphrase, ok := d.GetOk("certificates_passphrase"); ok {
-		sddcSpec.CertificatesPassphrase = certificatesPassphrase.(string)
 	}
 	if clusterSpec, ok := d.GetOk("cluster"); ok {
 		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
@@ -178,10 +159,6 @@ func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta
 	if securitySpec, ok := d.GetOk("security"); ok {
 		sddcSpec.SecuritySpec = sddc.GetSecuritySpecSchema(securitySpec.([]interface{}))
 	}
-	if rawShouldCleanupVsan, ok := d.GetOk("should_cleanup_vsan"); ok {
-		shouldCleanupVsan := rawShouldCleanupVsan.(bool)
-		sddcSpec.ShouldCleanupVSAN = shouldCleanupVsan
-	}
 	if skipEsxThumbPrintValidation, ok := d.GetOk("skip_esx_thumbprint_validation"); ok {
 		sddcSpec.SkipEsxThumbprintValidation = skipEsxThumbPrintValidation.(bool)
 	}
@@ -196,9 +173,6 @@ func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 	if vxManagerSpec, ok := d.GetOk("vx_manager"); ok {
 		sddcSpec.VxManagerSpec = sddc.GetVxManagerSpecFromSchema(vxManagerSpec.([]interface{}))
-	}
-	if excludedComponentsAttribute, ok := d.GetOk("excluded_components"); ok {
-		sddcSpec.ExcludedComponents = utils.ToStringSlice(excludedComponentsAttribute.([]interface{}))
 	}
 
 	bringUpInfo, err := getLastBringUp(ctx, client)

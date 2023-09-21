@@ -39,11 +39,10 @@ func GetDvsSchema() *schema.Schema {
 				},
 				"networks": {
 					Type:        schema.TypeList,
-					Description: "Types of networks in this portgroup. Possible values: VSAN, VMOTION, PUBLIC, MANAGEMENT, NSX_VTEP, HOST_MANAGEMENT,\n\tCLOUD_VENDOR_API, REPLICATION, DATACENTER_NETWORK, NSX_VXLAN, NON_ROUTABLE, CLOUD_VENDOR_API,\n\tOOB, CROSS_VPC, UPLINK01, UPLINK02, STORAGE, UDLR, DLR, X_REGION, REGION_SPECIFIC,\n\tREMOTE_REGION_SPECIFIC, COMPUTE, MANAGEMENT_VM, NSXT_EDGE_TEP, NSXT_HOST_OVERLAY",
+					Description: "Types of networks in this portgroup. Possible values: VSAN, VMOTION, MANAGEMENT, VM_MANAGEMENT",
 					Required:    true,
 					Elem: &schema.Schema{
-						Type:         schema.TypeString,
-						ValidateFunc: validation.StringInSlice(NetworkSpecNetworkType, false),
+						Type: schema.TypeString,
 					},
 				},
 				"nioc": getNiocSchema(),

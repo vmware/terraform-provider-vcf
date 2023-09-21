@@ -38,11 +38,6 @@ func GetVsanSchema() *schema.Schema {
 					Description: "VSAN feature Deduplication and Compression flag, one flag for both features",
 					Optional:    true,
 				},
-				"vsan_name": {
-					Type:        schema.TypeString,
-					Description: "Virtual SAN config name",
-					Required:    true,
-				},
 			},
 		},
 	}
@@ -57,14 +52,12 @@ func GetVsanSpecFromSchema(rawData []interface{}) *models.VSANSpec {
 	hclFile := data["hcl_file"].(string)
 	licenseFile := data["license_file"].(string)
 	vsanDedup := data["vsan_dedup"].(bool)
-	vsanName := data["vsan_name"].(string)
 
 	vsanSpecBinding := &models.VSANSpec{
 		DatastoreName: utils.ToStringPointer(datastoreName),
 		HclFile:       hclFile,
 		LicenseFile:   licenseFile,
 		VSANDedup:     vsanDedup,
-		VSANName:      utils.ToStringPointer(vsanName),
 	}
 	return vsanSpecBinding
 }

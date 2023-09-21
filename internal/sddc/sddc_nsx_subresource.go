@@ -60,6 +60,7 @@ func GetNsxSpecSchema() *schema.Schema {
 					Type:         schema.TypeString,
 					Description:  "NSX Manager root password. Password should have 1) At least eight characters, 2) At least one lower-case letter, 3) At least one upper-case letter 4) At least one digit 5) At least one special character, 6) At least five different characters , 7) No dictionary words, 6) No palindromes",
 					Required:     true,
+					Sensitive:    true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
 				"transport_vlan_id": {
@@ -91,12 +92,12 @@ func getNsxManagerSpecSchema() *schema.Schema {
 			Schema: map[string]*schema.Schema{
 				"hostname": {
 					Type:        schema.TypeString,
-					Description: "NSX Manager hostname",
+					Description: "NSX Manager hostname. If just the short hostname is provided, then FQDN will be generated using the \"domain\" from dns configuration",
 					Optional:    true,
 				},
 				"ip": {
 					Type:        schema.TypeString,
-					Description: "NSX Manager IP Address",
+					Description: "NSX Manager IPv4 Address",
 					Optional:    true,
 				},
 			},

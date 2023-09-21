@@ -26,20 +26,15 @@ func GetDnsSchema() *schema.Schema {
 				},
 				"name_server": {
 					Type:         schema.TypeString,
-					Description:  "Primary nameserver to be configured for vCenter/PSC/ESXi's/NSX. Example: 172.0.0.4",
+					Description:  "Primary nameserver IPv4 address. Example: 172.0.0.4",
 					Optional:     true,
 					ValidateFunc: validation.IsIPAddress,
 				},
 				"secondary_name_server": {
 					Type:         schema.TypeString,
-					Description:  "Secondary nameserver to be configured for vCenter/PSC/ESXi's/NSX. Example: 172.0.0.5",
+					Description:  "Secondary nameserver IPv4 address. Example: 172.0.0.5",
 					Optional:     true,
 					ValidateFunc: validation.IsIPAddress,
-				},
-				"subdomain": {
-					Type:        schema.TypeString,
-					Description: "Tenant Sub domain. Example: sfo.rainpole.io",
-					Required:    true,
 				},
 			},
 		},
@@ -54,13 +49,11 @@ func GetDnsSpecFromSchema(rawData []interface{}) *models.DNSSpec {
 	domain := utils.ToStringPointer(data["domain"])
 	nameServer := data["name_server"].(string)
 	secondaryNameserver := data["secondary_name_server"].(string)
-	subdomain := utils.ToStringPointer(data["subdomain"])
 
 	dnsSpecBinding := &models.DNSSpec{
-		Domain:              domain,
 		Nameserver:          nameServer,
 		SecondaryNameserver: secondaryNameserver,
-		Subdomain:           subdomain,
+		Subdomain:           domain,
 	}
 	return dnsSpecBinding
 }

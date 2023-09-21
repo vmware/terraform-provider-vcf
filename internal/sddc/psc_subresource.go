@@ -25,11 +25,6 @@ func GetPscSchema() *schema.Schema {
 					Required:     true,
 					ValidateFunc: validation.ValidatePassword,
 				},
-				"psc_id": {
-					Type:        schema.TypeString,
-					Description: "PSC Name",
-					Optional:    true,
-				},
 				"psc_sso_domain": {
 					Type:        schema.TypeString,
 					Description: "PSC SSO Domain",
@@ -46,11 +41,9 @@ func GetPscSpecsFromSchema(rawData []interface{}) []*models.PscSpec {
 		data := pscSpec.(map[string]interface{})
 		adminUserSsoPassword := data["admin_user_sso_password"].(string)
 		pscSsoDomain := data["psc_sso_domain"].(string)
-		pscID := data["psc_id"].(string)
 
 		pscSpecsBinding := &models.PscSpec{
 			AdminUserSSOPassword: utils.ToStringPointer(adminUserSsoPassword),
-			PscID:                pscID,
 			PscSSOSpec: &models.PscSSOSpec{
 				SSODomain: pscSsoDomain,
 			},

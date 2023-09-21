@@ -30,7 +30,7 @@ func GetVxManagerSchema() *schema.Schema {
 					Description: "VxRail Manager SSL thumbprint (SHA256)",
 					Optional:    true,
 				},
-				"vx_manager_host_name": {
+				"vx_manager_hostname": {
 					Type:        schema.TypeString,
 					Description: "VxManager host name",
 					Required:    true,
@@ -47,7 +47,7 @@ func GetVxManagerSpecFromSchema(rawData []interface{}) *models.VxManagerSpec {
 	data := rawData[0].(map[string]interface{})
 	sshThumbprint := data["ssh_thumbprint"].(string)
 	sslThumbprint := data["ssl_thumbprint"].(string)
-	vxManagerHostName := data["vx_manager_host_name"].(string)
+	vxManagerHostName := data["vx_manager_hostname"].(string)
 
 	vxManagerSpecBinding := &models.VxManagerSpec{
 		SSHThumbprint:     sshThumbprint,

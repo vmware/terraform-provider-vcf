@@ -35,7 +35,6 @@ func NewCloudBuilderClient(username, password, url string, allowUnverifiedTls bo
 }
 
 func (cloudBuilderClient *CloudBuilderClient) init() {
-	// Disable cert checks
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: cloudBuilderClient.allowUnverifiedTls}
 
