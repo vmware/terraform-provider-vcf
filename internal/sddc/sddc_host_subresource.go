@@ -26,7 +26,7 @@ func GetSddcHostSchema() *schema.Schema {
 				"credentials": getCredentialsSchema(),
 				"hostname": {
 					Type:         schema.TypeString,
-					Description:  "Host FQDN Example: esx-1, length from 3 to 63",
+					Description:  "ESXi hostname. If just the short hostname is provided, then FQDN will be generated using the \"domain\" from dns configuration. Example: \"esx-1\" length from 3 to 63",
 					Required:     true,
 					ValidateFunc: validation.StringLenBetween(3, 63),
 				},
