@@ -25,12 +25,12 @@ func GetVsanSchema() *schema.Schema {
 				},
 				"hcl_file": {
 					Type:        schema.TypeString,
-					Description: "HCL File",
+					Description: "A path (URL or local path) to an HCL file that will be uploaded to vCenter prior to configuring vSAN",
 					Optional:    true,
 				},
-				"license_file": {
+				"license": {
 					Type:        schema.TypeString,
-					Description: "License File",
+					Description: "VSAN License",
 					Optional:    true,
 				},
 				"vsan_dedup": {
@@ -50,13 +50,13 @@ func GetVsanSpecFromSchema(rawData []interface{}) *models.VSANSpec {
 	data := rawData[0].(map[string]interface{})
 	datastoreName := data["datastore_name"].(string)
 	hclFile := data["hcl_file"].(string)
-	licenseFile := data["license_file"].(string)
+	license := data["license"].(string)
 	vsanDedup := data["vsan_dedup"].(bool)
 
 	vsanSpecBinding := &models.VSANSpec{
 		DatastoreName: utils.ToStringPointer(datastoreName),
 		HclFile:       hclFile,
-		LicenseFile:   licenseFile,
+		LicenseFile:   license,
 		VSANDedup:     vsanDedup,
 	}
 	return vsanSpecBinding

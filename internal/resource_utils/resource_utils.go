@@ -25,7 +25,7 @@ func ToInt32Pointer(object interface{}) *int32 {
 	if object == nil {
 		return nil
 	}
-	objectAsInt32 := object.(int32)
+	objectAsInt32 := int32(object.(int))
 	return &objectAsInt32
 }
 

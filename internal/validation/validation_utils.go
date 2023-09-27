@@ -69,14 +69,15 @@ func ValidateSddcId(v interface{}, k string) (warnings []string, errors []error)
 		return
 	}
 	for _, char := range sddcId {
-		if !unicode.IsLetter(char) || !unicode.IsDigit(char) || char != '-' {
+		if !unicode.IsLetter(char) && !unicode.IsDigit(char) && char != '-' {
 			errors = append(errors, fmt.Errorf("can contain only letters, numbers and the following symbol: '-'"))
+			return
 		}
 	}
 	return
 }
 
-func ValidateParsingFloatToInt(v interface{}) (errors []error) {
+func ValidateParsingFloatToInt(v interface{}, k string) (warnings []string, errors []error) {
 	floatNum := v.(float64)
 	var intNum = int(floatNum)
 	if floatNum != float64(intNum) {

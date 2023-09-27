@@ -20,9 +20,28 @@ func GetNetworkSpecsSchema() *schema.Schema {
 		Required: true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
+				"network_type": {
+					Type:        schema.TypeString,
+					Description: "Network Type. One among: VSAN, VMOTION, MANAGEMENT, VM_MANAGEMENT or any custom network type",
+					Required:    true,
+				},
+				"vlan_id": {
+					Type:         schema.TypeString,
+					Description:  "VLAN Id",
+					Required:     true,
+					ValidateFunc: validation.StringLenBetween(1, 4),
+				},
 				"active_up_links": {
 					Type:        schema.TypeList,
 					Description: "Active Uplinks for teaming policy, specify uplink1 for failover_explicit VSAN Teaming Policy",
+					Optional:    true,
+					Elem: &schema.Schema{
+						Type: schema.TypeString,
+					},
+				},
+				"standby_uplinks": {
+					Type:        schema.TypeList,
+					Description: "Standby Uplinks for teaming policy, specify uplink2 for failover_explicit VSAN Teaming Policy",
 					Optional:    true,
 					Elem: &schema.Schema{
 						Type: schema.TypeString,
@@ -65,23 +84,11 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					Required:     true,
 					ValidateFunc: validation.StringLenBetween(4, 4),
 				},
-				"network_type": {
-					Type:        schema.TypeString,
-					Description: "Network Type. One among: VSAN, VMOTION, MANAGEMENT, VM_MANAGEMENT or any custom network type",
-					Required:    true,
-				},
+
 				"port_group_key": {
 					Type:        schema.TypeString,
-					Description: "Portgroup key name",
+					Description: "Portgroup key name. When adding a cluster with a new DVS, this value must be provided. When adding a cluster to an existing DVS, this value must not be provided.",
 					Optional:    true,
-				},
-				"standby_uplinks": {
-					Type:        schema.TypeList,
-					Description: "Standby Uplinks for teaming policy, specify uplink2 for failover_explicit VSAN Teaming Policy",
-					Optional:    true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-					},
 				},
 				"subnet": {
 					Type:         schema.TypeString,
@@ -99,12 +106,6 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					Description:  "Teaming Policy for VSAN and VMOTION network types, Default is loadbalance_loadbased. One among: loadbalance_ip, loadbalance_srcmac, loadbalance_srcid, failover_explicit, loadbalance_loadbased",
 					Default:      teamingPolicies[0],
 					ValidateFunc: validation.StringInSlice(teamingPolicies, false),
-				},
-				"vlan_id": {
-					Type:         schema.TypeString,
-					Description:  "VLAN Id",
-					Required:     true,
-					ValidateFunc: validation.StringLenBetween(1, 4),
 				},
 			},
 		},

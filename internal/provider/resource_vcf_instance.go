@@ -33,147 +33,90 @@ func ResourceVcfInstance() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(4 * time.Hour),
 		},
-		Schema: map[string]*schema.Schema{
-			"instance_id": {
-				Type:         schema.TypeString,
-				Description:  "Client string that identifies an SDDC by name or instance name. Used for management domain name. Can contain only letters, numbers and the following symbols: '-'. Example: \"sfo01-m01\", Length 3-20 characters",
-				Required:     true,
-				ValidateFunc: validation_utils.ValidateSddcId,
-			},
-			"status": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"creation_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"ceip_enabled": {
-				Type:        schema.TypeBool,
-				Description: "Customer Experience Improvement Program is to be enabled",
-				Optional:    true,
-			},
-			"cluster": sddc.GetSddcClusterSchema(),
-			"dns":     sddc.GetDnsSchema(),
-			"dvs":     sddc.GetDvsSchema(),
-			"dv_switch_version": {
-				Type:         schema.TypeString,
-				Description:  "One among: 7.0.0, 7.0.2, 7.0.3",
-				Required:     true,
-				ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
-			},
-			"esx_license": {
-				Type:      schema.TypeString,
-				Sensitive: true,
-				Optional:  true,
-			},
-			"fips_enabled": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-			"host": sddc.GetSddcHostSchema(),
-			"management_pool_name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"network": sddc.GetNetworkSpecsSchema(),
-			"nsx":     sddc.GetNsxSpecSchema(),
-			"ntp_servers": {
-				Type:     schema.TypeList,
-				Required: true,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
-					ValidateFunc: validation.IsIPAddress,
-				},
-			},
-			"psc":          sddc.GetPscSchema(),
-			"sddc_manager": sddc.GetSddcManagerSchema(),
-			"security":     sddc.GetSecuritySchema(),
-			"skip_esx_thumbprint_validation": {
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-			"task_name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "workflowconfig/workflowspec-ems.json",
-			},
-			"vcenter":    sddc.GetVcenterSchema(),
-			"vsan":       sddc.GetVsanSchema(),
-			"vx_manager": sddc.GetVxManagerSchema(),
+		Schema: resourceVcfInstanceSchema(),
+	}
+}
+
+func resourceVcfInstanceSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"instance_id": {
+			Type:         schema.TypeString,
+			Description:  "Client string that identifies an SDDC by name or instance name. Used for management domain name. Can contain only letters, numbers and the following symbols: '-'. Example: \"sfo01-m01\", Length 3-20 characters",
+			Required:     true,
+			ValidateFunc: validation_utils.ValidateSddcId,
 		},
+		"status": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"creation_timestamp": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"ceip_enabled": {
+			Type:        schema.TypeBool,
+			Description: "Enable VCF Customer Experience Improvement Program",
+			Optional:    true,
+		},
+		"fips_enabled": {
+			Type:        schema.TypeBool,
+			Description: "Enable Federal Information Processing Standards",
+			Optional:    true,
+		},
+		"cluster": sddc.GetSddcClusterSchema(),
+		"dns":     sddc.GetDnsSchema(),
+		"dvs":     sddc.GetDvsSchema(),
+		"dv_switch_version": {
+			Type:         schema.TypeString,
+			Description:  "The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3",
+			Required:     true,
+			ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
+		},
+		"esx_license": {
+			Type:      schema.TypeString,
+			Sensitive: true,
+			Optional:  true,
+		},
+		"host": sddc.GetSddcHostSchema(),
+		"management_pool_name": {
+			Type:        schema.TypeString,
+			Description: "A string identifying the network pool associated with the management domain",
+			Required:    true,
+		},
+		"network": sddc.GetNetworkSpecsSchema(),
+		"nsx":     sddc.GetNsxSpecSchema(),
+		"ntp_servers": {
+			Type:        schema.TypeList,
+			Description: "List of NTP servers",
+			Required:    true,
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.IsIPAddress,
+			},
+		},
+		"psc":          sddc.GetPscSchema(),
+		"sddc_manager": sddc.GetSddcManagerSchema(),
+		"security":     sddc.GetSecuritySchema(),
+		"skip_esx_thumbprint_validation": {
+			Type:        schema.TypeBool,
+			Description: "Skip ESXi thumbprint validation",
+			Required:    true,
+		},
+		"task_name": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "workflowconfig/workflowspec-ems.json",
+		},
+		"vcenter":    sddc.GetVcenterSchema(),
+		"vsan":       sddc.GetVsanSchema(),
+		"vx_manager": sddc.GetVxManagerSchema(),
 	}
 }
 
 func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.CloudBuilderClient)
 
-	sddcSpec := &models.SDDCSpec{}
-	if rawCeipEnabled, ok := d.GetOk("ceip_enabled"); ok {
-		ceipEnabled := rawCeipEnabled.(bool)
-		sddcSpec.CEIPEnabled = ceipEnabled
-	}
-	if clusterSpec, ok := d.GetOk("cluster"); ok {
-		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
-	}
-	if dnsSpec, ok := d.GetOk("dns"); ok {
-		sddcSpec.DNSSpec = sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
-	}
-	if dvsSpecs, ok := d.GetOk("dvs"); ok {
-		sddcSpec.DvsSpecs = sddc.GetDvsSpecsFromSchema(dvsSpecs.([]interface{}))
-	}
-	if dvSwitchVersion, ok := d.GetOk("dv_switch_version"); ok {
-		sddcSpec.DvSwitchVersion = dvSwitchVersion.(string)
-	}
-	if esxLicense, ok := d.GetOk("esx_license"); ok {
-		sddcSpec.EsxLicense = esxLicense.(string)
-	}
-	if rawFipsEnabled, ok := d.GetOk("fips_enabled"); ok {
-		fipsEnabled := rawFipsEnabled.(bool)
-		sddcSpec.FIPSEnabled = fipsEnabled
-	}
-	if hostSpecs, ok := d.GetOk("host"); ok {
-		sddcSpec.HostSpecs = sddc.GetSddcHostSpecsFromSchema(hostSpecs.([]interface{}))
-	}
-	if managementPoolName, ok := d.GetOk("management_pool_name"); ok {
-		sddcSpec.ManagementPoolName = managementPoolName.(string)
-	}
-	if networkSpecs, ok := d.GetOk("network"); ok {
-		sddcSpec.NetworkSpecs = sddc.GetNetworkSpecsBindingFromSchema(networkSpecs.([]interface{}))
-	}
-	if nsxSpec, ok := d.GetOk("nsx"); ok {
-		sddcSpec.NSXTSpec = sddc.GetNsxSpecFromSchema(nsxSpec.([]interface{}))
-	}
-	if ntpServers, ok := d.GetOk("ntp_servers"); ok {
-		sddcSpec.NtpServers = utils.ToStringSlice(ntpServers.([]interface{}))
-	}
-	if pscSpecs, ok := d.GetOk("psc"); ok {
-		sddcSpec.PscSpecs = sddc.GetPscSpecsFromSchema(pscSpecs.([]interface{}))
-	}
-	if sddcID, ok := d.GetOk("instance_id"); ok {
-		sddcSpec.SDDCID = utils.ToStringPointer(sddcID)
-	}
-	if sddcManagerSpec, ok := d.GetOk("sddc_manager"); ok {
-		sddcSpec.SDDCManagerSpec = sddc.GetSddcManagerSpecFromSchema(sddcManagerSpec.([]interface{}))
-	}
-	if securitySpec, ok := d.GetOk("security"); ok {
-		sddcSpec.SecuritySpec = sddc.GetSecuritySpecSchema(securitySpec.([]interface{}))
-	}
-	if skipEsxThumbPrintValidation, ok := d.GetOk("skip_esx_thumbprint_validation"); ok {
-		sddcSpec.SkipEsxThumbprintValidation = skipEsxThumbPrintValidation.(bool)
-	}
-	if taskName, ok := d.GetOk("task_name"); ok {
-		sddcSpec.TaskName = utils.ToStringPointer(taskName)
-	}
-	if vcenterSpec, ok := d.GetOk("vcenter"); ok {
-		sddcSpec.VcenterSpec = sddc.GetVcenterSpecFromSchema(vcenterSpec.([]interface{}))
-	}
-	if vsanSpec, ok := d.GetOk("vsan"); ok {
-		sddcSpec.VSANSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
-	}
-	if vxManagerSpec, ok := d.GetOk("vx_manager"); ok {
-		sddcSpec.VxManagerSpec = sddc.GetVxManagerSpecFromSchema(vxManagerSpec.([]interface{}))
-	}
+	sddcSpec := buildSddcSpec(d)
 
 	bringUpInfo, err := getLastBringUp(ctx, client)
 	if err != nil {
@@ -188,6 +131,77 @@ func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	return waitForBringupProcess(ctx, bringUpID, client)
 }
+
+func buildSddcSpec(data *schema.ResourceData) *models.SDDCSpec {
+	sddcSpec := &models.SDDCSpec{}
+	if rawCeipEnabled, ok := data.GetOk("ceip_enabled"); ok {
+		ceipEnabled := rawCeipEnabled.(bool)
+		sddcSpec.CEIPEnabled = ceipEnabled
+	}
+	if clusterSpec, ok := data.GetOk("cluster"); ok {
+		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
+	}
+	if dnsSpec, ok := data.GetOk("dns"); ok {
+		sddcSpec.DNSSpec = sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
+	}
+	if dvsSpecs, ok := data.GetOk("dvs"); ok {
+		sddcSpec.DvsSpecs = sddc.GetDvsSpecsFromSchema(dvsSpecs.([]interface{}))
+	}
+	if dvSwitchVersion, ok := data.GetOk("dv_switch_version"); ok {
+		sddcSpec.DvSwitchVersion = dvSwitchVersion.(string)
+	}
+	if esxLicense, ok := data.GetOk("esx_license"); ok {
+		sddcSpec.EsxLicense = esxLicense.(string)
+	}
+	if rawFipsEnabled, ok := data.GetOk("fips_enabled"); ok {
+		fipsEnabled := rawFipsEnabled.(bool)
+		sddcSpec.FIPSEnabled = fipsEnabled
+	}
+	if hostSpecs, ok := data.GetOk("host"); ok {
+		sddcSpec.HostSpecs = sddc.GetSddcHostSpecsFromSchema(hostSpecs.([]interface{}))
+	}
+	if managementPoolName, ok := data.GetOk("management_pool_name"); ok {
+		sddcSpec.ManagementPoolName = managementPoolName.(string)
+	}
+	if networkSpecs, ok := data.GetOk("network"); ok {
+		sddcSpec.NetworkSpecs = sddc.GetNetworkSpecsBindingFromSchema(networkSpecs.([]interface{}))
+	}
+	if nsxSpec, ok := data.GetOk("nsx"); ok {
+		sddcSpec.NSXTSpec = sddc.GetNsxSpecFromSchema(nsxSpec.([]interface{}))
+	}
+	if ntpServers, ok := data.GetOk("ntp_servers"); ok {
+		sddcSpec.NtpServers = utils.ToStringSlice(ntpServers.([]interface{}))
+	}
+	if pscSpecs, ok := data.GetOk("psc"); ok {
+		sddcSpec.PscSpecs = sddc.GetPscSpecsFromSchema(pscSpecs.([]interface{}))
+	}
+	if sddcID, ok := data.GetOk("instance_id"); ok {
+		sddcSpec.SDDCID = utils.ToStringPointer(sddcID)
+	}
+	if sddcManagerSpec, ok := data.GetOk("sddc_manager"); ok {
+		sddcSpec.SDDCManagerSpec = sddc.GetSddcManagerSpecFromSchema(sddcManagerSpec.([]interface{}))
+	}
+	if securitySpec, ok := data.GetOk("security"); ok {
+		sddcSpec.SecuritySpec = sddc.GetSecuritySpecSchema(securitySpec.([]interface{}))
+	}
+	if skipEsxThumbPrintValidation, ok := data.GetOk("skip_esx_thumbprint_validation"); ok {
+		sddcSpec.SkipEsxThumbprintValidation = skipEsxThumbPrintValidation.(bool)
+	}
+	if taskName, ok := data.GetOk("task_name"); ok {
+		sddcSpec.TaskName = utils.ToStringPointer(taskName)
+	}
+	if vcenterSpec, ok := data.GetOk("vcenter"); ok {
+		sddcSpec.VcenterSpec = sddc.GetVcenterSpecFromSchema(vcenterSpec.([]interface{}))
+	}
+	if vsanSpec, ok := data.GetOk("vsan"); ok {
+		sddcSpec.VSANSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+	}
+	if vxManagerSpec, ok := data.GetOk("vx_manager"); ok {
+		sddcSpec.VxManagerSpec = sddc.GetVxManagerSpecFromSchema(vxManagerSpec.([]interface{}))
+	}
+	return sddcSpec
+}
+
 func resourceVcfInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.CloudBuilderClient)
 

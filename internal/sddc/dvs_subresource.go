@@ -73,7 +73,7 @@ func getNiocSchema() *schema.Schema {
 				},
 				"value": {
 					Type:        schema.TypeString,
-					Description: "NIOC Value",
+					Description: "NIOC Value. Example: LOW, NORMAL, HIGH",
 					Required:    true,
 				},
 			},
@@ -87,7 +87,7 @@ func GetDvsSpecsFromSchema(rawData []interface{}) []*models.DvsSpec {
 		dvsSpecRaw := dvsSpecListEntry.(map[string]interface{})
 		dvsName := utils.ToStringPointer(dvsSpecRaw["dvs_name"])
 		isUsedByNsxt := dvsSpecRaw["is_used_by_nsxt"].(bool)
-		mtu := dvsSpecRaw["mtu"].(int32)
+		mtu := int32(dvsSpecRaw["mtu"].(int))
 
 		dvsSpec := &models.DvsSpec{
 			DvsName:      dvsName,

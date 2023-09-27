@@ -99,6 +99,9 @@ const (
 	// VcfTestVsanLicenseKey license key for vSAN required for workload domain and cluster acceptance tests.
 	VcfTestVsanLicenseKey = "VCF_TEST_VSAN_LICENSE_KEY"
 
+	// VcfTestVcenterLicenseKey license key for vCenter required for bringup acceptance tests.
+	VcfTestVcenterLicenseKey = "VCF_TEST_VCENTER_LICENSE_KEY"
+
 	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.
 	// Typically, the id of management domain is used as it is already created during bringup.
 	VcfTestDomainDataSourceId = "VCF_DOMAIN_DATA_SOURCE_ID"

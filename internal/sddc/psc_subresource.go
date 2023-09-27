@@ -27,7 +27,7 @@ func GetPscSchema() *schema.Schema {
 				},
 				"psc_sso_domain": {
 					Type:        schema.TypeString,
-					Description: "PSC SSO Domain",
+					Description: "PSC SSO Domain. Example: vsphere.local",
 					Optional:    true,
 				},
 			},

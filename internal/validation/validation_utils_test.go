@@ -90,11 +90,11 @@ func TestValidateParsingFloatToInt(t *testing.T) {
 	var testFloatInt float64 = 3
 	var expectedErr = "expected an integer, got a float"
 
-	if err := ValidateParsingFloatToInt(testFloatNotInt); len(err) == 0 {
+	if _, err := ValidateParsingFloatToInt(testFloatNotInt, ""); len(err) == 0 {
 		t.Errorf("Failed. Expected error: \"%s\", for float64 %f", expectedErr, testFloatNotInt)
 	}
 
-	if err := ValidateParsingFloatToInt(testFloatInt); len(err) != 0 {
+	if _, err := ValidateParsingFloatToInt(testFloatInt, ""); len(err) != 0 {
 		t.Errorf("Failed. Expected no errors for float64 %f, got: \"%s\"", testFloatInt, err[0].Error())
 	}
 }

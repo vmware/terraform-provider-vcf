@@ -23,9 +23,9 @@ func GetVcenterSchema() *schema.Schema {
 		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"license_file": {
+				"license": {
 					Type:        schema.TypeString,
-					Description: "License File",
+					Description: "vCenter License",
 					Optional:    true,
 				},
 				"root_vcenter_password": {
@@ -78,7 +78,7 @@ func GetVcenterSpecFromSchema(rawData []interface{}) *models.SDDCVcenterSpec {
 		return nil
 	}
 	data := rawData[0].(map[string]interface{})
-	licenceFile := data["license_file"].(string)
+	licence := data["license"].(string)
 	rootVcenterPassword := data["root_vcenter_password"].(string)
 	sshThumbprint := data["ssh_thumbprint"].(string)
 	sslThumbprint := data["ssl_thumbprint"].(string)
@@ -88,7 +88,7 @@ func GetVcenterSpecFromSchema(rawData []interface{}) *models.SDDCVcenterSpec {
 	vmSize := data["vm_size"].(string)
 
 	vcenterSpecBinding := &models.SDDCVcenterSpec{
-		LicenseFile:         licenceFile,
+		LicenseFile:         licence,
 		RootVcenterPassword: utils.ToStringPointer(rootVcenterPassword),
 		SSHThumbprint:       sshThumbprint,
 		SSLThumbprint:       sslThumbprint,

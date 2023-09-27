@@ -21,6 +21,23 @@ func GetNsxSpecSchema() *schema.Schema {
 		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
+				"vip": {
+					Type:        schema.TypeString,
+					Description: "Virtual IP address which would act as proxy/alias for NSX Managers",
+					Required:    true,
+				},
+				"vip_fqdn": {
+					Type:        schema.TypeString,
+					Description: "FQDN for VIP so that common SSL certificates can be installed across all managers",
+					Required:    true,
+				},
+				"root_nsx_manager_password": {
+					Type:         schema.TypeString,
+					Description:  "NSX Manager root password. Password should have 1) At least eight characters, 2) At least one lower-case letter, 3) At least one upper-case letter 4) At least one digit 5) At least one special character, 6) At least five different characters , 7) No dictionary words, 6) No palindromes",
+					Required:     true,
+					Sensitive:    true,
+					ValidateFunc: validation_utils.ValidatePassword,
+				},
 				"ip_address_pool": {
 					Type:        schema.TypeList,
 					Description: "NSX IP address pool specification",
@@ -42,7 +59,7 @@ func GetNsxSpecSchema() *schema.Schema {
 					Sensitive:    true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
-				"license_key": {
+				"license": {
 					Type:        schema.TypeString,
 					Description: "NSX Manager license",
 					Optional:    true,
@@ -50,33 +67,16 @@ func GetNsxSpecSchema() *schema.Schema {
 				},
 				"nsx_manager_size": {
 					Type:         schema.TypeString,
-					Description:  "NSX-T Manager size. One among:medium, large",
+					Description:  "NSX-T Manager size. One among: medium, large",
 					Required:     true,
 					ValidateFunc: validation.StringInSlice([]string{"medium", "large"}, true),
 				},
 				"nsx_manager":            getNsxManagerSpecSchema(),
 				"overlay_transport_zone": getTransportZoneSchema(),
-				"root_nsx_manager_password": {
-					Type:         schema.TypeString,
-					Description:  "NSX Manager root password. Password should have 1) At least eight characters, 2) At least one lower-case letter, 3) At least one upper-case letter 4) At least one digit 5) At least one special character, 6) At least five different characters , 7) No dictionary words, 6) No palindromes",
-					Required:     true,
-					Sensitive:    true,
-					ValidateFunc: validation_utils.ValidatePassword,
-				},
 				"transport_vlan_id": {
 					Type:        schema.TypeInt,
 					Description: "Transport VLAN ID",
 					Optional:    true,
-				},
-				"vip": {
-					Type:        schema.TypeString,
-					Description: "Virtual IP address which would act as proxy/alias for NSX Managers",
-					Required:    true,
-				},
-				"vip_fqdn": {
-					Type:        schema.TypeString,
-					Description: "FQDN for VIP so that common SSL certificates can be installed across all managers",
-					Required:    true,
 				},
 			},
 		},
@@ -96,9 +96,10 @@ func getNsxManagerSpecSchema() *schema.Schema {
 					Optional:    true,
 				},
 				"ip": {
-					Type:        schema.TypeString,
-					Description: "NSX Manager IPv4 Address",
-					Optional:    true,
+					Type:         schema.TypeString,
+					Description:  "NSX Manager IPv4 Address",
+					Optional:     true,
+					ValidateFunc: validation.IsIPAddress,
 				},
 			},
 		},
@@ -135,10 +136,10 @@ func GetNsxSpecFromSchema(rawData []interface{}) *models.SDDCNSXTSpec {
 	data := rawData[0].(map[string]interface{})
 	nsxAdminPassword := data["nsx_admin_password"].(string)
 	nsxAuditPassword := data["nsx_audit_password"].(string)
-	nsxLicense := data["license_key"].(string)
+	nsxLicense := data["license"].(string)
 	nsxManagerSize := data["nsx_manager_size"].(string)
 	rootNsxManagerPassword := data["root_nsx_manager_password"].(string)
-	transportVlanID := data["transport_vlan_id"].(int32)
+	transportVlanID := int32(data["transport_vlan_id"].(int))
 	vip := data["vip"].(string)
 	vipFqdn := data["vip_fqdn"].(string)
 

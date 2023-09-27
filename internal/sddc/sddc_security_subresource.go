@@ -23,7 +23,7 @@ func GetSecuritySchema() *schema.Schema {
 			Schema: map[string]*schema.Schema{
 				"esxi_certs_mode": {
 					Type:         schema.TypeString,
-					Description:  "ESXi certificates mode. One among:Custom, VMCA",
+					Description:  "ESXi certificates mode. One among: Custom, VMCA",
 					Optional:     true,
 					ValidateFunc: validation.StringInSlice(esxiCertsModes, false),
 				},

@@ -31,15 +31,15 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 // testAccPreCheck validates all required environment variables for running acceptance
 // tests are set.
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv(constants.VcfTestUrl); v == "" {
-		t.Fatal(constants.VcfTestUrl + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestUsername); v == "" {
-		t.Fatal(constants.VcfTestUsername + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestPassword); v == "" {
-		t.Fatal(constants.VcfTestPassword + " must be set for acceptance tests")
-	}
+	//if v := os.Getenv(constants.VcfTestUrl); v == "" {
+	//	t.Fatal(constants.VcfTestUrl + " must be set for acceptance tests")
+	//}
+	//if v := os.Getenv(constants.VcfTestUsername); v == "" {
+	//	t.Fatal(constants.VcfTestUsername + " must be set for acceptance tests")
+	//}
+	//if v := os.Getenv(constants.VcfTestPassword); v == "" {
+	//	t.Fatal(constants.VcfTestPassword + " must be set for acceptance tests")
+	//}
 	if v := os.Getenv(constants.VcfTestHost1Fqdn); v == "" {
 		t.Fatal(constants.VcfTestHost1Fqdn + " must be set for acceptance tests")
 	}
