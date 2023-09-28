@@ -37,7 +37,7 @@ func ResourceVcfInstance() *schema.Resource {
 	}
 }
 
-// TODO add support for "subscriptionLicensing" property in future releases
+// TODO add support for "subscriptionLicensing" property in future releases.
 func resourceVcfInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"instance_id": {
