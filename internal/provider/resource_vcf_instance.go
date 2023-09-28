@@ -230,6 +230,10 @@ func resourceVcfInstanceRead(ctx context.Context, d *schema.ResourceData, meta i
 	_ = d.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
 
 	sddcManagerInfo, err := getSddcManagerInfo(ctx, bringupId, client)
+	if err != nil {
+		tflog.Error(ctx, err.Error())
+		return diag.FromErr(err)
+	}
 
 	_ = d.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
 	_ = d.Set("sddc_manager_id", sddcManagerInfo.ID)
