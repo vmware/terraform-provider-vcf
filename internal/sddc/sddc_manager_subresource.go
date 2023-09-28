@@ -59,16 +59,16 @@ func GetSddcManagerSpecFromSchema(rawData []interface{}) *models.SDDCManagerSpec
 	ipAddress := data["ip_address"].(string)
 	localUserPassword := data["local_user_password"].(string)
 
-	sddcManagerSpecBinding := &models.SDDCManagerSpec{
+	sddcManagerSpec := &models.SDDCManagerSpec{
 		Hostname:          utils.ToStringPointer(hostname),
 		IPAddress:         utils.ToStringPointer(ipAddress),
 		LocalUserPassword: localUserPassword,
 	}
 	if rootUserCredentialsData := getCredentialsFromSchema(data["root_user_credentials"].([]interface{})); rootUserCredentialsData != nil {
-		sddcManagerSpecBinding.RootUserCredentials = rootUserCredentialsData
+		sddcManagerSpec.RootUserCredentials = rootUserCredentialsData
 	}
 	if secondUserCredentialsData := getCredentialsFromSchema(data["second_user_credentials"].([]interface{})); secondUserCredentialsData != nil {
-		sddcManagerSpecBinding.SecondUserCredentials = secondUserCredentialsData
+		sddcManagerSpec.SecondUserCredentials = secondUserCredentialsData
 	}
-	return sddcManagerSpecBinding
+	return sddcManagerSpec
 }

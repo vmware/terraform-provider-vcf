@@ -31,12 +31,13 @@ func ResourceVcfInstance() *schema.Resource {
 		UpdateContext: resourceVcfInstanceUpdate,
 		DeleteContext: resourceVcfInstanceDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(4 * time.Hour),
+			Create: schema.DefaultTimeout(5 * time.Hour),
 		},
 		Schema: resourceVcfInstanceSchema(),
 	}
 }
 
+// TODO add support for "subscriptionLicensing" property in future releases
 func resourceVcfInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"instance_id": {
