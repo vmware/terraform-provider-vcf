@@ -54,6 +54,18 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"sddc_manager_fqdn": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"sddc_manager_id": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"sddc_manager_version": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		"ceip_enabled": {
 			Type:        schema.TypeBool,
 			Description: "Enable VCF Customer Experience Improvement Program",
@@ -211,10 +223,18 @@ func resourceVcfInstanceRead(ctx context.Context, d *schema.ResourceData, meta i
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
+	bringupId := bringUpInfo.ID
 
-	d.SetId(bringUpInfo.ID)
+	d.SetId(bringupId)
 	_ = d.Set("status", bringUpInfo.Status)
 	_ = d.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
+
+	sddcManagerInfo, err := getSddcManagerInfo(ctx, bringupId, client)
+
+	_ = d.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
+	_ = d.Set("sddc_manager_id", sddcManagerInfo.ID)
+	_ = d.Set("sddc_manager_version", sddcManagerInfo.Version)
+
 	return nil
 }
 func resourceVcfInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -335,4 +355,13 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudB
 		return nil, err
 	}
 	return retrieveSddcResponse.Payload, nil
+}
+
+func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*models.SDDCManagerInfo, error) {
+	getSddcManagerInfoResponse, err := client.ApiClient.SDDC.GetSDDCManagerInfo(
+		sddc_api.NewGetSDDCManagerInfoParamsWithContext(ctx).WithID(bringupId).WithTimeout(constants.DefaultVcfApiCallTimeout))
+	if err != nil {
+		return nil, err
+	}
+	return getSddcManagerInfoResponse.Payload, nil
 }
