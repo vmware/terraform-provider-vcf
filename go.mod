@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
-	github.com/vmware/vcf-sdk-go v0.1.1
+	github.com/vmware/vcf-sdk-go v0.1.2
 )
 
 require (

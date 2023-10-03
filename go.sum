@@ -287,8 +287,8 @@ github.com/vmihailenco/msgpack/v5 v5.3.5 h1:5gO0H1iULLWGhs2H5tbAHIZTV8/cYafcFOr9
 github.com/vmihailenco/msgpack/v5 v5.3.5/go.mod h1:7xyJ9e+0+9SaZT0Wt1RGleJXzli6Q/V5KbhBonMG9jc=
 github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAhO7/IwNM9g=
 github.com/vmihailenco/tagparser/v2 v2.0.0/go.mod h1:Wri+At7QHww0WTrCBeu4J6bNtoV6mEfg5OIWRZA9qds=
-github.com/vmware/vcf-sdk-go v0.1.1 h1:8ke09kcrRp5LntqG4XRwfqXq6BLtX62tLAktEUVfa4Q=
-github.com/vmware/vcf-sdk-go v0.1.1/go.mod h1:EXM19ZwD2qmvMVSvgUzcnT7dSTCq3lzv84ErrFPZm1Q=
+github.com/vmware/vcf-sdk-go v0.1.2 h1:LoKzVSXcuKZYxn46FrGfPlD6QPjopvdWBhD4aMtdvSM=
+github.com/vmware/vcf-sdk-go v0.1.2/go.mod h1:EXM19ZwD2qmvMVSvgUzcnT7dSTCq3lzv84ErrFPZm1Q=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
 github.com/xdg-go/scram v1.0.2/go.mod h1:1WAq6h33pAW+iRreB34OORO2Nf7qel3VV3fjBj+hCSs=
