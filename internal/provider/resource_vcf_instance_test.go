@@ -8,7 +8,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -21,8 +20,6 @@ import (
 )
 
 func TestAccResourceVcfSddcBasic(t *testing.T) {
-	sddcName := "terraform_test_sddc_" + acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -30,7 +27,7 @@ func TestAccResourceVcfSddcBasic(t *testing.T) {
 			{
 				Config: testAccCheckVcfSddcConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSddcResourceExists(sddcName),
+					testAccCheckSddcResourceExists(),
 					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "instance_id"),
 					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "creation_timestamp"),
 					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "status"),
@@ -43,24 +40,25 @@ func TestAccResourceVcfSddcBasic(t *testing.T) {
 	})
 }
 
-func testAccCheckSddcResourceExists(name string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[name]
-		if !ok {
-			return fmt.Errorf("not found: %s", name)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("no sddc id is set")
-		}
-		sddcBringUpID := rs.Primary.Attributes["instance_id"]
-		client := testAccProvider.Meta().(*api_client.CloudBuilderClient)
-		response, err := getLastBringUp(context.Background(), client)
-		if err != nil {
-			return fmt.Errorf("error occurred while retrieving all sddcs")
-		}
-		foundSddc := response
-		if foundSddc.ID != sddcBringUpID {
-			return fmt.Errorf("error retrieving SDDC Bring-Up with id %s", sddcBringUpID)
+func testAccCheckSddcResourceExists() resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "vcf_instance" {
+				continue
+			}
+
+			instanceId := rs.Primary.Attributes["id"]
+			client := testAccProvider.Meta().(*api_client.CloudBuilderClient)
+			response, err := getLastBringUp(context.Background(), client)
+			if err != nil {
+				return fmt.Errorf("error occurred while retrieving all sddcs")
+			}
+			foundInstance := response
+			if foundInstance.ID != instanceId {
+				return fmt.Errorf("error retrieving SDDC Bring-Up with id %s", instanceId)
+			}
+			return nil
+
 		}
 		return nil
 	}
@@ -79,20 +77,20 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  sddc_manager {
 		second_user_credentials {
 		  username = "vcf"
-		  password = "TestTest123!"
+		  password = "MnogoSl0jn@P@rol@!"
 		}
 		ip_address = "10.0.0.4"
 		hostname = "sddc-manager"
 		root_user_credentials {
 		  username = "root"
-		  password = "TestTest123!"
+		  password = "MnogoSl0jn@P@rol@!"
 		}
 	  }
 	  ntp_servers = [
 		"10.0.0.250"
 	  ]
 	  dns {
-		domain = "vsphere.local"
+		domain = "vrack.vsphere.local"
 		name_server = "10.0.0.250"
 		secondary_name_server = "10.0.0.250"
 	  }
@@ -138,9 +136,9 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  hostname = "nsx-mgmt-1"
 		  ip = "10.0.0.31"
 		}
-		root_nsx_manager_password = "TestTest123!TestTest123!"
-		nsx_admin_password = "TestTest123!TestTest123!"
-		nsx_audit_password = "TestTest123!TestTest123!"
+		root_nsx_manager_password = "MnogoSl0jn@P@rol@!"
+		nsx_admin_password = "MnogoSl0jn@P@rol@!"
+		nsx_audit_password = "MnogoSl0jn@P@rol@!"
 		overlay_transport_zone {
 		  zone_name = "overlay-tz"
 		  network_name = "net-overlay"
@@ -225,7 +223,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  }
 	  psc {
 		psc_sso_domain = "vsphere.local"
-		admin_user_sso_password = "TestTest123!"
+		admin_user_sso_password = "MnogoSl0jn@P@rol@!"
 	  }
 	  vcenter {
 		vcenter_ip = "10.0.0.6"
@@ -319,13 +317,13 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"root_user_credentials": []interface{}{
 					map[string]interface{}{
 						"username": "root",
-						"password": "TestTest123!",
+						"password": "MnogoSl0jn@P@rol@!",
 					},
 				},
 				"second_user_credentials": []interface{}{
 					map[string]interface{}{
 						"username": "vcf",
-						"password": "TestTest123!",
+						"password": "MnogoSl0jn@P@rol@!",
 					},
 				},
 			},
@@ -369,9 +367,9 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 						"ip":       "10.0.0.31",
 					},
 				},
-				"root_nsx_manager_password": "TestTest123!TestTest123!",
-				"nsx_admin_password":        "TestTest123!TestTest123!",
-				"nsx_audit_password":        "TestTest123!TestTest123!",
+				"root_nsx_manager_password": "MnogoSl0jn@P@rol@!",
+				"nsx_admin_password":        "MnogoSl0jn@P@rol@!",
+				"nsx_audit_password":        "MnogoSl0jn@P@rol@!",
 				"vip":                       "10.0.0.30",
 				"vip_fqdn":                  "vip-nsx-mgmt",
 				"license":                   "XXX",
@@ -490,11 +488,12 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, *sddcSpec.SDDCManagerSpec.IPAddress, "10.0.0.4")
 	assert.Equal(t, *sddcSpec.SDDCManagerSpec.Hostname, "sddc-manager")
 	assert.Equal(t, *sddcSpec.SDDCManagerSpec.RootUserCredentials.Username, "root")
-	assert.Equal(t, *sddcSpec.SDDCManagerSpec.RootUserCredentials.Password, "TestTest123!")
+	assert.Equal(t, *sddcSpec.SDDCManagerSpec.RootUserCredentials.Password, "MnogoSl0jn@P@rol@!")
 	assert.Equal(t, *sddcSpec.SDDCManagerSpec.SecondUserCredentials.Username, "vcf")
-	assert.Equal(t, *sddcSpec.SDDCManagerSpec.SecondUserCredentials.Password, "TestTest123!")
+	assert.Equal(t, *sddcSpec.SDDCManagerSpec.SecondUserCredentials.Password, "MnogoSl0jn@P@rol@!")
 	assert.Equal(t, sddcSpec.NtpServers, []string{"10.0.0.250"})
-	assert.Equal(t, *sddcSpec.DNSSpec.Subdomain, "vsphere.local")
+	assert.Equal(t, *sddcSpec.DNSSpec.Domain, "vsphere.local")
+	assert.Equal(t, *sddcSpec.DNSSpec.Domain, "vsphere.local")
 	assert.Equal(t, sddcSpec.DNSSpec.Nameserver, "10.0.0.250")
 	assert.Equal(t, sddcSpec.DNSSpec.SecondaryNameserver, "10.0.0.250")
 	assert.Equal(t, *sddcSpec.NetworkSpecs[0].VlanID, "0")
@@ -509,9 +508,9 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, *sddcSpec.NSXTSpec.NSXTManagerSize, "medium")
 	assert.Equal(t, sddcSpec.NSXTSpec.NSXTManagers[0].Hostname, "nsx-mgmt-1")
 	assert.Equal(t, sddcSpec.NSXTSpec.NSXTManagers[0].IP, "10.0.0.31")
-	assert.Equal(t, *sddcSpec.NSXTSpec.RootNSXTManagerPassword, "TestTest123!TestTest123!")
-	assert.Equal(t, sddcSpec.NSXTSpec.NSXTAdminPassword, "TestTest123!TestTest123!")
-	assert.Equal(t, sddcSpec.NSXTSpec.NSXTAuditPassword, "TestTest123!TestTest123!")
+	assert.Equal(t, *sddcSpec.NSXTSpec.RootNSXTManagerPassword, "MnogoSl0jn@P@rol@!")
+	assert.Equal(t, sddcSpec.NSXTSpec.NSXTAdminPassword, "MnogoSl0jn@P@rol@!")
+	assert.Equal(t, sddcSpec.NSXTSpec.NSXTAuditPassword, "MnogoSl0jn@P@rol@!")
 	assert.Equal(t, *sddcSpec.NSXTSpec.Vip, "10.0.0.30")
 	assert.Equal(t, *sddcSpec.NSXTSpec.VipFqdn, "vip-nsx-mgmt")
 	assert.Equal(t, sddcSpec.NSXTSpec.NSXTLicense, "XXX")

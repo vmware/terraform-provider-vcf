@@ -74,9 +74,10 @@ func GetNsxSpecSchema() *schema.Schema {
 				"nsx_manager":            getNsxManagerSpecSchema(),
 				"overlay_transport_zone": getTransportZoneSchema(),
 				"transport_vlan_id": {
-					Type:        schema.TypeInt,
-					Description: "Transport VLAN ID",
-					Optional:    true,
+					Type:         schema.TypeInt,
+					Description:  "Transport VLAN ID",
+					Required:     true,
+					ValidateFunc: validation.IntBetween(0, 4095),
 				},
 			},
 		},

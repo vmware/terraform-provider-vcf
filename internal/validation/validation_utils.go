@@ -178,11 +178,19 @@ func ConvertValidationResultToDiag(validationResult *models.Validation) diag.Dia
 func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCheck) []diag.Diagnostic {
 	var result []diag.Diagnostic
 	for _, validationCheck := range validationChecks {
-		if validationCheck.Severity == "ERROR" {
+		if validationCheck.Severity == "ERROR" || validationCheck.ResultStatus != "SUCCEEDED" {
+			var validationErrorDetail string
+			if len(validationCheck.ErrorResponse.NestedErrors) > 0 {
+				for _, nestedError := range validationCheck.ErrorResponse.NestedErrors {
+					validationErrorDetail += nestedError.Message + "\n"
+				}
+			} else {
+				validationErrorDetail = validationCheck.ErrorResponse.Message
+			}
 			result = append(result, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  validationCheck.ErrorResponse.Message,
-				Detail:   validationCheck.Description,
+				Summary:  validationCheck.Description,
+				Detail:   validationErrorDetail,
 			})
 		}
 		if len(validationCheck.NestedValidationChecks) > 0 {
@@ -190,6 +198,18 @@ func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCh
 		}
 	}
 	return result
+}
+
+func HaveValidationChecksFinished(validationChecks []*models.ValidationCheck) bool {
+	for _, validationCheck := range validationChecks {
+		if validationCheck.ResultStatus == "IN_PROGRESS" {
+			return false
+		}
+		if !HaveValidationChecksFinished(validationCheck.NestedValidationChecks) {
+			return false
+		}
+	}
+	return true
 }
 
 func IsEmpty(object interface{}) bool {

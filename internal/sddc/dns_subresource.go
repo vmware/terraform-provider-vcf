@@ -21,7 +21,7 @@ func GetDnsSchema() *schema.Schema {
 			Schema: map[string]*schema.Schema{
 				"domain": {
 					Type:        schema.TypeString,
-					Description: "Tenant domain. Example: rainpole.io",
+					Description: "Tenant domain. Parent tenant domain including TLD suffix Example: vmware.com",
 					Required:    true,
 				},
 				"name_server": {
@@ -53,6 +53,7 @@ func GetDnsSpecFromSchema(rawData []interface{}) *models.DNSSpec {
 	dnsSpecBinding := &models.DNSSpec{
 		Nameserver:          nameServer,
 		SecondaryNameserver: secondaryNameserver,
+		Domain:              domain,
 		Subdomain:           domain,
 	}
 	return dnsSpecBinding

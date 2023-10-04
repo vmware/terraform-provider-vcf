@@ -47,24 +47,29 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation_utils.ValidateSddcId,
 		},
 		"status": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Description: "SDDC creation Task status",
+			Computed:    true,
 		},
 		"creation_timestamp": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Description: "SDDC Task creation timestamp",
+			Computed:    true,
 		},
 		"sddc_manager_fqdn": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Description: "FQDN of the resulting SDDC Manager",
+			Computed:    true,
 		},
 		"sddc_manager_id": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Description: "ID of the resulting SDDC Manager",
+			Computed:    true,
 		},
 		"sddc_manager_version": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Description: "Version of the resulting SDDC Manager",
+			Computed:    true,
 		},
 		"ceip_enabled": {
 			Type:        schema.TypeBool,
@@ -124,25 +129,6 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 		"vsan":       sddc.GetVsanSchema(),
 		"vx_manager": sddc.GetVxManagerSchema(),
 	}
-}
-
-func resourceVcfInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*api_client.CloudBuilderClient)
-
-	sddcSpec := buildSddcSpec(d)
-
-	bringUpInfo, err := getLastBringUp(ctx, client)
-	if err != nil {
-		tflog.Error(ctx, err.Error())
-		return diag.FromErr(err)
-	}
-
-	bringUpID, diags := invokeBringupWorkflow(ctx, client, sddcSpec, bringUpInfo)
-	if diags != nil {
-		return diags
-	}
-
-	return waitForBringupProcess(ctx, bringUpID, client)
 }
 
 func buildSddcSpec(data *schema.ResourceData) *models.SDDCSpec {
@@ -215,7 +201,31 @@ func buildSddcSpec(data *schema.ResourceData) *models.SDDCSpec {
 	return sddcSpec
 }
 
-func resourceVcfInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*api_client.CloudBuilderClient)
+
+	sddcSpec := buildSddcSpec(data)
+
+	bringUpInfo, err := getLastBringUp(ctx, client)
+	if err != nil {
+		tflog.Error(ctx, err.Error())
+		return diag.FromErr(err)
+	}
+
+	bringUpID, diags := invokeBringupWorkflow(ctx, client, sddcSpec, bringUpInfo)
+	if diags != nil {
+		return diags
+	}
+
+	diags = waitForBringupProcess(ctx, bringUpID, client)
+	if diags != nil {
+		return diags
+	}
+
+	return resourceVcfInstanceRead(ctx, data, meta)
+}
+
+func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.CloudBuilderClient)
 
 	bringUpInfo, err := getLastBringUp(ctx, client)
@@ -225,9 +235,9 @@ func resourceVcfInstanceRead(ctx context.Context, d *schema.ResourceData, meta i
 	}
 	bringupId := bringUpInfo.ID
 
-	d.SetId(bringupId)
-	_ = d.Set("status", bringUpInfo.Status)
-	_ = d.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
+	data.SetId(bringupId)
+	_ = data.Set("status", bringUpInfo.Status)
+	_ = data.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
 
 	sddcManagerInfo, err := getSddcManagerInfo(ctx, bringupId, client)
 	if err != nil {
@@ -235,15 +245,15 @@ func resourceVcfInstanceRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	_ = d.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
-	_ = d.Set("sddc_manager_id", sddcManagerInfo.ID)
-	_ = d.Set("sddc_manager_version", sddcManagerInfo.Version)
+	_ = data.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
+	_ = data.Set("sddc_manager_id", sddcManagerInfo.ID)
+	_ = data.Set("sddc_manager_version", sddcManagerInfo.Version)
 
 	return nil
 }
-func resourceVcfInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVcfInstanceUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// no op
-	return resourceVcfInstanceRead(ctx, d, meta)
+	return resourceVcfInstanceRead(ctx, data, meta)
 }
 func resourceVcfInstanceDelete(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	// no op
@@ -254,7 +264,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 	var bringUpID string
 	if lastBringup != nil && lastBringup.Status != "COMPLETED_WITH_SUCCESS" {
 		bringUpID = lastBringup.ID
-		diags := validateBringupSpec(ctx, client, sddcSpec, true)
+		diags := validateBringupSpec(ctx, client, sddcSpec)
 		if diags != nil {
 			return bringUpID, diags
 		}
@@ -272,7 +282,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 			return "", diag.FromErr(err)
 		}
 	} else {
-		diags := validateBringupSpec(ctx, client, sddcSpec, false)
+		diags := validateBringupSpec(ctx, client, sddcSpec)
 		if diags != nil {
 			return bringUpID, diags
 		}
@@ -328,12 +338,12 @@ func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) 
 	if len(retrieveAllSddcsResp.Payload.Elements) > 0 {
 		return retrieveAllSddcsResp.Payload.Elements[0], nil
 	}
-	return nil, fmt.Errorf("no bringups executed, cannot determine last successful bringup")
+	return nil, nil
 }
 
-func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *models.SDDCSpec, isRetry bool) diag.Diagnostics {
+func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *models.SDDCSpec) diag.Diagnostics {
 	validateSddcSpec := sddc_api.NewValidateSDDCSpecParams().WithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithSDDCSpec(sddcSpec).WithRedo(utils.ToBoolPointer(isRetry))
+		WithTimeout(constants.DefaultVcfApiCallTimeout).WithSDDCSpec(sddcSpec).WithRedo(utils.ToBoolPointer(true))
 
 	var validationResponse *models.Validation
 	okResponse, acceptedResponse, err := client.ApiClient.SDDC.ValidateSDDCSpec(validateSddcSpec)
@@ -349,6 +359,28 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	if validation_utils.HasValidationFailed(validationResponse) {
 		return validation_utils.ConvertValidationResultToDiag(validationResponse)
 	}
+	validationId := validationResponse.ID
+	for {
+		getSddcValidationParams := sddc_api.NewGetSDDCValidationParamsWithContext(ctx).
+			WithTimeout(constants.DefaultVcfApiCallTimeout)
+		getSddcValidationParams.SetID(validationId)
+		getValidationResponse, err := client.ApiClient.SDDC.GetSDDCValidation(getSddcValidationParams)
+		if err != nil {
+			return validation_utils.ConvertVcfErrorToDiag(err)
+		}
+		validationResponse = getValidationResponse.Payload
+		if validation_utils.HaveValidationChecksFinished(validationResponse.ValidationChecks) {
+			break
+		}
+		time.Sleep(10 * time.Second)
+	}
+	if err != nil {
+		return validation_utils.ConvertVcfErrorToDiag(err)
+	}
+	if validation_utils.HasValidationFailed(validationResponse) {
+		return validation_utils.ConvertValidationResultToDiag(validationResponse)
+	}
+
 	return nil
 }
 
