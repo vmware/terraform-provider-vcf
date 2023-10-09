@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [v0.5.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.5.0)
+
+> Release Date: Oct 9th 2023
+
+FEATURES:
+* Add support for management domain deployment (bringup) [\#38](https://github.com/vmware/terraform-provider-vcf/issues/38)
+
+**Note:** Provider has two mutually exclusive modes of operation: CloudBuilder mode (for bringup) and SDDCManager mode
+
 ## [v0.4.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.4.0)
 
 > Release Date: Sep 11th 2023
