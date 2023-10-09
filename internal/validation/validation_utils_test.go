@@ -49,16 +49,52 @@ func TestValidatePassword(t *testing.T) {
 	})
 }
 
+func TestValidateSddcId(t *testing.T) {
+	t.Run("Validate sddc Id", func(t *testing.T) {
+		var sddcIdTests = []struct {
+			sddcId      string
+			expectedErr string
+		}{
+			{"Test1!", "can contain only letters, numbers and the following symbol: '-'"},
+			{"te", "sddcId can have length of 3-20 characters"},
+			{"Test%", "can contain only letters, numbers and the following symbol: '-'"},
+		}
+
+		for _, sddcIdTest := range sddcIdTests {
+			_, err := ValidateSddcId(sddcIdTest.sddcId, "")
+			if len(err) == 0 {
+				t.Errorf("failed. expected one error for sddcId %s, but got zero", sddcIdTest.sddcId)
+				break
+			}
+			if !strings.Contains(err[0].Error(), sddcIdTest.expectedErr) {
+				t.Errorf("failed. Unexpected error for sddcId %s : %s, expected %s", sddcIdTest.sddcId, err[0].Error(), sddcIdTest.expectedErr)
+			}
+		}
+	})
+
+	t.Run("Nil sddcId validation", func(t *testing.T) {
+		var expectedError = "expected not nil and type of \"\" to be string"
+
+		_, err := ValidateSddcId(nil, "")
+		if len(err) == 0 {
+			t.Fatalf("failed. expected one error for nil sddcId, but got zero")
+		}
+		if !strings.Contains(err[0].Error(), expectedError) {
+			t.Errorf("Failed. Unexpected error for nil sddcId: %s, expected %s", err[0].Error(), expectedError)
+		}
+	})
+}
+
 func TestValidateParsingFloatToInt(t *testing.T) {
 	var testFloatNotInt = 3.14
 	var testFloatInt float64 = 3
 	var expectedErr = "expected an integer, got a float"
 
-	if err := ValidateParsingFloatToInt(testFloatNotInt); len(err) == 0 {
+	if _, err := ValidateParsingFloatToInt(testFloatNotInt, ""); len(err) == 0 {
 		t.Errorf("Failed. Expected error: \"%s\", for float64 %f", expectedErr, testFloatNotInt)
 	}
 
-	if err := ValidateParsingFloatToInt(testFloatInt); len(err) != 0 {
+	if _, err := ValidateParsingFloatToInt(testFloatInt, ""); len(err) != 0 {
 		t.Errorf("Failed. Expected no errors for float64 %f, got: \"%s\"", testFloatInt, err[0].Error())
 	}
 }

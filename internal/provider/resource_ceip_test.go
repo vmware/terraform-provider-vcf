@@ -1,5 +1,7 @@
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+/*
+ *  Copyright 2023 VMware, Inc.
+ *    SPDX-License-Identifier: MPL-2.0
+ */
 
 package provider
 
@@ -7,6 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"log"
 	"testing"
 )
@@ -33,7 +36,7 @@ func testAccVcfCeip() string {
 }
 
 func testVerifyVcfCeip(enabledState string) error {
-	vcfClient := testAccProvider.Meta().(*SddcManagerClient)
+	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)

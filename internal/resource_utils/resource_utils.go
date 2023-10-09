@@ -21,6 +21,24 @@ func ToStringPointer(object interface{}) *string {
 	return &objectAsString
 }
 
+func ToInt32Pointer(object interface{}) *int32 {
+	if object == nil {
+		return nil
+	}
+	objectAsInt32 := int32(object.(int))
+	return &objectAsInt32
+}
+
+func ToStringSlice(params []interface{}) []string {
+	var paramSlice []string
+	for _, p := range params {
+		if param, ok := p.(string); ok {
+			paramSlice = append(paramSlice, param)
+		}
+	}
+	return paramSlice
+}
+
 // CreateIdToObjectMap Creates a Map with string ID index to Object.
 func CreateIdToObjectMap(objectsList []interface{}) map[string]interface{} {
 	// crete a map of new host id -> host

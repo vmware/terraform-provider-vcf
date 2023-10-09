@@ -15,6 +15,13 @@ const (
 	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for Acceptance tests.
 	VcfTestPassword = "VCF_TEST_PASSWORD"
 
+	// CloudBuilderTestUrl URL of a CloudBuilder instance, used for Acceptance tests.
+	CloudBuilderTestUrl = "CLOUDBUILDER_TEST_URL"
+	// CloudBuilderTestUsername username of CloudBuilder user, used for Acceptance tests.
+	CloudBuilderTestUsername = "CLOUDBUILDER_TEST_USERNAME"
+	// CloudBuilderTestPassword an CloudBuilder user, used for Acceptance tests.
+	CloudBuilderTestPassword = "CLOUDBUILDER_TEST_PASSWORD"
+
 	// VcfTestAllowUnverifiedTls allows VCF environments with self-signed certificates
 	// to be used in Acceptance tests.
 	VcfTestAllowUnverifiedTls = "VCF_TEST_ALLOW_UNVERIFIED_TLS"
@@ -91,6 +98,9 @@ const (
 
 	// VcfTestVsanLicenseKey license key for vSAN required for workload domain and cluster acceptance tests.
 	VcfTestVsanLicenseKey = "VCF_TEST_VSAN_LICENSE_KEY"
+
+	// VcfTestVcenterLicenseKey license key for vCenter required for bringup acceptance tests.
+	VcfTestVcenterLicenseKey = "VCF_TEST_VCENTER_LICENSE_KEY"
 
 	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.
 	// Typically, the id of management domain is used as it is already created during bringup.

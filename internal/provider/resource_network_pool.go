@@ -1,11 +1,14 @@
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+/*
+ *  Copyright 2023 VMware, Inc.
+ *    SPDX-License-Identifier: MPL-2.0
+ */
 
 package provider
 
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/network_pools"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -97,7 +100,7 @@ func ResourceNetworkPool() *schema.Resource {
 }
 
 func resourceNetworkPoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*SddcManagerClient).ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	createParams := network_pools.NewCreateNetworkPoolParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
@@ -150,7 +153,7 @@ func resourceNetworkPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*SddcManagerClient).ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	params := network_pools.NewGetNetworkPoolParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
@@ -168,7 +171,7 @@ func resourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceNetworkPoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*SddcManagerClient).ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	params := network_pools.NewDeleteNetworkPoolParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)

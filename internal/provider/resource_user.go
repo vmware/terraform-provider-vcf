@@ -1,5 +1,7 @@
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+/*
+ *  Copyright 2023 VMware, Inc.
+ *    SPDX-License-Identifier: MPL-2.0
+ */
 
 package provider
 
@@ -8,6 +10,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/users"
 	"github.com/vmware/vcf-sdk-go/models"
@@ -74,7 +77,7 @@ func ResourceUser() *schema.Resource {
 }
 
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*SddcManagerClient).ApiClient
+	client := meta.(*api_client.SddcManagerClient).ApiClient
 	log.Println(d)
 	params := users.NewAddUsersParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
@@ -131,7 +134,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*SddcManagerClient).ApiClient
+	client := meta.(*api_client.SddcManagerClient).ApiClient
 
 	id := d.Id()
 
@@ -155,7 +158,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 }
 
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*SddcManagerClient).ApiClient
+	client := meta.(*api_client.SddcManagerClient).ApiClient
 
 	params := users.NewDeleteUserParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)

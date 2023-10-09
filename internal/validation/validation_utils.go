@@ -58,7 +58,26 @@ func ValidatePassword(v interface{}, k string) (warnings []string, errors []erro
 	return
 }
 
-func ValidateParsingFloatToInt(v interface{}) (errors []error) {
+func ValidateSddcId(v interface{}, k string) (warnings []string, errors []error) {
+	sddcId, ok := v.(string)
+	if !ok {
+		errors = append(errors, fmt.Errorf("expected not nil and type of %q to be string", k))
+		return
+	}
+	if len(sddcId) < 3 || len(sddcId) > 20 {
+		errors = append(errors, fmt.Errorf("sddcId can have length of 3-20 characters"))
+		return
+	}
+	for _, char := range sddcId {
+		if !unicode.IsLetter(char) && !unicode.IsDigit(char) && char != '-' {
+			errors = append(errors, fmt.Errorf("can contain only letters, numbers and the following symbol: '-'"))
+			return
+		}
+	}
+	return
+}
+
+func ValidateParsingFloatToInt(v interface{}, k string) (warnings []string, errors []error) {
 	floatNum := v.(float64)
 	var intNum = int(floatNum)
 	if floatNum != float64(intNum) {
@@ -159,11 +178,19 @@ func ConvertValidationResultToDiag(validationResult *models.Validation) diag.Dia
 func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCheck) []diag.Diagnostic {
 	var result []diag.Diagnostic
 	for _, validationCheck := range validationChecks {
-		if validationCheck.Severity == "ERROR" {
+		if validationCheck.Severity == "ERROR" || validationCheck.ResultStatus != "SUCCEEDED" {
+			var validationErrorDetail string
+			if len(validationCheck.ErrorResponse.NestedErrors) > 0 {
+				for _, nestedError := range validationCheck.ErrorResponse.NestedErrors {
+					validationErrorDetail += nestedError.Message + "\n"
+				}
+			} else {
+				validationErrorDetail = validationCheck.ErrorResponse.Message
+			}
 			result = append(result, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  validationCheck.ErrorResponse.Message,
-				Detail:   validationCheck.Description,
+				Summary:  validationCheck.Description,
+				Detail:   validationErrorDetail,
 			})
 		}
 		if len(validationCheck.NestedValidationChecks) > 0 {
@@ -171,6 +198,18 @@ func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCh
 		}
 	}
 	return result
+}
+
+func HaveValidationChecksFinished(validationChecks []*models.ValidationCheck) bool {
+	for _, validationCheck := range validationChecks {
+		if validationCheck.ResultStatus == "IN_PROGRESS" {
+			return false
+		}
+		if !HaveValidationChecksFinished(validationCheck.NestedValidationChecks) {
+			return false
+		}
+	}
+	return true
 }
 
 func IsEmpty(object interface{}) bool {

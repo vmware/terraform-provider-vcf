@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"log"
 	"os"
@@ -78,7 +79,7 @@ func testAccVcfHostConfig(hostFqdn, hostSshPassword string) string {
 }
 
 func testCheckVcfHostDestroy(_ *terraform.State) error {
-	vcfClient := testAccProvider.Meta().(*SddcManagerClient)
+	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	hosts, err := apiClient.Hosts.GetHosts(nil)

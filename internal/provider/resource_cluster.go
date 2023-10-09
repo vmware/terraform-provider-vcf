@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/cluster"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
@@ -37,7 +38,7 @@ func ResourceCluster() *schema.Resource {
 		DeleteContext: resourceClusterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				vcfClient := meta.(*SddcManagerClient)
+				vcfClient := meta.(*api_client.SddcManagerClient)
 				apiClient := vcfClient.ApiClient
 				clusterId := data.Id()
 				return cluster.ImportCluster(ctx, data, apiClient, clusterId)
@@ -197,7 +198,7 @@ func clusterSubresourceSchema() *schema.Resource {
 }
 
 func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 
 	clusterSpec, err := cluster.TryConvertResourceDataToClusterSpec(data)
 	if err != nil {
@@ -215,7 +216,7 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 }
 
 func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
 	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
@@ -237,7 +238,7 @@ func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta in
 }
 
 func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 
 	clusterUpdateSpec, err := cluster.CreateClusterUpdateSpec(data, false)
 	if err != nil {
@@ -253,7 +254,7 @@ func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta 
 }
 
 func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*SddcManagerClient)
+	vcfClient := meta.(*api_client.SddcManagerClient)
 
 	diagnostics := deleteCluster(ctx, data.Id(), vcfClient)
 	if diagnostics != nil {
@@ -264,7 +265,7 @@ func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta 
 }
 
 func createCluster(ctx context.Context, domainId string, clusterSpec *models.ClusterSpec,
-	vcfClient *SddcManagerClient) (string, diag.Diagnostics) {
+	vcfClient *api_client.SddcManagerClient) (string, diag.Diagnostics) {
 	apiClient := vcfClient.ApiClient
 	clusterCreationSpec := models.ClusterCreationSpec{
 		ComputeSpec: &models.ComputeSpec{
@@ -306,7 +307,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec *models.Clu
 }
 
 func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec *models.ClusterUpdateSpec,
-	vcfClient *SddcManagerClient) diag.Diagnostics {
+	vcfClient *api_client.SddcManagerClient) diag.Diagnostics {
 	apiClient := vcfClient.ApiClient
 	validationDiagnostics := cluster.ValidateClusterUpdateOperation(ctx, clusterId, clusterUpdateSpec, apiClient)
 	if validationDiagnostics != nil {
@@ -336,7 +337,7 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec *mod
 	return nil
 }
 
-func deleteCluster(ctx context.Context, clusterId string, vcfClient *SddcManagerClient) diag.Diagnostics {
+func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.SddcManagerClient) diag.Diagnostics {
 	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	clusterUpdateParams.ID = clusterId

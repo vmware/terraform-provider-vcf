@@ -1,7 +1,9 @@
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+/*
+ *  Copyright 2023 VMware, Inc.
+ *    SPDX-License-Identifier: MPL-2.0
+ */
 
-package provider
+package api_client
 
 import (
 	"context"
@@ -24,27 +26,27 @@ import (
 
 // SddcManagerClient model that represents properties to authenticate against VCF instance.
 type SddcManagerClient struct {
-	SddcManagerUsername string
-	SddcManagerPassword string
-	SddcManagerHost     string
-	AccessToken         *string
-	ApiClient           *vcfclient.VcfClient
-	allowUnverifiedTls  bool
-	lastRefreshTime     time.Time
-	isRefreshing        bool
-	getTaskRetries      int
+	username           string
+	password           string
+	sddcManagerUrl     string
+	accessToken        *string
+	ApiClient          *vcfclient.VcfClient
+	allowUnverifiedTls bool
+	lastRefreshTime    time.Time
+	isRefreshing       bool
+	getTaskRetries     int
 }
 
 // NewSddcManagerClient constructs new Client instance with vcf credentials.
-func NewSddcManagerClient(username, password, host string, allowUnverifiedTls bool) *SddcManagerClient {
+func NewSddcManagerClient(username, password, url string, allowUnverifiedTls bool) *SddcManagerClient {
 	return &SddcManagerClient{
-		SddcManagerUsername: username,
-		SddcManagerPassword: password,
-		SddcManagerHost:     host,
-		allowUnverifiedTls:  allowUnverifiedTls,
-		lastRefreshTime:     time.Now(),
-		isRefreshing:        false,
-		getTaskRetries:      0,
+		username:           username,
+		password:           password,
+		sddcManagerUrl:     url,
+		allowUnverifiedTls: allowUnverifiedTls,
+		lastRefreshTime:    time.Now(),
+		isRefreshing:       false,
+		getTaskRetries:     0,
 	}
 }
 
@@ -53,19 +55,19 @@ var accessToken *string
 const maxGetTaskRetries int = 10
 const maxTaskRetries int = 6
 
-func newTransport(sddcManagerClient *SddcManagerClient) *customTransport {
-	return &customTransport{
+func (sddcManagerClient *SddcManagerClient) newTransport() *sddcManagerCustomHttpTransport {
+	return &sddcManagerCustomHttpTransport{
 		originalTransport: http.DefaultTransport,
 		sddcManagerClient: sddcManagerClient,
 	}
 }
 
-type customTransport struct {
+type sddcManagerCustomHttpTransport struct {
 	originalTransport http.RoundTripper
 	sddcManagerClient *SddcManagerClient
 }
 
-func (c *customTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (c *sddcManagerCustomHttpTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	// Refresh the access token every 20 minutes so that SDK operations won't start to
 	// fail with 401, 403 because of token expiration, during long-running tasks
 	if time.Since(c.sddcManagerClient.lastRefreshTime) > 20*time.Minute &&
@@ -97,10 +99,9 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 		InsecureSkipVerify: sddcManagerClient.allowUnverifiedTls}
 
 	cfg := vcfclient.DefaultTransportConfig()
-	openApiClient := openapiclient.New(sddcManagerClient.SddcManagerHost, cfg.BasePath, cfg.Schemes)
-	// openApiClient.SetDebug(true)
+	openApiClient := openapiclient.New(sddcManagerClient.sddcManagerUrl, cfg.BasePath, cfg.Schemes)
 
-	openApiClient.Transport = newTransport(sddcManagerClient)
+	openApiClient.Transport = sddcManagerClient.newTransport()
 
 	// create the API client, with the transport
 	vcfClient := vcfclient.New(openApiClient, strfmt.Default)
@@ -108,8 +109,8 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 	sddcManagerClient.ApiClient = vcfClient
 	// Get access token
 	tokenSpec := &models.TokenCreationSpec{
-		Username: sddcManagerClient.SddcManagerUsername,
-		Password: sddcManagerClient.SddcManagerPassword,
+		Username: sddcManagerClient.username,
+		Password: sddcManagerClient.password,
 	}
 	params := tokens.NewCreateTokenParams().
 		WithTokenCreationSpec(tokenSpec).WithTimeout(constants.DefaultVcfApiCallTimeout)
@@ -122,7 +123,7 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 	accessToken = &ok.Payload.AccessToken
 	// save the access token for later use
 	sddcManagerClient.lastRefreshTime = time.Now()
-	sddcManagerClient.AccessToken = &ok.Payload.AccessToken
+	sddcManagerClient.accessToken = &ok.Payload.AccessToken
 	sddcManagerClient.isRefreshing = false
 	return nil
 }
