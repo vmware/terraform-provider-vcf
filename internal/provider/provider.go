@@ -77,13 +77,14 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"vcf_instance":     ResourceVcfInstance(),
-			"vcf_user":         ResourceUser(),
-			"vcf_network_pool": ResourceNetworkPool(),
-			"vcf_ceip":         ResourceCeip(),
-			"vcf_host":         ResourceHost(),
-			"vcf_domain":       ResourceDomain(),
-			"vcf_cluster":      ResourceCluster(),
+			"vcf_instance":              ResourceVcfInstance(),
+			"vcf_user":                  ResourceUser(),
+			"vcf_network_pool":          ResourceNetworkPool(),
+			"vcf_ceip":                  ResourceCeip(),
+			"vcf_host":                  ResourceHost(),
+			"vcf_domain":                ResourceDomain(),
+			"vcf_cluster":               ResourceCluster(),
+			"vcf_certificate_authority": ResourceCertificateAuthority(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
