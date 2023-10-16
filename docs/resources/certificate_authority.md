@@ -8,7 +8,8 @@ description: |-
 
 # vcf_certificate_authority (Resource)
 
-
+VMware Cloud Foundation supports the ability to manage certificates by integrating with Microsoft Active Directory Certificate Services (Microsoft CA) or OpenSSL CA.
+Before you can perform certificate operations using this provider you must ensure that the Microsoft Certificate Authority or OpenSSL Certificate Authority are configured correctly.
 
 
 
@@ -17,8 +18,8 @@ description: |-
 
 ### Optional
 
-- `microsoft` (Block List, Max: 1) (see [below for nested schema](#nestedblock--microsoft))
-- `open_ssl` (Block List, Max: 1) (see [below for nested schema](#nestedblock--open_ssl))
+- `microsoft` (Block List, Max: 1) Configuration describing Microsoft CA server (see [below for nested schema](#nestedblock--microsoft))
+- `open_ssl` (Block List, Max: 1) Configuration describing OpenSSL CA server (see [below for nested schema](#nestedblock--open_ssl))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

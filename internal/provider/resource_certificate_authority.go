@@ -23,7 +23,6 @@ func ResourceCertificateAuthority() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceCertificateAuthorityCreate,
 		ReadContext:   resourceCertificateAuthorityRead,
-		UpdateContext: resourceCertificateAuthorityUpdate,
 		DeleteContext: resourceCertificateAuthorityDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -45,7 +44,8 @@ func ResourceCertificateAuthority() *schema.Resource {
 				Type:          schema.TypeList,
 				MaxItems:      1,
 				Optional:      true,
-				Description:   "",
+				ForceNew:      true,
+				Description:   "Configuration describing Microsoft CA server",
 				ConflictsWith: []string{"open_ssl"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -81,7 +81,8 @@ func ResourceCertificateAuthority() *schema.Resource {
 				Type:          schema.TypeList,
 				MaxItems:      1,
 				Optional:      true,
-				Description:   "",
+				ForceNew:      true,
+				Description:   "Configuration describing OpenSSL CA server",
 				ConflictsWith: []string{"microsoft"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -92,19 +93,10 @@ func ResourceCertificateAuthority() *schema.Resource {
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 						"country": {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "ISO 3166 country code where company is legally registered",
-							ValidateFunc: validation.StringInSlice([]string{"US", "CA", "AX", "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AN", "AO", "AQ", "AR", "AS", "AT", "AU",
-								"AW", "AZ", "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BM", "BN", "BO", "BR", "BS", "BT", "BV", "BW", "BZ", "CA", "CC", "CF", "CH", "CI", "CK",
-								"CL", "CM", "CN", "CO", "CR", "CS", "CV", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM", "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI", "FJ", "FK",
-								"FM", "FO", "FR", "FX", "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", "GU", "GW", "GY", "HK", "HM", "HN",
-								"HR", "HT", "HU", "ID", "IE", "IL", "IM", "IN", "IO", "IS", "IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN", "KR", "KW", "KY", "KZ", "LA",
-								"LC", "LI", "LK", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV",
-								"MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NT", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM",
-								"PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SR", "ST",
-								"SU", "SV", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TM", "TN", "TO", "TP", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "US", "UY", "UZ", "VA",
-								"VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "COM", "EDU", "GOV", "INT", "MIL", "NET", "ORG", "ARPA"}, false),
+							Type:         schema.TypeString,
+							Required:     true,
+							Description:  "ISO 3166 country code where company is legally registered",
+							ValidateFunc: validation.StringInSlice(constants.GetIso3166CountryCodes(), false),
 						},
 						"locality": {
 							Type:         schema.TypeString,
@@ -137,8 +129,8 @@ func ResourceCertificateAuthority() *schema.Resource {
 }
 
 func validateRequiredAttributesForCertificateAuthority(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
-	microsoftConfig := diff.Get("microsoft").(string)
-	openSslConfig := diff.Get("open_ssl").(string)
+	microsoftConfig := diff.Get("microsoft")
+	openSslConfig := diff.Get("open_ssl")
 
 	if validationUtils.IsEmpty(microsoftConfig) && validationUtils.IsEmpty(openSslConfig) {
 		return fmt.Errorf("one of \"microsoft\" or \"open_ssl\" configuration has to be provided")
@@ -184,8 +176,14 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 	_ = data.Set("type", authorityId)
 	certificateAuthority := authorityResponse.Payload
 	if authorityId == "Microsoft" {
-		microsoftConfigRaw := *new([]interface{})
-		microsoftConfigRaw = append(microsoftConfigRaw, make(map[string]interface{}))
+		microsoftConfigAttribute, microsoftConfigExists := data.GetOk("microsoft")
+		var microsoftConfigRaw []interface{}
+		if microsoftConfigExists {
+			microsoftConfigRaw = microsoftConfigAttribute.([]interface{})
+		} else {
+			microsoftConfigRaw = *new([]interface{})
+			microsoftConfigRaw = append(microsoftConfigRaw, make(map[string]interface{}))
+		}
 		microsoftConfig := microsoftConfigRaw[0].(map[string]interface{})
 		microsoftConfig["server_url"] = certificateAuthority.ServerURL
 		microsoftConfig["template_name"] = certificateAuthority.TemplateName
@@ -193,8 +191,14 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 		_ = data.Set("microsoft", microsoftConfigRaw)
 	}
 	if authorityId == "OpenSSL" {
-		openSslConfigRaw := *new([]interface{})
-		openSslConfigRaw = append(openSslConfigRaw, make(map[string]interface{}))
+		openSslConfigAttribute, openSslConfigExists := data.GetOk("open_ssl")
+		var openSslConfigRaw []interface{}
+		if openSslConfigExists {
+			openSslConfigRaw = openSslConfigAttribute.([]interface{})
+		} else {
+			openSslConfigRaw = *new([]interface{})
+			openSslConfigRaw = append(openSslConfigRaw, make(map[string]interface{}))
+		}
 		openSslConfig := openSslConfigRaw[0].(map[string]interface{})
 		openSslConfig["common_name"] = certificateAuthority.CommonName
 		openSslConfig["country"] = certificateAuthority.Country
@@ -206,23 +210,6 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 	}
 
 	return nil
-}
-
-func resourceCertificateAuthorityUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
-
-	certificateAuthorityCreationSpec := getCertificateAuthorityCreationSpec(data)
-
-	configureCertificateAuthorityParams := certificates.NewConfigureCertificateAuthorityParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithCertificateAuthoritySpec(certificateAuthorityCreationSpec)
-
-	_, err := apiClient.Certificates.ConfigureCertificateAuthority(configureCertificateAuthorityParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return resourceCertificateAuthorityRead(ctx, data, meta)
 }
 
 func resourceCertificateAuthorityDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -291,11 +278,12 @@ func getCaType(data *schema.ResourceData) *string {
 	var caType string
 	if !validationUtils.IsEmpty(data.Get("microsoft")) {
 		caType = "Microsoft"
+		return &caType
 	}
 	if !validationUtils.IsEmpty(data.Get("open_ssl")) {
 		caType = "OpenSSL"
+		return &caType
 	} else {
 		return nil
 	}
-	return &caType
 }

@@ -6,6 +6,7 @@ package provider
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"os"
 	"testing"
 )
@@ -31,15 +32,24 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 // testAccPreCheck validates all required environment variables for running acceptance
 // tests are set.
 func testAccPreCheck(t *testing.T) {
-	//if v := os.Getenv(constants.VcfTestUrl); v == "" {
-	//	t.Fatal(constants.VcfTestUrl + " must be set for acceptance tests")
-	//}
-	//if v := os.Getenv(constants.VcfTestUsername); v == "" {
-	//	t.Fatal(constants.VcfTestUsername + " must be set for acceptance tests")
-	//}
-	//if v := os.Getenv(constants.VcfTestPassword); v == "" {
-	//	t.Fatal(constants.VcfTestPassword + " must be set for acceptance tests")
-	//}
+	testSddcManagerUrl := os.Getenv(constants.VcfTestUrl)
+	testCloudBuilderUrl := os.Getenv(constants.CloudBuilderTestUrl)
+	if validationUtils.IsEmpty(testSddcManagerUrl) && validationUtils.IsEmpty(testCloudBuilderUrl) {
+		t.Fatal(constants.VcfTestUrl + " or " + constants.CloudBuilderTestUrl +
+			" must be set for acceptance tests")
+	}
+	testSddcManagerUsername := os.Getenv(constants.VcfTestUsername)
+	testCloudBuilderUsername := os.Getenv(constants.CloudBuilderTestUsername)
+	if validationUtils.IsEmpty(testSddcManagerUsername) && validationUtils.IsEmpty(testCloudBuilderUsername) {
+		t.Fatal(constants.VcfTestUsername + " or " + constants.CloudBuilderTestUsername +
+			" must be set for acceptance tests")
+	}
+	testSddcManagerPassword := os.Getenv(constants.VcfTestPassword)
+	testCloudBuilderPassword := os.Getenv(constants.CloudBuilderTestPassword)
+	if validationUtils.IsEmpty(testSddcManagerPassword) && validationUtils.IsEmpty(testCloudBuilderPassword) {
+		t.Fatal(constants.VcfTestPassword + " or " + constants.CloudBuilderTestPassword +
+			" must be set for acceptance tests")
+	}
 	if v := os.Getenv(constants.VcfTestHost1Fqdn); v == "" {
 		t.Fatal(constants.VcfTestHost1Fqdn + " must be set for acceptance tests")
 	}
