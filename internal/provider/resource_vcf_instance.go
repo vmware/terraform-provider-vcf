@@ -109,7 +109,7 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Required:    true,
 			Elem: &schema.Schema{
 				Type:         schema.TypeString,
-				ValidateFunc: validation.IsIPAddress,
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
 		"psc":          sddc.GetPscSchema(),
