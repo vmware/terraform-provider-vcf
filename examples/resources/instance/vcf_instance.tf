@@ -89,11 +89,6 @@ resource "vcf_instance" "sddc_1" {
       zone_name = "overlay-tz"
       network_name = "net-overlay"
     }
-    vlan_transport_zone {
-      zone_name = "vlan-tz"
-      switch_name = "mgmt-nvds"
-      network_name = "net-vlan"
-    }
     vip = "10.0.0.30"
     vip_fqdn = "vip-nsx-mgmt"
     license = var.nsx_license_key
