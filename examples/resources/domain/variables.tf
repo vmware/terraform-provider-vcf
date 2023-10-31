@@ -59,8 +59,7 @@ variable "nsx_license_key" {
 }
 
 variable "esx_license_key" {
-  description = "License key for an ESXi host in the free pool. This is required except in cases where the " +
-    "ESXi host has already been licensed outside of the VMware Cloud Foundation system"
+  description = "License key for an ESXi host in the free pool. This is required except in cases where the ESXi host has already been licensed outside of the VMware Cloud Foundation system"
   default = ""
 }
 
