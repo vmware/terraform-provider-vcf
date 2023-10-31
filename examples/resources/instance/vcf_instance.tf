@@ -87,13 +87,7 @@ resource "vcf_instance" "sddc_1" {
     nsx_audit_password = var.nsx_manager_audit_password
     overlay_transport_zone {
       zone_name = "overlay-tz"
-      switch_name = "mgmt-nvds"
       network_name = "net-overlay"
-    }
-    vlan_transport_zone {
-      zone_name = "vlan-tz"
-      switch_name = "mgmt-nvds"
-      network_name = "net-vlan"
     }
     vip = "10.0.0.30"
     vip_fqdn = "vip-nsx-mgmt"
