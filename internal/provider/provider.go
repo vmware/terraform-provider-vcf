@@ -86,6 +86,8 @@ func Provider() *schema.Provider {
 			"vcf_cluster":               ResourceCluster(),
 			"vcf_certificate_authority": ResourceCertificateAuthority(),
 			"vcf_resource_csr":          ResourceCsr(),
+			"vcf_certificate":           ResourceCertificate(),
+			"vcf_external_certificate":  ResourceExternalCertificate(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

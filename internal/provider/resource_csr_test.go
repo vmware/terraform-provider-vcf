@@ -31,7 +31,7 @@ func TestAccResourceVcfCsr(t *testing.T) {
 	})
 }
 
-func testAccVcfCsrConfig(domainId string) string {
+func testAccVcfCsrConfig(domainID string) string {
 	return fmt.Sprintf(`
 	resource "vcf_resource_csr" "csr1" {
   		domain_id = %q
@@ -44,6 +44,6 @@ func testAccVcfCsrConfig(domainId string) string {
 		organization_unit = "VCF"
 		resource = "VCENTER"
 	}`,
-		domainId,
+		domainID,
 	)
 }
