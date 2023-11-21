@@ -68,20 +68,23 @@ func ValidateResourceCertificates(ctx context.Context, client *vcfclient.VcfClie
 		return validationutils.ConvertCertificateValidationsResultToDiag(validationResponse)
 	}
 	validationId := validationResponse.ValidationID
-	for {
-		getResourceCertificatesValidationResultParams := certificates.NewGetResourceCertificatesValidationResultParams().
-			WithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout).
-			WithID(*validationId)
-		getValidationResponse, err := client.Certificates.GetResourceCertificatesValidationResult(getResourceCertificatesValidationResultParams)
-		if err != nil {
-			return validationutils.ConvertVcfErrorToDiag(err)
+	// Wait for certificate validation to fisnish
+	if !validationutils.HasCertificateValidationFinished(validationResponse) {
+		for {
+			getResourceCertificatesValidationResultParams := certificates.NewGetResourceCertificatesValidationResultParams().
+				WithContext(ctx).
+				WithTimeout(constants.DefaultVcfApiCallTimeout).
+				WithID(*validationId)
+			getValidationResponse, err := client.Certificates.GetResourceCertificatesValidationResult(getResourceCertificatesValidationResultParams)
+			if err != nil {
+				return validationutils.ConvertVcfErrorToDiag(err)
+			}
+			validationResponse = getValidationResponse.Payload
+			if validationutils.HasCertificateValidationFinished(validationResponse) {
+				break
+			}
+			time.Sleep(10 * time.Second)
 		}
-		validationResponse = getValidationResponse.Payload
-		if validationutils.HasCertificateValidationFinished(validationResponse) {
-			break
-		}
-		time.Sleep(10 * time.Second)
 	}
 	if err != nil {
 		return validationutils.ConvertVcfErrorToDiag(err)

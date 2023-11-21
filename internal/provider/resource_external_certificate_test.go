@@ -13,6 +13,12 @@ import (
 	"testing"
 )
 
+/*
+ * To execute this test one has to log in to a VCF environment, generate a CSR for the
+ * VCENTER resource, download it, paste its contents into an external CA, generate a
+ * certificate, based on that CSR, copy the PEM format of the Certificate along with
+ * Certificate Chain and Certificate CA and assign them to the appropriate env variables.
+ */
 func TestAccResourceVcfResourceExternalCertificate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck: func() {
@@ -25,16 +31,12 @@ func TestAccResourceVcfResourceExternalCertificate(t *testing.T) {
 				Config: testAccVcfResourceExternalCertificate(
 					os.Getenv(constants.VcfTestDomainDataSourceId),
 					os.Getenv(constants.VcfTestResourceCertificate),
-					os.Getenv(constants.VcfTestResourceCaCertificate),
-					os.Getenv(constants.VcfTestResourceCertificateChain)),
+					os.Getenv(constants.VcfTestResourceCaCertificate)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.issued_by"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.issued_to"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.expiration_status"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.certificate_error"),
-					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.is_installed"),
-					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.issued_by"),
-					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.issued_to"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.key_size"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.not_after"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.not_before"),
@@ -44,7 +46,7 @@ func TestAccResourceVcfResourceExternalCertificate(t *testing.T) {
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.serial_number"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.signature_algorithm"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.subject"),
-					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.subject_alternative_name"),
+					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.subject_alternative_name.#"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.thumbprint"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.thumbprint_algorithm"),
 					resource.TestCheckResourceAttrSet("vcf_external_certificate.vcenter_cert", "certificate.0.version"),
@@ -61,38 +63,19 @@ func testAccVcfResourceExternalCertificatePreCheck(t *testing.T) {
 	if v := os.Getenv(constants.VcfTestResourceCaCertificate); v == "" {
 		t.Fatal(constants.VcfTestResourceCaCertificate + " must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VcfTestResourceCertificateChain); v == "" {
-		t.Fatal(constants.VcfTestResourceCertificateChain + " must be set for acceptance tests")
-	}
 }
 
-func testAccVcfResourceExternalCertificate(domainID, resourceCert, caCert, certChain string) string {
+func testAccVcfResourceExternalCertificate(domainID, resourceCert, caCert string) string {
 	return fmt.Sprintf(`
 
-	resource "vcf_resource_csr" "csr1" {
-  		domain_id = %q
-		country = "BG"
-		email = "admin@vmware.com"
-		key_size = "3072"
-		locality = "Sofia"
-		state = "Sofia-grad"
-		organization = "VMware Inc."
-		organization_unit = "VCF"
-		resource = "VCENTER"
-	}
-
-
 	resource "vcf_external_certificate" "vcenter_cert" {
-		domain_id = vcf_resource_csr.csr1.id
-		resource = "VCENTER"
+		csr_id = "csr:%s:VCENTER:some-task-id"
 		resource_certificate = %q
 		ca_certificate = %q
-		certificate_chain = %q
 	}
 	`,
 		domainID,
 		resourceCert,
 		caCert,
-		certChain,
 	)
 }

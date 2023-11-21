@@ -14,6 +14,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/certificates"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strings"
@@ -27,9 +28,9 @@ func ResourceExternalCertificate() *schema.Resource {
 		UpdateContext: resourceResourceExternalCertificateUpdate,
 		DeleteContext: resourceResourceExternalCertificateDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(50 * time.Minute),
 			Read:   schema.DefaultTimeout(20 * time.Minute),
-			Update: schema.DefaultTimeout(20 * time.Minute),
+			Update: schema.DefaultTimeout(50 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
@@ -39,24 +40,30 @@ func ResourceExternalCertificate() *schema.Resource {
 				Description:  "The ID of the CSR generated for a resource. A generated CSR is required for certificate replacement.",
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
+			"resource_certificate": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "Resource Certificate",
+				RequiredWith:  []string{"ca_certificate"},
+				ConflictsWith: []string{"certificate_chain"},
+				ValidateFunc:  validation.StringIsNotEmpty,
+			},
 			"ca_certificate": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Certificate of the CA issuing the replacement certificate",
-				ValidateFunc: validation.StringIsNotEmpty,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "Certificate of the CA issuing the replacement certificate",
+				RequiredWith:  []string{"resource_certificate"},
+				ConflictsWith: []string{"certificate_chain"},
+				ValidateFunc:  validation.StringIsNotEmpty,
 			},
 			"certificate_chain": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Certificate Chain",
-				ValidateFunc: validation.StringIsNotEmpty,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "Certificate Chain",
+				ConflictsWith: []string{"resource_certificate", "ca_certificate"},
+				ValidateFunc:  validation.StringIsNotEmpty,
 			},
-			"resource_certificate": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Resource Certificate",
-				ValidateFunc: validation.StringIsNotEmpty,
-			},
+
 			"certificate": {
 				Type:        schema.TypeList,
 				Computed:    true,
@@ -92,12 +99,23 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	certificateChain := data.Get("certificate_chain").(string)
 	resourceCertificate := data.Get("resource_certificate").(string)
 
-	resourceCertificateSpec := &models.ResourceCertificateSpec{
-		ResourceFqdn:        *resourceFqdn,
-		CaCertificate:       caCertificate,
-		CertificateChain:    certificateChain,
-		ResourceCertificate: resourceCertificate,
+	var resourceCertificateSpec *models.ResourceCertificateSpec
+
+	if !validation_utils.IsEmpty(resourceCertificate) && !validation_utils.IsEmpty(caCertificate) {
+		resourceCertificateSpec = &models.ResourceCertificateSpec{
+			ResourceFqdn:        *resourceFqdn,
+			CaCertificate:       caCertificate,
+			ResourceCertificate: resourceCertificate,
+		}
+	} else if !validation_utils.IsEmpty(certificateChain) {
+		resourceCertificateSpec = &models.ResourceCertificateSpec{
+			ResourceFqdn:     *resourceFqdn,
+			CertificateChain: certificateChain,
+		}
+	} else {
+		return diag.FromErr(fmt.Errorf("no certificate_chain or (ca_certificate, resource_certificate) defined"))
 	}
+
 	resourceCertificateSpecs := []*models.ResourceCertificateSpec{resourceCertificateSpec}
 
 	diags := certificates.ValidateResourceCertificates(ctx, apiClient, domainID, resourceCertificateSpecs)
@@ -111,12 +129,15 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	replaceResourceCertificatesParams.SetResourceCertificateSpecs(resourceCertificateSpecs)
 
 	var taskId string
-	task, err := apiClient.Certificates.ReplaceResourceCertificates(replaceResourceCertificatesParams)
+	responseOk, responseAccepted, err := apiClient.Certificates.ReplaceResourceCertificates(replaceResourceCertificatesParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if task != nil {
-		taskId = task.Payload.ID
+	if responseOk != nil {
+		taskId = responseOk.Payload.ID
+	}
+	if responseAccepted != nil {
+		taskId = responseAccepted.Payload.ID
 	}
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
