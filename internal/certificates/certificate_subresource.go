@@ -28,11 +28,6 @@ func CertificateSchema() *schema.Resource {
 				Description: "Error if certificate cannot be fetched. Example: Status : NOT_TRUSTED, Message : Certificate Expired",
 				Computed:    true,
 			},
-			"is_installed": {
-				Type:        schema.TypeBool,
-				Description: "Whether the certificate is installed or not",
-				Computed:    true,
-			},
 			"issued_by": {
 				Type:        schema.TypeString,
 				Description: "The certificate authority that issued the certificate",
@@ -121,10 +116,18 @@ func CertificateSchema() *schema.Resource {
 
 func FlattenCertificate(cert *models.Certificate) map[string]interface{} {
 	result := make(map[string]interface{})
-	result["domain"] = *cert.Domain
+	if cert.Domain == nil {
+		result["domain"] = "nil"
+	} else {
+		result["domain"] = *cert.Domain
+	}
+	if cert.GetCertificateError == nil {
+		result["certificate_error"] = "nil"
+	} else {
+		result["certificate_error"] = *cert.GetCertificateError
+	}
+
 	result["expiration_status"] = *cert.ExpirationStatus
-	result["certificate_error"] = *cert.GetCertificateError
-	result["is_installed"] = *cert.IsInstalled
 	result["issued_by"] = *cert.IssuedBy
 	result["issued_to"] = *cert.IssuedTo
 	result["key_size"] = *cert.KeySize

@@ -162,23 +162,10 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	}
 	data.SetId("csr:" + domainId + ":" + resourceType + ":" + taskId)
 
-	return resourceCsrRead(ctx, data, meta)
-}
-
-func resourceCsrRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
-
-	domainId := data.Get("domain_id").(string)
 	getCsrsParams := certificatesSdk.NewGetCSRsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
 		WithDomainName(domainId)
-
 	getCsrResponse, err := apiClient.Certificates.GetCSRs(getCsrsParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	resourceType := data.Get("resource").(string)
-	resourceFqdn, err := certificates.GetFqdnOfResourceTypeInDomain(ctx, domainId, resourceType, apiClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -187,6 +174,10 @@ func resourceCsrRead(ctx context.Context, data *schema.ResourceData, meta interf
 	flattenedCsr := certificates.FlattenCsr(csr)
 	_ = data.Set("csr", []interface{}{flattenedCsr})
 
+	return resourceCsrRead(ctx, data, meta)
+}
+
+func resourceCsrRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 

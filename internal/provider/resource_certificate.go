@@ -28,9 +28,9 @@ func ResourceCertificate() *schema.Resource {
 		UpdateContext: resourceResourceCertificateUpdate,
 		DeleteContext: resourceResourceCertificateDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(20 * time.Minute),
+			Create: schema.DefaultTimeout(50 * time.Minute),
 			Read:   schema.DefaultTimeout(20 * time.Minute),
-			Update: schema.DefaultTimeout(20 * time.Minute),
+			Update: schema.DefaultTimeout(50 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
@@ -134,13 +134,13 @@ func resourceResourceCertificateRead(ctx context.Context, data *schema.ResourceD
 	}
 
 	flattenedCert := certificates.FlattenCertificate(cert)
-	_ = data.Set("certificate", flattenedCert)
+	_ = data.Set("certificate", []interface{}{flattenedCert})
 
 	return nil
 }
 
 func resourceResourceCertificateUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return resourceResourceCertificateRead(ctx, data, meta)
+	return resourceResourceCertificateCreate(ctx, data, meta)
 }
 
 func resourceResourceCertificateDelete(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {

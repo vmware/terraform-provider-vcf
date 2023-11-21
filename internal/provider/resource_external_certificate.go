@@ -16,6 +16,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
 	"github.com/vmware/vcf-sdk-go/models"
+	"strings"
 	"time"
 )
 
@@ -32,17 +33,11 @@ func ResourceExternalCertificate() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
-			"domain_id": {
+			"csr_id": {
 				Type:         schema.TypeString,
-				Description:  "Domain Id or Name for which the certificate should be rotated",
 				Required:     true,
+				Description:  "The ID of the CSR generated for a resource. A generated CSR is required for certificate replacement.",
 				ValidateFunc: validation.StringIsNotEmpty,
-			},
-			"resource": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Resources for which the certificate should be rotated. One among: SDDC_MANAGER, VCENTER, NSX_MANAGER, NSXT_MANAGER, VROPS, VRSLCM, VXRAIL_MANAGER",
-				ValidateFunc: validation.StringInSlice([]string{"SDDC_MANAGER", "VCENTER", "NSX_MANAGER", "NSXT_MANAGER", "VROPS", "VRSLCM", "VXRAIL_MANAGER"}, false),
 			},
 			"ca_certificate": {
 				Type:         schema.TypeString,
@@ -76,8 +71,14 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	domainID := data.Get("domain_id").(string)
-	resourceType := data.Get("resource").(string)
+	csrID := data.Get("csr_id").(string)
+	csrIdComponents := strings.Split(csrID, ":")
+	if len(csrIdComponents) != 4 {
+		return diag.FromErr(fmt.Errorf("CSR ID invalid"))
+	}
+
+	domainID := csrIdComponents[1]
+	resourceType := csrIdComponents[2]
 
 	resourceFqdn, err := certificates.GetFqdnOfResourceTypeInDomain(ctx, domainID, resourceType, apiClient)
 	if err != nil {
@@ -130,8 +131,14 @@ func resourceResourceExternalCertificateRead(ctx context.Context, data *schema.R
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	domainID := data.Get("domain_id").(string)
-	resourceType := data.Get("resource").(string)
+	csrID := data.Get("csr_id").(string)
+	csrIdComponents := strings.Split(csrID, ":")
+	if len(csrIdComponents) != 4 {
+		return diag.FromErr(fmt.Errorf("CSR ID invalid"))
+	}
+
+	domainID := csrIdComponents[1]
+	resourceType := csrIdComponents[2]
 
 	cert, err := certificates.GetCertificateForResourceInDomain(ctx, apiClient, domainID, resourceType)
 	if err != nil {
@@ -139,13 +146,13 @@ func resourceResourceExternalCertificateRead(ctx context.Context, data *schema.R
 	}
 
 	flattenedCert := certificates.FlattenCertificate(cert)
-	_ = data.Set("certificate", flattenedCert)
+	_ = data.Set("certificate", []interface{}{flattenedCert})
 
 	return nil
 }
 
 func resourceResourceExternalCertificateUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return resourceResourceExternalCertificateRead(ctx, data, meta)
+	return resourceResourceExternalCertificateCreate(ctx, data, meta)
 }
 
 func resourceResourceExternalCertificateDelete(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {

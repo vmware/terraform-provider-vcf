@@ -68,8 +68,22 @@ func testAccVcfResourceExternalCertificatePreCheck(t *testing.T) {
 
 func testAccVcfResourceExternalCertificate(domainID, resourceCert, caCert, certChain string) string {
 	return fmt.Sprintf(`
+
+	resource "vcf_resource_csr" "csr1" {
+  		domain_id = %q
+		country = "BG"
+		email = "admin@vmware.com"
+		key_size = "3072"
+		locality = "Sofia"
+		state = "Sofia-grad"
+		organization = "VMware Inc."
+		organization_unit = "VCF"
+		resource = "VCENTER"
+	}
+
+
 	resource "vcf_external_certificate" "vcenter_cert" {
-		domain_id = %q
+		domain_id = vcf_resource_csr.csr1.id
 		resource = "VCENTER"
 		resource_certificate = %q
 		ca_certificate = %q
