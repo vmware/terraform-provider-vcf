@@ -23,9 +23,9 @@ func TestAccResourceVcfCsr(t *testing.T) {
 			{
 				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId)),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_resource_csr.csr1", "csr.0.csr_pem"),
-					resource.TestCheckResourceAttrSet("vcf_resource_csr.csr1", "csr.0.csr_string"),
-					resource.TestCheckResourceAttrSet("vcf_resource_csr.csr1", "csr.0.resource.0.fqdn")),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_pem"),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_string"),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.resource.0.fqdn")),
 			},
 		},
 	})
@@ -33,7 +33,7 @@ func TestAccResourceVcfCsr(t *testing.T) {
 
 func testAccVcfCsrConfig(domainID string) string {
 	return fmt.Sprintf(`
-	resource "vcf_resource_csr" "csr1" {
+	resource "vcf_csr" "csr1" {
   		domain_id = %q
 		country = "BG"
 		email = "admin@vmware.com"

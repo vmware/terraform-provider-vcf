@@ -62,7 +62,7 @@ func testAccVcfResourceCertificate(domainID, msftCaServerUrl, msftCaUser, msftCa
 		}
 	}
 
-	resource "vcf_resource_csr" "csr1" {
+	resource "vcf_csr" "csr1" {
   		domain_id = %q
 		country = "BG"
 		email = "admin@vmware.com"
@@ -76,7 +76,7 @@ func testAccVcfResourceCertificate(domainID, msftCaServerUrl, msftCaUser, msftCa
 
 
 	resource "vcf_certificate" "vcenter_cert" {
-		csr_id = vcf_resource_csr.csr1.id
+		csr_id = vcf_csr.csr1.id
 		ca_id = vcf_certificate_authority.ca.id
 	}
 	`,

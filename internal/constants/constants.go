@@ -123,13 +123,13 @@ const (
 	// VcfTestMsftCaSecret used in vcf_certificate_authority tests.
 	VcfTestMsftCaSecret = "VCF_TEST_MSFT_CA_SECRET"
 
-	// VcfTestResourceCertificate used in vcf_resource_external_certificate tests.
+	// VcfTestResourceCertificate used in vcf_external_certificate tests.
 	VcfTestResourceCertificate = "VCF_TEST_RESOURCE_CERTIFICATE"
 
-	// VcfTestResourceCaCertificate used in vcf_resource_external_certificate tests.
+	// VcfTestResourceCaCertificate used in vcf_external_certificate tests.
 	VcfTestResourceCaCertificate = "VCF_TEST_RESOURCE_CA_CERTIFICATE"
 
-	// VcfTestResourceCertificateChain used in vcf_resource_external_certificate tests.
+	// VcfTestResourceCertificateChain used in vcf_external_certificate tests.
 	VcfTestResourceCertificateChain = "VCF_TEST_RESOURCE_CERTIFICATE_CHAIN"
 )
 
