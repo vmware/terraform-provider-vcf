@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [v0.6.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.6.0)
+
+> Release Date: Nov 23 2023
+
+FEATURES:
+* Support for CA configuration
+* Support for CSR generation
+* Support for replacing certificate of a resource in a Domain via configured CA
+* Support for replacing certificate of a resource in a Domain via external CA
+
 ## [v0.5.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.5.0)
 
 > Release Date: Oct 9th 2023
