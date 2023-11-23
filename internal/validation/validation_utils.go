@@ -171,6 +171,22 @@ func HasValidationFailed(validationResult *models.Validation) bool {
 	return validationResult.ResultStatus == "FAILED"
 }
 
+func HaveCertificateValidationsFailed(validationTask *models.CertificateValidationTask) bool {
+	if validationTask == nil {
+		return true
+	}
+	validationResult := validationTask.Validations
+	for _, certValidation := range validationResult {
+		if validationResult == nil && certValidation.ValidationStatus != nil {
+			continue
+		}
+		if *certValidation.ValidationStatus == "FAILED" {
+			return true
+		}
+	}
+	return false
+}
+
 func ConvertValidationResultToDiag(validationResult *models.Validation) diag.Diagnostics {
 	return convertValidationChecksToDiagErrors(validationResult.ValidationChecks)
 }
@@ -200,6 +216,27 @@ func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCh
 	return result
 }
 
+func ConvertCertificateValidationsResultToDiag(validationTask *models.CertificateValidationTask) diag.Diagnostics {
+	if validationTask == nil || validationTask.Validations == nil {
+		return diag.FromErr(fmt.Errorf("provided certificate validation task is nil"))
+	}
+	return convertCertificateValidationChecksToDiagErrors(validationTask.Validations)
+}
+
+func convertCertificateValidationChecksToDiagErrors(validationChecks []*models.CertificateValidation) []diag.Diagnostic {
+	var result []diag.Diagnostic
+	for _, validationCheck := range validationChecks {
+		if *validationCheck.ValidationStatus != "SUCCEEDED" {
+			validationMessage := validationCheck.ValidationMessage
+			result = append(result, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  validationMessage,
+			})
+		}
+	}
+	return result
+}
+
 func HaveValidationChecksFinished(validationChecks []*models.ValidationCheck) bool {
 	for _, validationCheck := range validationChecks {
 		if validationCheck.ResultStatus == "IN_PROGRESS" {
@@ -210,6 +247,13 @@ func HaveValidationChecksFinished(validationChecks []*models.ValidationCheck) bo
 		}
 	}
 	return true
+}
+
+func HasCertificateValidationFinished(validationTask *models.CertificateValidationTask) bool {
+	if validationTask == nil {
+		return false
+	}
+	return *validationTask.Completed
 }
 
 func IsEmpty(object interface{}) bool {

@@ -15,12 +15,9 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/certificates"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
-	"github.com/vmware/vcf-sdk-go/client"
 	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -109,7 +106,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	domainId := data.Get("domain_id").(string)
 	resourceType := data.Get("resource").(string)
 
-	resourceFqdn, err := getFqdnOfResourceTypeInDomain(ctx, domainId, resourceType, apiClient)
+	resourceFqdn, err := certificates.GetFqdnOfResourceTypeInDomain(ctx, domainId, resourceType, apiClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -163,26 +160,12 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	// TODO maybe the taskId is better?
-	data.SetId(domainId + "/" + resourceType)
+	data.SetId("csr:" + domainId + ":" + resourceType + ":" + taskId)
 
-	return resourceCsrRead(ctx, data, meta)
-}
-
-func resourceCsrRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
-
-	domainId := data.Get("domain_id").(string)
 	getCsrsParams := certificatesSdk.NewGetCSRsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
 		WithDomainName(domainId)
-
 	getCsrResponse, err := apiClient.Certificates.GetCSRs(getCsrsParams)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	resourceType := data.Get("resource").(string)
-	resourceFqdn, err := getFqdnOfResourceTypeInDomain(ctx, domainId, resourceType, apiClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -191,6 +174,10 @@ func resourceCsrRead(ctx context.Context, data *schema.ResourceData, meta interf
 	flattenedCsr := certificates.FlattenCsr(csr)
 	_ = data.Set("csr", []interface{}{flattenedCsr})
 
+	return resourceCsrRead(ctx, data, meta)
+}
+
+func resourceCsrRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 
@@ -200,31 +187,6 @@ func resourceCsrUpdate(ctx context.Context, data *schema.ResourceData, meta inte
 
 func resourceCsrDelete(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	return nil
-}
-
-func getFqdnOfResourceTypeInDomain(ctx context.Context, domainId, resourceType string, apiClient *client.VcfClient) (*string, error) {
-	if apiClient == nil || len(resourceType) < 1 || len(domainId) < 1 {
-		return nil, nil
-	}
-
-	endpointsParams := domains.NewGetDomainEndpointsParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(domainId)
-
-	endpointsResult, err := apiClient.Domains.GetDomainEndpoints(endpointsParams)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, endpoint := range endpointsResult.Payload.Elements {
-		if resourceType == *endpoint.Type {
-			result := *endpoint.URL
-			if strings.Contains(result, "https://") {
-				result = strings.ReplaceAll(result, "https://", "")
-			}
-			return &result, nil
-		}
-	}
-	return nil, nil
 }
 
 // getCsrByResourceFqdn SDDC Manager API doesn't return CSR resource type, just FQDN.

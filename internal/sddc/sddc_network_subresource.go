@@ -93,7 +93,7 @@ func GetNetworkSpecsSchema() *schema.Schema {
 				"subnet": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					ValidateFunc: validation.StringLenBetween(7, 15),
+					ValidateFunc: validation.StringLenBetween(7, 18),
 				},
 				"subnet_mask": {
 					Type:         schema.TypeString,
