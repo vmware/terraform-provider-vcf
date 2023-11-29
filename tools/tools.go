@@ -1,8 +1,8 @@
 //go:build tools
 // +build tools
 
-/* Copyright 2023 VMware, Inc.
-   SPDX-License-Identifier: MPL-2.0 */
+// Copyright 2023 Broadcom. All Rights Reserved.
+// SPDX-License-Identifier: MPL-2.0
 
 package tools
 
