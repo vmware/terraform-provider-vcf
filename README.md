@@ -110,6 +110,6 @@ provider.
 
 # License
 
-Copyright 2023 VMware, Inc.
+Copyright 2023 Broadcom. All Rights Reserved.
 
 The Terraform provider for VMware Cloud Foundation is available under [MPL2.0 license](https://github.com/vmware/terraform-provider-vcf/blob/master/LICENSE).
