@@ -1,12 +1,38 @@
 ---
 chore:
-  - '.github/**/*'
-  - '.gitignore'
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**/*"
+          - ".gitignore"
+          - ".release"
+          - "scripts/**/*"
+          - "tools/**/*"
+          - "go.mod"
+          - "go.sum"
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "go.mod"
+          - "go.sum"
 documentation:
-  - '**/*.md'
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "examples/**/*"
+          - "docs/**/*"
 github-actions:
-  - '.github/workflows/**/*'
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**/*"
 needs-review:
-  - '**'
-  - '.*'
-  - '.*/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**"
+provider:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "internal/**/*"
+          - "Makefile"
+          - "go.mod"
+          - "go.sum"
+          - "main.go"
