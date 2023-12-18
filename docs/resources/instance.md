@@ -52,7 +52,7 @@ Note : In order to configure NSX-T Host Overlay Using a Static IP Pool, please p
 
 - `cluster` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--cluster))
 - `dns` (Block List, Min: 1, Max: 1) (see [below for nested schema](#nestedblock--dns))
-- `dv_switch_version` (String) The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3
+- `dv_switch_version` (String) The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3, 8.0.0
 - `dvs` (Block List, Min: 1) (see [below for nested schema](#nestedblock--dvs))
 - `host` (Block List, Min: 1) (see [below for nested schema](#nestedblock--host))
 - `instance_id` (String) Client string that identifies an SDDC by name or instance name. Used for management domain name. Can contain only letters, numbers and the following symbols: '-'. Example: "sfo01-m01", Length 3-20 characters
