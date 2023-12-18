@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3"}
+var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3", "8.0.0"}
 
 func ResourceVcfInstance() *schema.Resource {
 	return &schema.Resource{
@@ -84,7 +84,7 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 		"dvs":     sddc.GetDvsSchema(),
 		"dv_switch_version": {
 			Type:         schema.TypeString,
-			Description:  "The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3",
+			Description:  "The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3, 8.0.0",
 			Required:     true,
 			ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
 		},
