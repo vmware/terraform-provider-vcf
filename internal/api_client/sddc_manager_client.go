@@ -13,8 +13,10 @@ import (
 	"github.com/vmware/vcf-sdk-go/client/tasks"
 	"github.com/vmware/vcf-sdk-go/client/tokens"
 	"github.com/vmware/vcf-sdk-go/models"
+	"golang.org/x/exp/slices"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	openapiclient "github.com/go-openapi/runtime/client"
@@ -137,8 +139,8 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(ctx context.Context, tas
 			log.Println("error = ", err)
 			return err
 		}
-
-		if task.Status == "In Progress" || task.Status == "Pending" {
+		waitStatuses := []string{"in progress", "pending", "in_progress"}
+		if slices.Contains(waitStatuses, strings.ToLower(task.Status)) {
 			time.Sleep(20 * time.Second)
 			taskStatusRetry--
 			continue

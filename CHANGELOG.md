@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [v0.7.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.7.0)
+
+> Release Date: Jan 12 2024
+
+FEATURES:
+* Credentials data source
+* Password update
+* Password rotation
+* Password auto-rotate policy configuration
+
+
 ## [v0.6.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.6.0)
 
 > Release Date: Nov 23 2023
