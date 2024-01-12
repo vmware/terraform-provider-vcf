@@ -32,6 +32,27 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 // testAccPreCheck validates all required environment variables for running acceptance
 // tests are set.
 func testAccPreCheck(t *testing.T) {
+	testAccSDDCManagerOrCloudBuilderPreCheck(t)
+	testAccHostsPreCheck(t, 8)
+
+	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestEsxiLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestEsxiLicenseKey + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestVsanLicenseKey); v == "" {
+		t.Fatal(constants.VcfTestVsanLicenseKey + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
+		t.Fatal(constants.VcfTestDomainDataSourceId + " must be set for acceptance tests")
+	}
+	if v := os.Getenv(constants.VcfTestClusterDataSourceId); v == "" {
+		t.Fatal(constants.VcfTestClusterDataSourceId + " must be set for acceptance tests")
+	}
+}
+
+func testAccSDDCManagerOrCloudBuilderPreCheck(t *testing.T) {
 	testSddcManagerUrl := os.Getenv(constants.VcfTestUrl)
 	testCloudBuilderUrl := os.Getenv(constants.CloudBuilderTestUrl)
 	if validationUtils.IsEmpty(testSddcManagerUrl) && validationUtils.IsEmpty(testCloudBuilderUrl) {
@@ -50,67 +71,45 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal(constants.VcfTestPassword + " or " + constants.CloudBuilderTestPassword +
 			" must be set for acceptance tests")
 	}
-	if v := os.Getenv(constants.VcfTestHost1Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost1Fqdn + " must be set for acceptance tests")
+}
+
+func testAccHostsPreCheck(t *testing.T, numberOfHosts int) {
+	hostList := []string{
+		constants.VcfTestHost1Fqdn,
+		constants.VcfTestHost2Fqdn,
+		constants.VcfTestHost3Fqdn,
+		constants.VcfTestHost4Fqdn,
+		constants.VcfTestHost5Fqdn,
+		constants.VcfTestHost6Fqdn,
+		constants.VcfTestHost7Fqdn,
+		constants.VcfTestHost8Fqdn,
 	}
-	if v := os.Getenv(constants.VcfTestHost1Pass); v == "" {
-		t.Fatal(constants.VcfTestHost1Pass + " must be set for acceptance tests")
+
+	passwordList := []string{
+		constants.VcfTestHost1Pass,
+		constants.VcfTestHost2Pass,
+		constants.VcfTestHost3Pass,
+		constants.VcfTestHost4Pass,
+		constants.VcfTestHost5Pass,
+		constants.VcfTestHost6Pass,
+		constants.VcfTestHost7Pass,
+		constants.VcfTestHost8Pass,
 	}
-	if v := os.Getenv(constants.VcfTestHost2Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost2Fqdn + " must be set for acceptance tests")
+
+	if numberOfHosts < len(hostList) {
+		t.Fatal("Too many hosts required")
+		return
 	}
-	if v := os.Getenv(constants.VcfTestHost2Pass); v == "" {
-		t.Fatal(constants.VcfTestHost2Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost3Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost3Fqdn + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost3Pass); v == "" {
-		t.Fatal(constants.VcfTestHost3Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost4Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost4Fqdn + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost4Pass); v == "" {
-		t.Fatal(constants.VcfTestHost4Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost5Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost5Fqdn + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost5Pass); v == "" {
-		t.Fatal(constants.VcfTestHost5Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost6Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost6Fqdn + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost6Pass); v == "" {
-		t.Fatal(constants.VcfTestHost6Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost7Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost7Fqdn + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost7Pass); v == "" {
-		t.Fatal(constants.VcfTestHost7Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost8Fqdn); v == "" {
-		t.Fatal(constants.VcfTestHost8Fqdn + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestHost8Pass); v == "" {
-		t.Fatal(constants.VcfTestHost8Pass + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestEsxiLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestEsxiLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestVsanLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestVsanLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
-		t.Fatal(constants.VcfTestDomainDataSourceId + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestClusterDataSourceId); v == "" {
-		t.Fatal(constants.VcfTestClusterDataSourceId + " must be set for acceptance tests")
+
+	for i := numberOfHosts - 1; i >= 0; i-- {
+		hostNameEnvVar := hostList[i]
+		passwordEnvVar := passwordList[i]
+		if v := os.Getenv(hostNameEnvVar); v == "" {
+			t.Fatal(hostNameEnvVar + " must be set for acceptance tests")
+		}
+
+		if v := os.Getenv(passwordEnvVar); v == "" {
+			t.Fatal(passwordEnvVar + " must be set for acceptance tests")
+		}
 	}
 }
