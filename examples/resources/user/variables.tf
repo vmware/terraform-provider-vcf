@@ -1,29 +1,29 @@
 variable "sddc_manager_username" {
   description = "Username used to authenticate against an SDDC Manager instance"
-  default = ""
+  default     = ""
 }
 
 variable "sddc_manager_password" {
   description = "Password used to authenticate against an SDDC Manager instance"
-  default = ""
+  default     = ""
 }
 
 variable "sddc_manager_host" {
   description = "FQDN of an SDDC Manager instance"
-  default = ""
+  default     = ""
 }
 
 variable "sso_domain" {
   description = "The SSO domain in which an SSO user is to be created"
-  default = "rainpole.io"
+  default     = "rainpole.io"
 }
 
 variable "sso_username" {
   description = "Username of an SSO user to be created"
-  default = ""
+  default     = ""
 }
 
 variable "sso_service_username" {
   description = "Username of an SSO service user to be created"
-  default = ""
+  default     = ""
 }

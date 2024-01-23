@@ -16,13 +16,22 @@ import (
 )
 
 func ValidatePassword(v interface{}, k string) (warnings []string, errors []error) {
+	var specialSymbols = []rune{'\'', '!', '"', '#', '$', '%', '&', '(', ')', '*', '+', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', 'Ι', '}', '~'}
+	return validatePasswordInternal(v, k, specialSymbols, 8)
+}
+
+func ValidateNsxEdgePassword(v interface{}, k string) (warnings []string, errors []error) {
+	var specialSymbols = []rune{'!', '@', '^', '=', '*', '+'}
+	return validatePasswordInternal(v, k, specialSymbols, 12)
+}
+
+func validatePasswordInternal(v interface{}, k string, specialSymbols []rune, minLength int) (warnings []string, errors []error) {
 	password, ok := v.(string)
 	if !ok {
 		errors = append(errors, fmt.Errorf("expected not nil and type of %q to be string", k))
 		return
 	}
 	var containsUpperCase, containsLowerCase, containsDigit, containsSymbol bool
-	var specialSymbols = []rune{'\'', '!', '"', '#', '$', '%', '&', '(', ')', '*', '+', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', 'Ι', '}', '~'}
 	for _, char := range password {
 		if !containsLowerCase && unicode.IsLower(char) {
 			containsLowerCase = true
@@ -38,8 +47,8 @@ func ValidatePassword(v interface{}, k string) (warnings []string, errors []erro
 			break
 		}
 	}
-	if len(password) < 8 {
-		errors = append(errors, fmt.Errorf("the password must be at least 8 characters long"))
+	if len(password) < minLength {
+		errors = append(errors, fmt.Errorf("the password must be at least %d characters long", minLength))
 	}
 	if !containsLowerCase {
 		errors = append(errors, fmt.Errorf("the password must contain at least one lower case letter"))
@@ -106,6 +115,18 @@ func validateIPv4Address(value string) error {
 	return nil
 }
 
+func validateCidrIPv4Address(value string) error {
+	prefix, err := netip.ParsePrefix(value)
+	if err != nil {
+		return err
+	}
+
+	if !prefix.IsValid() || !prefix.Addr().Is4() {
+		return errors.New("invalid IPv4 address")
+	}
+	return nil
+}
+
 func ValidateIPv4AddressSchema(i interface{}, k string) (_ []string, errors []error) {
 	ipAddress, ok := i.(string)
 	if !ok {
@@ -114,7 +135,21 @@ func ValidateIPv4AddressSchema(i interface{}, k string) (_ []string, errors []er
 	}
 	ipValidationError := validateIPv4Address(ipAddress)
 	if ipValidationError != nil {
-		return nil, []error{}
+		return nil, []error{ipValidationError}
+	} else {
+		return nil, nil
+	}
+}
+
+func ValidateCidrIPv4AddressSchema(i interface{}, k string) (_ []string, errors []error) {
+	ipAddress, ok := i.(string)
+	if !ok {
+		errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
+		return nil, errors
+	}
+	ipValidationError := validateCidrIPv4Address(ipAddress)
+	if ipValidationError != nil {
+		return nil, []error{ipValidationError}
 	} else {
 		return nil, nil
 	}
@@ -237,7 +272,7 @@ func convertCertificateValidationChecksToDiagErrors(validationChecks []*models.C
 
 func HaveValidationChecksFinished(validationChecks []*models.ValidationCheck) bool {
 	for _, validationCheck := range validationChecks {
-		if validationCheck.ResultStatus == "IN_PROGRESS" {
+		if validationCheck.ResultStatus == "IN_PROGRESS" || validationCheck.ResultStatus == "UNKNOWN" {
 			return false
 		}
 		if !HaveValidationChecksFinished(validationCheck.NestedValidationChecks) {

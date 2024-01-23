@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     vcf = {
-      source  = "vmware/vcf"
+      source = "vmware/vcf"
     }
   }
 }
@@ -13,13 +13,13 @@ provider "vcf" {
 }
 
 resource "vcf_csr" "csr1" {
-  domain_id = var.vcf_domain_id
-  country = "BG"
-  email = "admin@vmware.com"
-  key_size = "3072"
-  locality = "Sofia"
-  state = "Sofia-grad"
-  organization = "VMware Inc."
+  domain_id         = var.vcf_domain_id
+  country           = "BG"
+  email             = "admin@vmware.com"
+  key_size          = "3072"
+  locality          = "Sofia"
+  state             = "Sofia-grad"
+  organization      = "VMware Inc."
   organization_unit = "VCF"
-  resource = "VCENTER"
+  resource          = "VCENTER"
 }
