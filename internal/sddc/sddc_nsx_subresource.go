@@ -158,6 +158,14 @@ func GetNsxSpecFromSchema(rawData []interface{}) *models.SDDCNSXTSpec {
 	if overLayTransportZoneData := getTransportZoneFromSchema(data["overlay_transport_zone"].([]interface{})); overLayTransportZoneData != nil {
 		nsxtSpecBinding.OverLayTransportZone = overLayTransportZoneData
 	}
+
+	if ipAddressPoolRaw, ok := data["ip_address_pool"]; ok && !validation_utils.IsEmpty(ipAddressPoolRaw) {
+		ipAddressPoolList := ipAddressPoolRaw.([]interface{})
+		// Only one IP Address pool spec is allowed in the resource
+		if ipAddressPoolSpec, err := network.GetIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{})); err == nil {
+			nsxtSpecBinding.IPAddressPoolSpec = ipAddressPoolSpec
+		}
+	}
 	return nsxtSpecBinding
 }
 
