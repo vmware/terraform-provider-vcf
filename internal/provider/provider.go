@@ -89,6 +89,7 @@ func Provider() *schema.Provider {
 			"vcf_csr":                            ResourceCsr(),
 			"vcf_certificate":                    ResourceCertificate(),
 			"vcf_external_certificate":           ResourceExternalCertificate(),
+			"vcf_edge_cluster":                   ResourceEdgeCluster(),
 			"vcf_credentials_auto_rotate_policy": ResourceCredentialsAutoRotatePolicy(),
 			"vcf_credentials_rotate":             ResourceCredentialsRotate(),
 			"vcf_credentials_update":             ResourceCredentialsUpdate(),

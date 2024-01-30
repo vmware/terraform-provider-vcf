@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     vcf = {
-      source  = "vmware/vcf"
+      source = "vmware/vcf"
     }
   }
 }
@@ -14,11 +14,11 @@ provider "vcf" {
 
 resource "vcf_certificate_authority" "ca" {
   open_ssl {
-    common_name = "test.openssl.eng.vmware.com"
-    country = "BG"
-    state = "Sofia-grad"
-    locality = "Sofia"
-    organization = "VMware"
+    common_name       = "test.openssl.eng.vmware.com"
+    country           = "BG"
+    state             = "Sofia-grad"
+    locality          = "Sofia"
+    organization      = "VMware"
     ogranization_unit = "CIBG"
   }
 }

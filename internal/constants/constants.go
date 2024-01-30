@@ -131,6 +131,27 @@ const (
 
 	// VcfTestResourceCertificateChain used in vcf_external_certificate tests.
 	VcfTestResourceCertificateChain = "VCF_TEST_RESOURCE_CERTIFICATE_CHAIN"
+
+	// VcfTestEdgeClusterRootPass the root user password for the NSX manager.
+	VcfTestEdgeClusterRootPass = "VCF_TEST_EDGE_CLUSTER_ROOT_PASS"
+
+	// VcfTestEdgeClusterAdminPass the admin user password for the NSX manager.
+	VcfTestEdgeClusterAdminPass = "VCF_TEST_EDGE_CLUSTER_ADMIN_PASS"
+
+	// VcfTestEdgeClusterAuditPass the audit user password for the NSX manager.
+	VcfTestEdgeClusterAuditPass = "VCF_TEST_EDGE_CLUSTER_AUDIT_PASS"
+
+	// VcfTestEdgeNodeRootPass the root user password for the edge nodes.
+	VcfTestEdgeNodeRootPass = "VCF_TEST_EDGE_NODE_ROOT_PASS"
+
+	// VcfTestEdgeNodeAdminPass the admin user password for the edge nodes.
+	VcfTestEdgeNodeAdminPass = "VCF_TEST_EDGE_NODE_ADMIN_PASS"
+
+	// VcfTestEdgeNodeAuditPass the audit user password for the edge nodes.
+	VcfTestEdgeNodeAuditPass = "VCF_TEST_EDGE_NODE_AUDIT_PASS"
+
+	// VcfTestComputeClusterId the identifier of the compute cluster that will contain the edge nodes.
+	VcfTestComputeClusterId = "VCF_TEST_COMPUTE_CLUSTER_ID"
 )
 
 func GetIso3166CountryCodes() []string {

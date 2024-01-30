@@ -6,23 +6,23 @@ terraform {
   }
 }
 provider "vcf" {
-  cloud_builder_host = var.cloud_builder_host
+  cloud_builder_host     = var.cloud_builder_host
   cloud_builder_username = var.cloud_builder_username
   cloud_builder_password = var.cloud_builder_password
 }
 
 resource "vcf_instance" "sddc_1" {
-  instance_id = "sddcId-1001"
-  dv_switch_version = "7.0.0"
+  instance_id                    = "sddcId-1001"
+  dv_switch_version              = "7.0.0"
   skip_esx_thumbprint_validation = true
-  management_pool_name = "bringup-networkpool"
-  ceip_enabled = false
-  esx_license = ""
-  task_name = "workflowconfig/workflowspec-ems.json"
+  management_pool_name           = "bringup-networkpool"
+  ceip_enabled                   = false
+  esx_license                    = ""
+  task_name                      = "workflowconfig/workflowspec-ems.json"
   sddc_manager {
     ip_address = "10.0.0.4"
-    netmask = "255.255.255.0"
-    hostname = "sddc-manager"
+    netmask    = "255.255.255.0"
+    hostname   = "sddc-manager"
     root_user_credentials {
       username = "root"
       password = var.sddc_manager_root_user_password
@@ -36,106 +36,106 @@ resource "vcf_instance" "sddc_1" {
     "10.0.0.250"
   ]
   dns {
-    domain = "vsphere.local"
-    name_server = "10.0.0.250"
+    domain                = "vsphere.local"
+    name_server           = "10.0.0.250"
     secondary_name_server = "10.0.0.250"
   }
   network {
-    subnet = "10.0.0.0/22"
-    vlan_id = "0"
-    mtu = "1500"
+    subnet       = "10.0.0.0/22"
+    vlan_id      = "0"
+    mtu          = "1500"
     network_type = "MANAGEMENT"
-    gateway = "10.0.0.250"
+    gateway      = "10.0.0.250"
   }
   network {
     subnet = "10.0.4.0/24"
     include_ip_address_ranges {
       start_ip_address = "10.0.4.7"
-      end_ip_address = "10.0.4.48"
+      end_ip_address   = "10.0.4.48"
     }
     include_ip_address_ranges {
       start_ip_address = "10.0.4.3"
-      end_ip_address = "10.0.4.6"
+      end_ip_address   = "10.0.4.6"
     }
     include_ip_address = [
       "10.0.4.50",
-      "10.0.4.49"]
-    vlan_id = "0"
-    mtu = "8940"
+    "10.0.4.49"]
+    vlan_id      = "0"
+    mtu          = "8940"
     network_type = "VSAN"
-    gateway = "10.0.4.253"
+    gateway      = "10.0.4.253"
   }
   network {
     subnet = "10.0.8.0/24"
     include_ip_address_ranges {
       start_ip_address = "10.0.8.3"
-      end_ip_address = "10.0.8.50"
+      end_ip_address   = "10.0.8.50"
     }
-    vlan_id = "0"
-    mtu = "8940"
+    vlan_id      = "0"
+    mtu          = "8940"
     network_type = "VMOTION"
-    gateway = "10.0.8.253"
+    gateway      = "10.0.8.253"
   }
   nsx {
     nsx_manager_size = "medium"
     nsx_manager {
       hostname = "nsx-mgmt-1"
-      ip = "10.0.0.31"
+      ip       = "10.0.0.31"
     }
     root_nsx_manager_password = var.nsx_manager_root_password
-    nsx_admin_password = var.nsx_manager_admin_password
-    nsx_audit_password = var.nsx_manager_audit_password
+    nsx_admin_password        = var.nsx_manager_admin_password
+    nsx_audit_password        = var.nsx_manager_audit_password
     overlay_transport_zone {
-      zone_name = "overlay-tz"
+      zone_name    = "overlay-tz"
       network_name = "net-overlay"
     }
-    vip = "10.0.0.30"
-    vip_fqdn = "vip-nsx-mgmt"
-    license = var.nsx_license_key
+    vip               = "10.0.0.30"
+    vip_fqdn          = "vip-nsx-mgmt"
+    license           = var.nsx_license_key
     transport_vlan_id = 0
   }
   vsan {
-    vsan_name = "vsan-1"
-    license = var.vsan_license_key
+    vsan_name      = "vsan-1"
+    license        = var.vsan_license_key
     datastore_name = "sfo01-m01-vsan"
   }
   dvs {
     mtu = 8940
     nioc {
       traffic_type = "VSAN"
-      value = "HIGH"
+      value        = "HIGH"
     }
     nioc {
       traffic_type = "VMOTION"
-      value = "LOW"
+      value        = "LOW"
     }
     nioc {
       traffic_type = "VDP"
-      value = "LOW"
+      value        = "LOW"
     }
     nioc {
       traffic_type = "VIRTUALMACHINE"
-      value = "HIGH"
+      value        = "HIGH"
     }
     nioc {
       traffic_type = "MANAGEMENT"
-      value = "NORMAL"
+      value        = "NORMAL"
     }
     nioc {
       traffic_type = "NFS"
-      value = "LOW"
+      value        = "LOW"
     }
     nioc {
       traffic_type = "HBR"
-      value = "LOW"
+      value        = "LOW"
     }
     nioc {
       traffic_type = "FAULTTOLERANCE"
-      value = "LOW"
+      value        = "LOW"
     }
     nioc {
       traffic_type = "ISCSI"
-      value = "LOW"
+      value        = "LOW"
     }
     dvs_name = "SDDC-Dswitch-Private"
     vmnics = [
@@ -149,7 +149,7 @@ resource "vcf_instance" "sddc_1" {
     ]
   }
   cluster {
-    cluster_name = "SDDC-Cluster1"
+    cluster_name     = "SDDC-Cluster1"
     cluster_evc_mode = ""
     resource_pool {
       name = "Mgmt-ResourcePool"
@@ -169,15 +169,15 @@ resource "vcf_instance" "sddc_1" {
     }
   }
   psc {
-    psc_sso_domain = "vsphere.local"
+    psc_sso_domain          = "vsphere.local"
     admin_user_sso_password = "TestTest!"
   }
   vcenter {
-    vcenter_ip = "10.0.0.6"
-    vcenter_hostname = "vcenter-1"
-    license = var.vcenter_license_key
+    vcenter_ip            = "10.0.0.6"
+    vcenter_hostname      = "vcenter-1"
+    license               = var.vcenter_license_key
     root_vcenter_password = var.vcenter_root_password
-    vm_size = "tiny"
+    vm_size               = "tiny"
   }
   host {
     credentials {
@@ -185,14 +185,14 @@ resource "vcf_instance" "sddc_1" {
       password = var.esx_host1_pass
     }
     ip_address_private {
-      subnet = "255.255.252.0"
-      cidr = ""
+      subnet     = "255.255.252.0"
+      cidr       = ""
       ip_address = "10.0.0.100"
-      gateway = "10.0.0.250"
+      gateway    = "10.0.0.250"
     }
-    hostname = "esxi-1"
-    vswitch = "vSwitch0"
-    server_id = "host-0"
+    hostname    = "esxi-1"
+    vswitch     = "vSwitch0"
+    server_id   = "host-0"
     association = "SDDC-Datacenter"
   }
   host {
@@ -201,13 +201,13 @@ resource "vcf_instance" "sddc_1" {
       password = var.esx_host2_pass
     }
     ip_address_private {
-      subnet = "255.255.252.0"
-      cidr = ""
+      subnet     = "255.255.252.0"
+      cidr       = ""
       ip_address = "10.0.0.101"
-      gateway = "10.0.0.250"
+      gateway    = "10.0.0.250"
     }
-    hostname = "esxi-2"
-    vswitch = "vSwitch0"
+    hostname    = "esxi-2"
+    vswitch     = "vSwitch0"
     association = "SDDC-Datacenter"
   }
   host {
@@ -216,13 +216,13 @@ resource "vcf_instance" "sddc_1" {
       password = var.esx_host3_pass
     }
     ip_address_private {
-      subnet = "255.255.255.0"
-      cidr = ""
+      subnet     = "255.255.255.0"
+      cidr       = ""
       ip_address = "10.0.0.102"
-      gateway = "10.0.0.250"
+      gateway    = "10.0.0.250"
     }
-    hostname = "esxi-3"
-    vswitch = "vSwitch0"
+    hostname    = "esxi-3"
+    vswitch     = "vSwitch0"
     association = "SDDC-Datacenter"
   }
   host {
@@ -231,14 +231,14 @@ resource "vcf_instance" "sddc_1" {
       password = var.esx_host4_pass
     }
     ip_address_private {
-      subnet = "255.255.255.0"
-      cidr = ""
+      subnet     = "255.255.255.0"
+      cidr       = ""
       ip_address = "10.0.0.103"
-      gateway = "10.0.0.250"
+      gateway    = "10.0.0.250"
     }
-    hostname = "esxi-4"
-    vswitch = "vSwitch0"
-    server_id = "host-3"
+    hostname    = "esxi-4"
+    vswitch     = "vSwitch0"
+    server_id   = "host-3"
     association = "SDDC-Datacenter"
   }
 }

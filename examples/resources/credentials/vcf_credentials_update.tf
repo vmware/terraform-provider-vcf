@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     vcf = {
-      source  = "vmware/vcf"
+      source = "vmware/vcf"
     }
   }
 }
@@ -11,7 +11,7 @@ resource "vcf_credentials_update" "vc_0_update" {
   resource_type = "ESXI"
   credentials {
     credential_type = "SSH"
-    user_name = "root"
-    password = var.esxi_host_1_pass
+    user_name       = "root"
+    password        = var.esxi_host_1_pass
   }
 }
