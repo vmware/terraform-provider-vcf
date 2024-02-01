@@ -151,7 +151,7 @@ func BgpPeerSchema() *schema.Resource {
 				Type:         schema.TypeInt,
 				Required:     true,
 				Description:  "ASN",
-				ValidateFunc: validation.IntBetween(1, int(math.Pow(2, 32))),
+				ValidateFunc: validation.IntBetween(1, int(math.Pow(2, 31)-1)),
 			},
 		},
 	}

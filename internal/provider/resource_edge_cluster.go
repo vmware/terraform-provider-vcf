@@ -116,7 +116,7 @@ func ResourceEdgeCluster() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Description:  "ASN for the cluster",
-				ValidateFunc: validation.IntBetween(1, int(math.Pow(2, 32))),
+				ValidateFunc: validation.IntBetween(1, int(math.Pow(2, 31)-1)),
 			},
 			"skip_tep_routability_check": {
 				Type:        schema.TypeBool,
