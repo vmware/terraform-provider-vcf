@@ -5,6 +5,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,11 +32,25 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 		result.Name = data.Get("name").(string)
 	}
 
-	// TODO support vSAN stretch/unstretch operations by adding a "witness" attribute to vcf_cluster and checking for change on it.
 	if data.HasChange("host") {
 		oldHostsValue, newHostsValue := data.GetChange("host")
 		resultUpdated, err := SetExpansionOrContractionSpec(result,
 			oldHostsValue.([]interface{}), newHostsValue.([]interface{}))
+		if err != nil {
+			return nil, err
+		}
+		return resultUpdated, nil
+	}
+
+	if data.HasChange("witness_host") {
+		_, newWitnessHostRaw := data.GetChange("witness_host")
+		witnessHosts := newWitnessHostRaw.([]interface{})
+		if len(witnessHosts) > 1 {
+			return nil, errors.New("there can be only 1 witness host")
+		}
+
+		resultUpdated, err := SetStretchOrUnstretchSpec(result, witnessHosts, data.Get("host").([]interface{}))
+
 		if err != nil {
 			return nil, err
 		}
@@ -84,6 +99,53 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 		return updateSpec, nil
 	}
 }
+
+// SetStretchOrUnstretchSpec sets ClusterStretchSpec or ClusterUnstretchSpec to a provided
+// ClusterUpdateSpec depending on weather a witness host is being added or removed.
+func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, witnessHosts, hosts []interface{}) (*models.ClusterUpdateSpec, error) {
+	if len(witnessHosts) > 0 {
+		// stretch
+		witnessHost := witnessHosts[0].(map[string]interface{})
+
+		ip := witnessHost["vsan_ip"].(string)
+		cidr := witnessHost["vsan_cidr"].(string)
+		fqdn := witnessHost["fqdn"].(string)
+
+		witnessSpec := models.WitnessSpec{
+			Fqdn:     &fqdn,
+			VSANCidr: &cidr,
+			VSANIP:   &ip,
+		}
+
+		// TODO - move host specs into witness config
+		// All new hosts are added to the secondary fault domain. All existing hosts go into the primary domain.
+		var hostSpecs []*models.HostSpec
+		for _, addedHostRaw := range hosts {
+			hostSpec, err := TryConvertToHostSpec(addedHostRaw.(map[string]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			hostSpecs = append(hostSpecs, hostSpec)
+		}
+
+		var secondaryAzOverlayVlanId int32 = 0
+
+		stretchSpec := &models.ClusterStretchSpec{
+			HostSpecs:                         hostSpecs,
+			SecondaryAzOverlayVlanID:          &secondaryAzOverlayVlanId,
+			WitnessSpec:                       &witnessSpec,
+			IsEdgeClusterConfiguredForMultiAZ: true,
+		}
+		updateSpec.ClusterStretchSpec = stretchSpec
+	} else {
+		// unstretch
+		updateSpec.ClusterUnstretchSpec = EmptySpec{}
+	}
+	return updateSpec, nil
+}
+
+// TODO - Change ClusterUnstretchSpec to struct so that we can obtain an empty non-nil value without this workaround.
+type EmptySpec struct{}
 
 func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
