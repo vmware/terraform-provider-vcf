@@ -52,6 +52,48 @@ func TestAccResourceVcfClusterCreate(t *testing.T) {
 	})
 }
 
+func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testCheckVcfClusterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfClusterResourceWitnessTestConfig(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestVcenterLicenseKey),
+					"vi-cluster1",
+					""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+				),
+			},
+			// Convert to stretched
+			{
+				Config: testAccVcfClusterResourceWitnessTestConfig(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestVcenterLicenseKey),
+					"vi-cluster1",
+					getWitnessHostConfig("10.0.0.112", "10.0.0.0/22", "esxi-13.vrack.vsphere.local")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+				),
+			},
+			// Restore to unstretched
+			{
+				Config: testAccVcfClusterResourceWitnessTestConfig(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestVcenterLicenseKey),
+					"vi-cluster1",
+					""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceVcfClusterFull(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -177,6 +219,43 @@ func testAccVcfHostCommissionConfig(hostResourceId, hostFqdn, hostPass string) s
 		storage_type = "VSAN"
 	}
 	`, hostResourceId, hostFqdn, hostPass)
+}
+
+func testAccVcfClusterResourceWitnessTestConfig(domainId, licenseKey, name, witnessHostConfig string) string {
+	return fmt.Sprintf(`
+	resource "vcf_cluster" "cluster1" {
+		domain_id = %q
+		name = %q
+		%s
+		host {
+			id = "0cfed44c-e50f-4d4b-b57c-a20f8aabfb90"
+			license_key = %q
+		}
+		host {
+			id = "e9ca0770-9783-4886-aaf1-8c99f01d3877"
+			license_key = %q
+		}
+		host {
+			id = "db78648a-a88c-4344-8f2a-077ecc1923e8"
+			license_key = %q
+		}
+		vds {
+			name = "new-vi-vcenter-2-vi-cluster1-vds01"
+			portgroup {
+				name = "vi-cluster1-vds-Mgmt"
+				transport_type = "MANAGEMENT"
+			}
+			portgroup {
+				name = "vi-cluster1-vds-VSAN1"
+				transport_type = "VSAN"
+			}
+			portgroup {
+				name = "vi-cluster1-vds-vMotion1"
+				transport_type = "VMOTION"
+			}
+		}
+	}
+	`, domainId, name, witnessHostConfig, licenseKey, licenseKey, licenseKey)
 }
 
 func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, host2Pass,
@@ -312,6 +391,16 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 	}
 	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, additionalCommissionHostConfig, domainId,
 		esxLicenseKey, esxLicenseKey, esxLicenseKey, additionalHostInClusterConfig, vsanLicenseKey)
+}
+
+func getWitnessHostConfig(ip, cidr, fqdn string) string {
+	return fmt.Sprintf(`
+	witness_host {
+		vsan_ip = %q
+		vsan_cidr = %q
+		fqdn = %q
+	}
+	`, ip, cidr, fqdn)
 }
 
 func testCheckVcfClusterDestroy(state *terraform.State) error {

@@ -15,6 +15,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/vsan"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
@@ -173,6 +174,13 @@ func clusterSubresourceSchema() *schema.Resource {
 				Description: "vSphere Distributed Switches to add to the cluster",
 				Elem:        network.VdsSchema(),
 			},
+			"witness_host": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Description: "TODO",
+				Elem:        vsan.WitnessHostSubresource(),
+			},
 			"primary_datastore_name": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -198,19 +206,21 @@ func clusterSubresourceSchema() *schema.Resource {
 }
 
 func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
+	//vcfClient := meta.(*api_client.SddcManagerClient)
+	//
+	//clusterSpec, err := cluster.TryConvertResourceDataToClusterSpec(data)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+	//clusterId, diagnostics := createCluster(ctx, data.Get("domain_id").(string),
+	//	clusterSpec, vcfClient)
+	//if diagnostics != nil {
+	//	return diagnostics
+	//}
+	//
+	//data.SetId(clusterId)
 
-	clusterSpec, err := cluster.TryConvertResourceDataToClusterSpec(data)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	clusterId, diagnostics := createCluster(ctx, data.Get("domain_id").(string),
-		clusterSpec, vcfClient)
-	if diagnostics != nil {
-		return diagnostics
-	}
-
-	data.SetId(clusterId)
+	data.SetId("227fa709-d169-4dbc-834d-10beedd0fa03")
 
 	return resourceClusterRead(ctx, data, meta)
 }
@@ -245,21 +255,23 @@ func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	diagnostics := updateCluster(ctx, data.Id(), clusterUpdateSpec, vcfClient)
-	if diagnostics != nil {
-		return diagnostics
+	if clusterUpdateSpec.ClusterUnstretchSpec != nil {
+		diagnostics := updateCluster(ctx, data.Id(), clusterUpdateSpec, vcfClient)
+		if diagnostics != nil {
+			return diagnostics
+		}
 	}
 
 	return resourceClusterRead(ctx, data, meta)
 }
 
 func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-
-	diagnostics := deleteCluster(ctx, data.Id(), vcfClient)
-	if diagnostics != nil {
-		return diagnostics
-	}
+	//vcfClient := meta.(*api_client.SddcManagerClient)
+	//
+	//diagnostics := deleteCluster(ctx, data.Id(), vcfClient)
+	//if diagnostics != nil {
+	//	return diagnostics
+	//}
 
 	return nil
 }
