@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v0.8.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.8.1)
+
+> Release Date: Feb 6 2024
+
+BUG FIXES:
+* Respect static IP pool configuration when configuring NSX [\#113](https://github.com/vmware/terraform-provider-vcf/issues/113)
+* Fix Edge ASN upper boundary on 32-bit systems [\#120](https://github.com/vmware/terraform-provider-vcf/issues/120)
+
 ## [v0.8.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.8.0)
 
 > Release Date: Jan 31 2024
