@@ -230,6 +230,8 @@ github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAh
 github.com/vmihailenco/tagparser/v2 v2.0.0/go.mod h1:Wri+At7QHww0WTrCBeu4J6bNtoV6mEfg5OIWRZA9qds=
 github.com/vmware/vcf-sdk-go v0.2.2 h1:4Jq8tRd88fDLbEfa3zyD1Z/iy4iVYFMHP2OlR737vpE=
 github.com/vmware/vcf-sdk-go v0.2.2/go.mod h1:EXM19ZwD2qmvMVSvgUzcnT7dSTCq3lzv84ErrFPZm1Q=
+github.com/vmware/vcf-sdk-go v0.2.3 h1:+0SP6RGbCeC4i82mq721tqHMBDZILqVVBZhtTfavfEc=
+github.com/vmware/vcf-sdk-go v0.2.3/go.mod h1:EXM19ZwD2qmvMVSvgUzcnT7dSTCq3lzv84ErrFPZm1Q=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
