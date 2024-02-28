@@ -1,4 +1,4 @@
-ariable "sddc_manager_username" {
+variable "sddc_manager_username" {
   description = "Username used to authenticate against an SDDC Manager instance."
   default     = ""
 }
