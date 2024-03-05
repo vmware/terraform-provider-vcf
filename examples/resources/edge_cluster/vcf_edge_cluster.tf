@@ -28,7 +28,7 @@ resource "vcf_edge_cluster" "cluster_1" {
 
   edge_node {
     name               = var.edge_node_1_name
-    cluster_id         = var.compute_cluster_id
+    compute_cluster_id = var.compute_cluster_id
     root_password      = var.edge_node_1_root_pass
     admin_password     = var.edge_node_1_admin_pass
     audit_password     = var.edge_node_1_audit_pass
@@ -63,7 +63,7 @@ resource "vcf_edge_cluster" "cluster_1" {
 
   edge_node {
     name               = var.edge_node_2_name
-    cluster_id         = var.compute_cluster_id
+    compute_cluster_id = var.compute_cluster_id
     root_password      = var.edge_node_2_root_pass
     admin_password     = var.edge_node_2_admin_pass
     audit_password     = var.edge_node_2_audit_pass
