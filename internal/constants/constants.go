@@ -102,6 +102,9 @@ const (
 	// VcfTestVcenterLicenseKey license key for vCenter required for bringup acceptance tests.
 	VcfTestVcenterLicenseKey = "VCF_TEST_VCENTER_LICENSE_KEY"
 
+	// VcfTestVcenterId the guid of the vCenter server
+	VcfTestVcenterId = "VCF_TEST_VCENTER_ID"
+
 	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.
 	// Typically, the id of management domain is used as it is already created during bringup.
 	VcfTestDomainDataSourceId = "VCF_DOMAIN_DATA_SOURCE_ID"

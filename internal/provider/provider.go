@@ -85,6 +85,7 @@ func Provider() *schema.Provider {
 			"vcf_host":                           ResourceHost(),
 			"vcf_domain":                         ResourceDomain(),
 			"vcf_cluster":                        ResourceCluster(),
+			"vcf_cluster_personality":            ResourceClusterPersonality(),
 			"vcf_certificate_authority":          ResourceCertificateAuthority(),
 			"vcf_csr":                            ResourceCsr(),
 			"vcf_certificate":                    ResourceCertificate(),
