@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	VcfTestVcenterName = "VCF_TEST_VCENTER_NAME"
-	VcfTestClusterName = "VCF_TEST_CLUSTER_NAME"
+	VcfTestClusterId = "VCF_TEST_CLUSTER_ID"
 )
 
 func TestAccClusterPersonality_basic(t *testing.T) {
@@ -35,26 +34,21 @@ func getClusterPersonalityConfig() string {
 	return fmt.Sprintf(`
 		resource "vcf_cluster_personality" "personality" {
 			name      = "personality1"
+			cluster_id = %q
 			domain_id = %q
-			cluster_name = %q
-			vcenter_name = %q
 		}
 		`,
-		os.Getenv(constants.VcfTestDomainDataSourceId),
-		os.Getenv(VcfTestClusterName),
-		os.Getenv(VcfTestVcenterName))
+		os.Getenv(VcfTestClusterId),
+		os.Getenv(constants.VcfTestDomainDataSourceId))
 }
 
 // testAccPreCheck validates all required environment variables for running these acceptance
 // tests are set.
 func testAccPersonalityPreCheck(t *testing.T) {
+	if v := os.Getenv(VcfTestClusterId); v == "" {
+		t.Fatalf("%s must be set for acceptance tests", VcfTestClusterId)
+	}
 	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
 		t.Fatalf("%s must be set for acceptance tests", constants.VcfTestDomainDataSourceId)
-	}
-	if v := os.Getenv(VcfTestClusterName); v == "" {
-		t.Fatalf("%s must be set for acceptance tests", VcfTestClusterName)
-	}
-	if v := os.Getenv(VcfTestVcenterName); v == "" {
-		t.Fatalf("%s must be set for acceptance tests", VcfTestVcenterName)
 	}
 }
