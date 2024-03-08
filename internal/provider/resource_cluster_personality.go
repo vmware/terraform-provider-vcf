@@ -5,11 +5,14 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
+	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/client/personalities"
+	"github.com/vmware/vcf-sdk-go/client/vcenters"
 	"github.com/vmware/vcf-sdk-go/models"
 	"time"
 )
@@ -39,18 +42,24 @@ func ResourceClusterPersonality() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 				ForceNew:     true,
 			},
-			// Maybe use Domain name & cluster name as inputs and work out the identifiers
-			"vcenter_id": {
+			"vcenter_name": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "The identifier of the vCenter Server where the source cluster resides",
+				Description:  "The name (FQDN or IP address) of the vCenter Server where the source cluster resides",
 				ValidateFunc: validation.NoZeroValues,
 				ForceNew:     true,
 			},
-			"cluster_id": {
+			"domain_id": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "The identifier for the source cluster",
+				Description:  "The identifier of the domain which contains the vcenter and source cluster",
+				ValidateFunc: validation.NoZeroValues,
+				ForceNew:     true,
+			},
+			"cluster_name": {
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "The name of the source cluster",
 				ValidateFunc: validation.NoZeroValues,
 				ForceNew:     true,
 			},
@@ -63,14 +72,23 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 
 	mode := uploadModeReferred
 	name := data.Get("name").(string)
-	clusterId := data.Get("cluster_id").(string)
-	vcenterId := data.Get("vcenter_id").(string)
+
+	vcenterId, err := getVcenterId(data, meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	clusterId, err := getClusterId(data, meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	spec := models.PersonalityUploadSpec{
 		Name:       name,
 		UploadMode: &mode,
 		UploadSpecReferredMode: &models.PersonalityUploadSpecReferred{
-			ClusterID: &clusterId,
-			VCenterID: &vcenterId,
+			ClusterID: clusterId,
+			VCenterID: vcenterId,
 		},
 	}
 
@@ -117,4 +135,41 @@ func resourceClusterPersonalityDelete(ctx context.Context, data *schema.Resource
 	}
 
 	return nil
+}
+
+func getVcenterId(data *schema.ResourceData, meta interface{}) (*string, error) {
+	client := meta.(*api_client.SddcManagerClient).ApiClient
+
+	domainId := data.Get("domain_id").(string)
+	vcenterName := data.Get("vcenter_name").(string)
+
+	if vcs, err := client.VCenters.GetVCENTERS(&vcenters.GetVCENTERSParams{DomainID: &domainId}); err != nil {
+		return nil, err
+	} else {
+		for _, vc := range vcs.Payload.Elements {
+			if vc.Fqdn == vcenterName || vc.IPAddress == vcenterName {
+				return &vc.ID, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("vcenter %s not found in domain %s", vcenterName, domainId)
+}
+
+func getClusterId(data *schema.ResourceData, meta interface{}) (*string, error) {
+	client := meta.(*api_client.SddcManagerClient).ApiClient
+
+	clusterName := data.Get("cluster_name").(string)
+
+	if cls, err := client.Clusters.GetClusters(&clusters.GetClustersParams{}); err != nil {
+		return nil, err
+	} else {
+		for _, cluster := range cls.Payload.Elements {
+			if cluster.Name == clusterName {
+				return &cluster.ID, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("cluster %s not found", clusterName)
 }
