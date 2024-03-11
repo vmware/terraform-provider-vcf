@@ -81,9 +81,13 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 		},
 	}
 
-	if _, task, err := client.Personalities.UploadPersonality(&personalities.UploadPersonalityParams{PersonalityUploadSpec: &spec}); err != nil {
+	_, task, err := client.Personalities.UploadPersonality(&personalities.UploadPersonalityParams{PersonalityUploadSpec: &spec})
+
+	if err != nil {
 		return diag.FromErr(err)
-	} else if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, task.Payload.ID, false); err != nil {
+	}
+
+	if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, task.Payload.ID, false); err != nil {
 		return diag.FromErr(err)
 	}
 

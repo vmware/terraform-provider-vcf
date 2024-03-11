@@ -11,10 +11,6 @@ import (
 	"testing"
 )
 
-const (
-	VcfTestClusterId = "VCF_TEST_CLUSTER_ID"
-)
-
 func TestAccClusterPersonality_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPersonalityPreCheck(t) },
@@ -38,15 +34,15 @@ func getClusterPersonalityConfig() string {
 			domain_id = %q
 		}
 		`,
-		os.Getenv(VcfTestClusterId),
+		os.Getenv(constants.VcfTestClusterId),
 		os.Getenv(constants.VcfTestDomainDataSourceId))
 }
 
 // testAccPreCheck validates all required environment variables for running these acceptance
 // tests are set.
 func testAccPersonalityPreCheck(t *testing.T) {
-	if v := os.Getenv(VcfTestClusterId); v == "" {
-		t.Fatalf("%s must be set for acceptance tests", VcfTestClusterId)
+	if v := os.Getenv(constants.VcfTestClusterId); v == "" {
+		t.Fatalf("%s must be set for acceptance tests", constants.VcfTestClusterId)
 	}
 	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
 		t.Fatalf("%s must be set for acceptance tests", constants.VcfTestDomainDataSourceId)
