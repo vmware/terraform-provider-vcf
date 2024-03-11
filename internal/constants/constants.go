@@ -102,7 +102,7 @@ const (
 	// VcfTestVcenterLicenseKey license key for vCenter required for bringup acceptance tests.
 	VcfTestVcenterLicenseKey = "VCF_TEST_VCENTER_LICENSE_KEY"
 
-	// VcfTestVcenterId the guid of the vCenter server
+	// VcfTestVcenterId the guid of the vCenter server.
 	VcfTestVcenterId = "VCF_TEST_VCENTER_ID"
 
 	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.
