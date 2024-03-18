@@ -90,6 +90,15 @@ const (
 	// with the SDDC Manager.
 	VcfTestHost8Pass = "VCF_TEST_HOST8_PASS"
 
+	// VcfTestWitnessHostIp the IP address of the witness host to be used to stretch a cluster
+	VcfTestWitnessHostIp = "VCF_TEST_WITNESS_HOST_IP"
+
+	// VcfTestWitnessHostCidr the CIDR notatin address of the witness host to be used to stretch a cluster
+	VcfTestWitnessHostCidr = "VCF_TEST_WITNESS_HOST_CIDR"
+
+	// VcfTestWitnessHostFqdn the FQDN of the witness host to be used to stretch a cluster
+	VcfTestWitnessHostFqdn = "VCF_TEST_WITNESS_HOST_FQDN"
+
 	// VcfTestNsxLicenseKey license key for NSX required for domain and cluster acceptance tests.
 	VcfTestNsxLicenseKey = "VCF_TEST_NSX_LICENSE_KEY"
 

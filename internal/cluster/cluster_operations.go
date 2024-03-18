@@ -5,7 +5,6 @@ package cluster
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,14 +41,8 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 		return resultUpdated, nil
 	}
 
-	if data.HasChange("witness_host") {
-		_, newWitnessHostRaw := data.GetChange("witness_host")
-		witnessHosts := newWitnessHostRaw.([]interface{})
-		if len(witnessHosts) > 1 {
-			return nil, errors.New("there can be only 1 witness host")
-		}
-
-		resultUpdated, err := SetStretchOrUnstretchSpec(result, witnessHosts, data.Get("host").([]interface{}))
+	if data.HasChange("stretch_configuration") {
+		resultUpdated, err := SetStretchOrUnstretchSpec(result, data)
 
 		if err != nil {
 			return nil, err
@@ -102,9 +95,19 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 
 // SetStretchOrUnstretchSpec sets ClusterStretchSpec or ClusterUnstretchSpec to a provided
 // ClusterUpdateSpec depending on weather a witness host is being added or removed.
-func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, witnessHosts, hosts []interface{}) (*models.ClusterUpdateSpec, error) {
-	if len(witnessHosts) > 0 {
+func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schema.ResourceData) (*models.ClusterUpdateSpec, error) {
+	configOld, configNew := data.GetChange("stretch_configuration")
+
+	if len(configOld.([]interface{})) == len(configNew.([]interface{})) {
+		return nil, fmt.Errorf("updating the stretch configuration is not supported")
+	}
+
+	configRaw := configNew.([]interface{})
+
+	if len(configRaw) > 0 {
 		// stretch
+		config := configRaw[0].(map[string]interface{})
+		witnessHosts := config["witness_host"].([]interface{})
 		witnessHost := witnessHosts[0].(map[string]interface{})
 
 		ip := witnessHost["vsan_ip"].(string)
@@ -117,10 +120,10 @@ func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, witnessHost
 			VSANIP:   &ip,
 		}
 
-		// TODO - move host specs into witness config
-		// All new hosts are added to the secondary fault domain. All existing hosts go into the primary domain.
+		// All new hosts are added to the secondary fault domain. All existing hosts in the cluster go into the primary domain.
+		secondaryFdHosts := config["secondary_fd_host"].([]interface{})
 		var hostSpecs []*models.HostSpec
-		for _, addedHostRaw := range hosts {
+		for _, addedHostRaw := range secondaryFdHosts {
 			hostSpec, err := TryConvertToHostSpec(addedHostRaw.(map[string]interface{}))
 			if err != nil {
 				return nil, err
