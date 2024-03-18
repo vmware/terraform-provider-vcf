@@ -60,9 +60,7 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterResourceWitnessTestConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
-					os.Getenv(constants.VcfTestVcenterLicenseKey),
-					"vi-cluster1",
+					"sfo-w02-cl02",
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
@@ -71,10 +69,8 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 			// Convert to stretched
 			{
 				Config: testAccVcfClusterResourceWitnessTestConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
-					os.Getenv(constants.VcfTestVcenterLicenseKey),
-					"vi-cluster1",
-					getWitnessHostConfig("10.0.0.112", "10.0.0.0/22", "esxi-13.vrack.vsphere.local")),
+					"sfo-w02-cl02",
+					getStretchConfig()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
 				),
@@ -82,9 +78,7 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 			// Restore to unstretched
 			{
 				Config: testAccVcfClusterResourceWitnessTestConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
-					os.Getenv(constants.VcfTestVcenterLicenseKey),
-					"vi-cluster1",
+					"sfo-w02-cl02",
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
@@ -221,41 +215,122 @@ func testAccVcfHostCommissionConfig(hostResourceId, hostFqdn, hostPass string) s
 	`, hostResourceId, hostFqdn, hostPass)
 }
 
-func testAccVcfClusterResourceWitnessTestConfig(domainId, licenseKey, name, witnessHostConfig string) string {
+func testAccVcfClusterResourceWitnessTestConfig(name, witnessHostConfig string) string {
 	return fmt.Sprintf(`
+	resource "vcf_network_pool" "domain_pool" {
+		name    = "cluster-pool"
+		network {
+			gateway   = "192.168.12.1"
+			mask      = "255.255.255.0"
+			mtu       = 9000
+			subnet    = "192.168.12.0"
+			type      = "VSAN"
+			vlan_id   = 100
+			ip_pools {
+				start = "192.168.12.5"
+				end   = "192.168.12.50"
+			}
+		}
+		network {
+			gateway   = "192.168.13.1"
+			mask      = "255.255.255.0"
+			mtu       = 9000
+			subnet    = "192.168.13.0"
+			type      = "vMotion"
+			vlan_id   = 100
+			ip_pools {
+			  start = "192.168.13.5"
+			  end   = "192.168.13.50"
+			}
+		}
+	}
+
+	resource "vcf_host" "host1" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+
+	resource "vcf_host" "host2" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+
+	resource "vcf_host" "host3" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+
+	resource "vcf_host" "host4" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+
 	resource "vcf_cluster" "cluster1" {
 		domain_id = %q
 		name = %q
 		%s
 		host {
-			id = "0cfed44c-e50f-4d4b-b57c-a20f8aabfb90"
+			id = vcf_host.host1.id
 			license_key = %q
 		}
 		host {
-			id = "e9ca0770-9783-4886-aaf1-8c99f01d3877"
+			id = vcf_host.host2.id
 			license_key = %q
 		}
 		host {
-			id = "db78648a-a88c-4344-8f2a-077ecc1923e8"
+			id = vcf_host.host3.id
 			license_key = %q
 		}
 		vds {
-			name = "new-vi-vcenter-2-vi-cluster1-vds01"
+			name = "sfo-w01-cl02-vds02"
 			portgroup {
-				name = "vi-cluster1-vds-Mgmt"
+				name = "sfo-w01-cl02-vds01-pg-mgmt"
 				transport_type = "MANAGEMENT"
 			}
 			portgroup {
-				name = "vi-cluster1-vds-VSAN1"
+				name = "sfo-w01-cl02-vds02-pg-vsan"
 				transport_type = "VSAN"
 			}
 			portgroup {
-				name = "vi-cluster1-vds-vMotion1"
+				name = "sfo-w01-cl02-vds02-pg-vmotion"
 				transport_type = "VMOTION"
 			}
 		}
+		vsan_datastore {
+			datastore_name = "sfo-m01-cl01-ds-vsan01"
+			failures_to_tolerate = 1
+			license_key = %q
+		}
 	}
-	`, domainId, name, witnessHostConfig, licenseKey, licenseKey, licenseKey)
+	`,
+		os.Getenv(constants.VcfTestHost1Fqdn),
+		os.Getenv(constants.VcfTestHost1Pass),
+		os.Getenv(constants.VcfTestHost2Fqdn),
+		os.Getenv(constants.VcfTestHost2Pass),
+		os.Getenv(constants.VcfTestHost3Fqdn),
+		os.Getenv(constants.VcfTestHost3Pass),
+		os.Getenv(constants.VcfTestHost4Fqdn),
+		os.Getenv(constants.VcfTestHost4Pass),
+		os.Getenv(constants.VcfTestDomainDataSourceId),
+		name,
+		witnessHostConfig,
+		os.Getenv(constants.VcfTestEsxiLicenseKey),
+		os.Getenv(constants.VcfTestEsxiLicenseKey),
+		os.Getenv(constants.VcfTestEsxiLicenseKey),
+		os.Getenv(constants.VcfTestVsanLicenseKey),
+	)
 }
 
 func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, host2Pass,
@@ -393,14 +468,26 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		esxLicenseKey, esxLicenseKey, esxLicenseKey, additionalHostInClusterConfig, vsanLicenseKey)
 }
 
-func getWitnessHostConfig(ip, cidr, fqdn string) string {
+func getStretchConfig() string {
 	return fmt.Sprintf(`
-	witness_host {
-		vsan_ip = %q
-		vsan_cidr = %q
-		fqdn = %q
+	stretch_configuration {
+		witness_host {
+			vsan_ip = %q
+			vsan_cidr = %q
+			fqdn = %q
+		}
+
+		secondary_fd_host {
+			id = vcf_host.host3.id
+			license_key = %q
+		}
 	}
-	`, ip, cidr, fqdn)
+	`,
+		os.Getenv(constants.VcfTestWitnessHostIp),
+		os.Getenv(constants.VcfTestWitnessHostCidr),
+		os.Getenv(constants.VcfTestWitnessHostFqdn),
+		os.Getenv(constants.VcfTestEsxiLicenseKey),
+	)
 }
 
 func testCheckVcfClusterDestroy(state *terraform.State) error {
