@@ -169,7 +169,7 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 			return err
 		}
 
-		if task.Status == "In Progress" || task.Status == "Pending" {
+		if task.Status == "In Progress" || task.Status == "Pending" || task.Status == "IN_PROGRESS" {
 			time.Sleep(20 * time.Second)
 			continue
 		}
