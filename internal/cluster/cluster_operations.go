@@ -105,7 +105,7 @@ func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.ClusterSpec, error) {
 	intermediaryMap := map[string]interface{}{}
 	intermediaryMap["name"] = data.Get("name")
-	intermediaryMap["clusterImageId"] = data.Get("clusterImageId")
+	intermediaryMap["cluster_image_id"] = data.Get("cluster_image_id")
 	intermediaryMap["evc_mode"] = data.Get("evc_mode")
 	intermediaryMap["high_availability_enabled"] = data.Get("high_availability_enabled")
 	intermediaryMap["geneve_vlan_id"] = data.Get("geneve_vlan_id")
