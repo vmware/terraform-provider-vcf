@@ -102,7 +102,7 @@ Required:
 
 - `asn` (Number) ASN
 - `ip` (String) IP address
-- `password` (String) Password
+- `password` (String) Password - can be empty.
 
 
 

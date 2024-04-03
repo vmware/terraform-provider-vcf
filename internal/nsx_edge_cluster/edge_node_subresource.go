@@ -142,10 +142,9 @@ func BgpPeerSchema() *schema.Resource {
 				ValidateFunc: validationUtils.ValidateCidrIPv4AddressSchema,
 			},
 			"password": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Password",
-				ValidateFunc: validation.NoZeroValues,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Password",
 			},
 			"asn": {
 				Type:         schema.TypeInt,
