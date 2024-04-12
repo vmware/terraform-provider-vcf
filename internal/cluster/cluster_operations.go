@@ -131,13 +131,14 @@ func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schem
 			hostSpecs = append(hostSpecs, hostSpec)
 		}
 
+		// MultiAZ support is not yet implemented
 		var secondaryAzOverlayVlanId int32 = 0
 
 		stretchSpec := &models.ClusterStretchSpec{
 			HostSpecs:                         hostSpecs,
 			SecondaryAzOverlayVlanID:          &secondaryAzOverlayVlanId,
 			WitnessSpec:                       &witnessSpec,
-			IsEdgeClusterConfiguredForMultiAZ: true,
+			IsEdgeClusterConfiguredForMultiAZ: false,
 		}
 		updateSpec.ClusterStretchSpec = stretchSpec
 	} else {
@@ -147,7 +148,6 @@ func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schem
 	return updateSpec, nil
 }
 
-// TODO - Change ClusterUnstretchSpec to struct so that we can obtain an empty non-nil value without this workaround.
 type EmptySpec struct{}
 
 func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
@@ -182,6 +182,7 @@ func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.Clu
 	intermediaryMap["vsan_remote_datastore_cluster"] = data.Get("vsan_remote_datastore_cluster")
 	intermediaryMap["nfs_datastores"] = data.Get("nfs_datastores")
 	intermediaryMap["vvol_datastores"] = data.Get("vvol_datastores")
+	intermediaryMap["stretch_configuration"] = data.Get("stretch_configuration")
 	return TryConvertToClusterSpec(intermediaryMap)
 }
 
@@ -277,6 +278,10 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 		return nil, err
 	} else {
 		result.DatastoreSpec = datastoreSpec
+	}
+
+	if _, ok := object["stretch_configuration"]; ok {
+		return nil, fmt.Errorf("cannot create stretched cluster, create the cluster first and apply the strech configuration later")
 	}
 
 	return result, nil

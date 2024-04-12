@@ -15,19 +15,19 @@ func WitnessHostSubresource() *schema.Resource {
 			"vsan_ip": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "TODO",
+				Description:  "IP address for the witness host on the vSAN network",
 				ValidateFunc: validation.IsIPv4Address,
 			},
 			"vsan_cidr": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "TODO",
+				Description:  "CIDR address for the witness host on the vSAN network",
 				ValidateFunc: validationUtils.ValidateCidrIPv4AddressSchema,
 			},
 			"fqdn": {
 				Type:         schema.TypeString,
 				Required:     true,
-				Description:  "TODO",
+				Description:  "Fully qualified domain name of the witness host. It should be routable on the vSAN network",
 				ValidateFunc: validation.NoZeroValues,
 			},
 		},

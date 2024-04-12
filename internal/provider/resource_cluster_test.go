@@ -73,9 +73,10 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 					getStretchConfig()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "stretch_configuration"),
 				),
 			},
-			// Restore to unstretched
+			// Restore to single site mode
 			{
 				Config: testAccVcfClusterResourceWitnessTestConfig(
 					"sfo-w02-cl02",
@@ -310,7 +311,6 @@ func testAccVcfClusterResourceWitnessTestConfig(name, witnessHostConfig string) 
 		}
 		vsan_datastore {
 			datastore_name = "sfo-m01-cl01-ds-vsan01"
-			failures_to_tolerate = 1
 			license_key = %q
 		}
 	}

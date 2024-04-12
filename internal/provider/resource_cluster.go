@@ -177,7 +177,7 @@ func clusterSubresourceSchema() *schema.Resource {
 			"stretch_configuration": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "TODO",
+				Description: "Settings for stretched vSAN clusters",
 				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -185,14 +185,14 @@ func clusterSubresourceSchema() *schema.Resource {
 							Type:        schema.TypeList,
 							Optional:    true,
 							MaxItems:    1,
-							Description: "TODO",
+							Description: "Configuration for the witness host",
 							Elem:        vsan.WitnessHostSubresource(),
 						},
 						"secondary_fd_host": {
 							Type:        schema.TypeList,
 							Optional:    true,
 							MinItems:    1,
-							Description: "TODO",
+							Description: "The list of hosts that will go into the secondary fault domain",
 							Elem:        cluster.HostSpecSchema(),
 						},
 					},
