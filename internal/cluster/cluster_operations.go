@@ -33,21 +33,12 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 
 	if data.HasChange("host") {
 		oldHostsValue, newHostsValue := data.GetChange("host")
-		resultUpdated, err := SetExpansionOrContractionSpec(result,
+		return SetExpansionOrContractionSpec(result,
 			oldHostsValue.([]interface{}), newHostsValue.([]interface{}))
-		if err != nil {
-			return nil, err
-		}
-		return resultUpdated, nil
 	}
 
 	if data.HasChange("stretch_configuration") {
-		resultUpdated, err := SetStretchOrUnstretchSpec(result, data)
-
-		if err != nil {
-			return nil, err
-		}
-		return resultUpdated, nil
+		return SetStretchOrUnstretchSpec(result, data)
 	}
 
 	return result, nil
