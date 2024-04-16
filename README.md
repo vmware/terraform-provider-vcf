@@ -43,6 +43,8 @@ To instead use a custom-built provider in your Terraform environment (e.g. the p
 
 **NOTE:** The provider does not support VMware Cloud Foundation on VxRail
 
+For more information about the capabilities of this provider see the [Terraform Registry](https://registry.terraform.io/providers/vmware/vcf/latest/docs)
+
 ## Controlling the Provider Version
 
 Note that you can also control the provider version. This requires the use of a
@@ -110,6 +112,6 @@ provider.
 
 # License
 
-Copyright 2023 Broadcom. All Rights Reserved.
+Copyright 2023-2024 Broadcom. All Rights Reserved.
 
 The Terraform provider for VMware Cloud Foundation is available under [MPL2.0 license](https://github.com/vmware/terraform-provider-vcf/blob/master/LICENSE).
