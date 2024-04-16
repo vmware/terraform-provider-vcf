@@ -43,7 +43,7 @@ To instead use a custom-built provider in your Terraform environment (e.g. the p
 
 **NOTE:** The provider does not support VMware Cloud Foundation on VxRail
 
-For more information about the capabilities of this provider see the [Terraform Registry](https://registry.terraform.io/providers/vmware/vcf/latest/docs)
+For more information about the capabilities of this provider see the [Terraform Registry](https://registry.terraform.io/providers/vmware/vcf/latest/docs).
 
 ## Controlling the Provider Version
 
