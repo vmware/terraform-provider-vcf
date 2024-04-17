@@ -16,10 +16,10 @@ The following data is prerequisite for creation:
 * Cluster details
   * Name of the cluster
   * Hosts details:
-     * ID of the host (UUID)
-     * License key for the host
-     * List of VDS names to associate with host
-     * ID of the vmNic host to be associated with VDS, once added to cluster
+    * ID of the host (UUID)
+    * License key for the host
+    * List of VDS names to associate with host
+    * ID of the vmNic host to be associated with VDS, once added to cluster
   * Datastore details:
   **Note :** Only one of “vsan_datastore” (For VSAN), “nfs_datastores” (For NFS) or “vmfs_datastore” (For VMFS on FC) or "vvol_datastores" (For VVOL) or "vsan_remote_datastore_cluster" (For vSAN HCI Mesh Remote Datastore) must be specified.
   * Network Details
@@ -62,6 +62,7 @@ The following data is prerequisite for creation:
 - `high_availability_enabled` (Boolean) vSphere High Availability settings for the cluster
 - `ip_address_pool` (Block List, Max: 1) Contains the parameters required to create or reuse an IP address pool. Omit for DHCP, provide name only to reuse existing IP Pool, if subnets are provided a new IP Pool will be created (see [below for nested schema](#nestedblock--ip_address_pool))
 - `nfs_datastores` (Block List) Cluster storage configuration for NFS (see [below for nested schema](#nestedblock--nfs_datastores))
+- `stretch_configuration` (Block List, Max: 1) Settings for stretched vSAN clusters (see [below for nested schema](#nestedblock--stretch_configuration))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `vmfs_datastore` (Block List, Max: 1) Cluster storage configuration for VMFS (see [below for nested schema](#nestedblock--vmfs_datastore))
 - `vsan_datastore` (Block List, Max: 1) Cluster storage configuration for vSAN (see [below for nested schema](#nestedblock--vsan_datastore))
@@ -200,6 +201,62 @@ Required:
 Optional:
 
 - `user_tag` (String) User tag used to annotate NFS share
+
+
+<a id="nestedblock--stretch_configuration"></a>
+### Nested Schema for `stretch_configuration`
+
+Note: All hosts which are part of the cluster prior to applying the stretch configuration will be
+placed in the primary fault domain. All hosts provided in the stretch configuration will go into the secondary
+fault domain.
+
+Optional:
+
+- `secondary_fd_host` (Block List) The list of hosts that will go into the secondary fault domain (see [below for nested schema](#nestedblock--stretch_configuration--secondary_fd_host))
+- `witness_host` (Block List, Max: 1) Configuration for the witness host (see [below for nested schema](#nestedblock--stretch_configuration--witness_host))
+
+<a id="nestedblock--stretch_configuration--secondary_fd_host"></a>
+### Nested Schema for `stretch_configuration.secondary_fd_host`
+
+Required:
+
+- `id` (String) ID of the ESXi host in the free pool
+
+Optional:
+
+- `availability_zone_name` (String) Availability Zone Name. This is required while performing a stretched cluster expand operation
+- `host_name` (String) Host name of the ESXi host
+- `ip_address` (String) IPv4 address of the ESXi host
+- `license_key` (String, Sensitive) License key for an ESXi host in the free pool. This is required except in cases where the ESXi host has already been licensed outside of the VMware Cloud Foundation system
+- `password` (String, Sensitive) Password to authenticate to the ESXi host
+- `serial_number` (String) Serial number of the ESXi host
+- `ssh_thumbprint` (String, Sensitive) SSH thumbprint of the ESXi host
+- `username` (String) Username to authenticate to the ESXi host
+- `vmnic` (Block List) vmnic configuration for the ESXi host (see [below for nested schema](#nestedblock--stretch_configuration--secondary_fd_host--vmnic))
+
+<a id="nestedblock--stretch_configuration--secondary_fd_host--vmnic"></a>
+### Nested Schema for `stretch_configuration.secondary_fd_host.vmnic`
+
+Required:
+
+- `id` (String) ESXI host vmnic ID to be associated with a VDS, once added to cluster
+
+Optional:
+
+- `uplink` (String) Uplink to be associated with vmnic
+- `vds_name` (String) Name of the VDS to associate with the ESXi host
+
+
+
+<a id="nestedblock--stretch_configuration--witness_host"></a>
+### Nested Schema for `stretch_configuration.witness_host`
+
+Required:
+
+- `fqdn` (String) Fully qualified domain name of the witness host. It should be routable on the vSAN network
+- `vsan_cidr` (String) CIDR address for the witness host on the vSAN network
+- `vsan_ip` (String) IP address for the witness host on the vSAN network
+
 
 
 <a id="nestedblock--timeouts"></a>
