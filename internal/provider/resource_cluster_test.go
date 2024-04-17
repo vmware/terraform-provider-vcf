@@ -59,26 +59,26 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 		CheckDestroy:      testCheckVcfClusterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVcfClusterResourceWitnessTestConfig(
+				Config: testAccVcfClusterResourcеStretchTestConfig(
 					"sfo-w02-cl02",
 					""),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "is_stretched"),
 				),
 			},
 			// Convert to stretched
 			{
-				Config: testAccVcfClusterResourceWitnessTestConfig(
+				Config: testAccVcfClusterResourcеStretchTestConfig(
 					"sfo-w02-cl02",
 					getStretchConfig()),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "stretch_configuration"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "is_stretched"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "stretch_configuration.0.%"),
 				),
 			},
 			// Restore to single site mode
 			{
-				Config: testAccVcfClusterResourceWitnessTestConfig(
+				Config: testAccVcfClusterResourcеStretchTestConfig(
 					"sfo-w02-cl02",
 					""),
 				Check: resource.ComposeTestCheckFunc(
@@ -216,7 +216,7 @@ func testAccVcfHostCommissionConfig(hostResourceId, hostFqdn, hostPass string) s
 	`, hostResourceId, hostFqdn, hostPass)
 }
 
-func testAccVcfClusterResourceWitnessTestConfig(name, witnessHostConfig string) string {
+func testAccVcfClusterResourcеStretchTestConfig(name, stretchConfig string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "domain_pool" {
 		name    = "cluster-pool"
@@ -278,7 +278,23 @@ func testAccVcfClusterResourceWitnessTestConfig(name, witnessHostConfig string) 
 		storage_type = "VSAN"
 	}
 
-	resource "vcf_cluster" "cluster1" {
+	resource "vcf_host" "host5" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+
+	resource "vcf_host" "host6" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_id = vcf_network_pool.domain_pool.id
+		storage_type = "VSAN"
+	}
+
+	resource "vcf_cluster" "cluster" {
 		domain_id = %q
 		name = %q
 		%s
@@ -295,22 +311,22 @@ func testAccVcfClusterResourceWitnessTestConfig(name, witnessHostConfig string) 
 			license_key = %q
 		}
 		vds {
-			name = "sfo-w01-cl02-vds02"
+			name = "new-vi-vcenter-2-vi-cluster1-vds01"
 			portgroup {
-				name = "sfo-w01-cl02-vds01-pg-mgmt"
+				name = "vi-cluster1-vds-Mgmt"
 				transport_type = "MANAGEMENT"
 			}
 			portgroup {
-				name = "sfo-w01-cl02-vds02-pg-vsan"
+				name = "vi-cluster-vds-VSAN1"
 				transport_type = "VSAN"
 			}
 			portgroup {
-				name = "sfo-w01-cl02-vds02-pg-vmotion"
+				name = "vi-cluster-vds-vMotion1"
 				transport_type = "VMOTION"
 			}
 		}
 		vsan_datastore {
-			datastore_name = "sfo-m01-cl01-ds-vsan01"
+			datastore_name = "vi-cluster1-vSanDatastore"
 			license_key = %q
 		}
 	}
@@ -323,9 +339,13 @@ func testAccVcfClusterResourceWitnessTestConfig(name, witnessHostConfig string) 
 		os.Getenv(constants.VcfTestHost3Pass),
 		os.Getenv(constants.VcfTestHost4Fqdn),
 		os.Getenv(constants.VcfTestHost4Pass),
+		os.Getenv(constants.VcfTestHost5Fqdn),
+		os.Getenv(constants.VcfTestHost5Pass),
+		os.Getenv(constants.VcfTestHost6Fqdn),
+		os.Getenv(constants.VcfTestHost6Pass),
 		os.Getenv(constants.VcfTestDomainDataSourceId),
 		name,
-		witnessHostConfig,
+		stretchConfig,
 		os.Getenv(constants.VcfTestEsxiLicenseKey),
 		os.Getenv(constants.VcfTestEsxiLicenseKey),
 		os.Getenv(constants.VcfTestEsxiLicenseKey),
@@ -478,7 +498,17 @@ func getStretchConfig() string {
 		}
 
 		secondary_fd_host {
-			id = vcf_host.host3.id
+			id = vcf_host.host4.id
+			license_key = %q
+		}
+
+		secondary_fd_host {
+			id = vcf_host.host5.id
+			license_key = %q
+		}
+
+		secondary_fd_host {
+			id = vcf_host.host6.id
 			license_key = %q
 		}
 	}
@@ -486,6 +516,8 @@ func getStretchConfig() string {
 		os.Getenv(constants.VcfTestWitnessHostIp),
 		os.Getenv(constants.VcfTestWitnessHostCidr),
 		os.Getenv(constants.VcfTestWitnessHostFqdn),
+		os.Getenv(constants.VcfTestEsxiLicenseKey),
+		os.Getenv(constants.VcfTestEsxiLicenseKey),
 		os.Getenv(constants.VcfTestEsxiLicenseKey),
 	)
 }

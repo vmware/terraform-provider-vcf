@@ -271,7 +271,7 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 		result.DatastoreSpec = datastoreSpec
 	}
 
-	if _, ok := object["stretch_configuration"]; ok {
+	if stretchConf, ok := object["stretch_configuration"]; ok && !validationUtils.IsEmpty(stretchConf) {
 		return nil, fmt.Errorf("cannot create stretched cluster, create the cluster first and apply the strech configuration later")
 	}
 
