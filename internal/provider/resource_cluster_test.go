@@ -63,7 +63,7 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 					"sfo-w02-cl02",
 					""),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "is_stretched"),
+					resource.TestCheckResourceAttr("vcf_cluster.cluster", "is_stretched", "false"),
 				),
 			},
 			// Convert to stretched
@@ -72,7 +72,7 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 					"sfo-w02-cl02",
 					getStretchConfig()),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "is_stretched"),
+					resource.TestCheckResourceAttr("vcf_cluster.cluster", "is_stretched", "true"),
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "stretch_configuration.0.%"),
 				),
 			},
@@ -82,7 +82,7 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 					"sfo-w02-cl02",
 					""),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttr("vcf_cluster.cluster1", "is_stretched", "false"),
 				),
 			},
 		},
