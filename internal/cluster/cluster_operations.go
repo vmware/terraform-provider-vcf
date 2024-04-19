@@ -143,12 +143,12 @@ type EmptySpec struct{}
 
 func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
-	validateClusterSpec := clusters.NewValidateClusterOperationsParamsWithContext(ctx).
+	validateClusterSpec := clusters.NewValidateClusterUpdateSpecParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	validateClusterSpec.ClusterUpdateSpec = clusterUpdateSpec
 	validateClusterSpec.ID = clusterId
 
-	validateResponse, err := apiClient.Clusters.ValidateClusterOperations(validateClusterSpec)
+	validateResponse, err := apiClient.Clusters.ValidateClusterUpdateSpec(validateClusterSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}

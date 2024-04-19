@@ -61,7 +61,7 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSAND
 	}
 	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validationutils.IsEmpty(failuresToTolerate) {
 		failuresToTolerateInt := int32(failuresToTolerate.(int))
-		result.FailuresToTolerate = &failuresToTolerateInt
+		result.FailuresToTolerate = failuresToTolerateInt
 	}
 
 	return result, nil

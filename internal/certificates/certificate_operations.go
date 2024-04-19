@@ -69,11 +69,11 @@ func ValidateResourceCertificates(ctx context.Context, client *vcfclient.VcfClie
 	// Wait for certificate validation to fisnish
 	if !validationutils.HasCertificateValidationFinished(validationResponse) {
 		for {
-			getResourceCertificatesValidationResultParams := certificates.NewGetResourceCertificatesValidationResultParams().
+			getResourceCertificatesValidationResultParams := certificates.NewGetResourceCertificatesValidationByIDParams().
 				WithContext(ctx).
 				WithTimeout(constants.DefaultVcfApiCallTimeout).
 				WithID(*validationId)
-			getValidationResponse, err := client.Certificates.GetResourceCertificatesValidationResult(getResourceCertificatesValidationResultParams)
+			getValidationResponse, err := client.Certificates.GetResourceCertificatesValidationByID(getResourceCertificatesValidationResultParams)
 			if err != nil {
 				return validationutils.ConvertVcfErrorToDiag(err)
 			}
@@ -104,11 +104,11 @@ func GetCertificateForResourceInDomain(ctx context.Context, client *vcfclient.Vc
 		return nil, fmt.Errorf("could not determine FQDN for resourceType %s in domain %s", resourceType, domainId)
 	}
 
-	viewCertificatesParams := certificates.NewViewCertificateParamsWithContext(ctx).
+	viewCertificatesParams := certificates.NewGetCertificatesByDomainParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	viewCertificatesParams.SetDomainName(domainId)
+	viewCertificatesParams.ID = domainId
 
-	certificatesResponse, err := client.Certificates.ViewCertificate(viewCertificatesParams)
+	certificatesResponse, err := client.Certificates.GetCertificatesByDomain(viewCertificatesParams)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func GenerateCertificateForResource(ctx context.Context, client *api_client.Sddc
 	}
 	generateCertificatesParam := certificates.NewGenerateCertificatesParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithDomainName(*domainId)
+		WithID(*domainId)
 	generateCertificatesParam.SetCertificateGenerationSpec(certificateGenerationSpec)
 
 	var taskId string

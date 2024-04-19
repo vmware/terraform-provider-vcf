@@ -159,11 +159,11 @@ func ConvertVcfErrorToDiag(err interface{}) diag.Diagnostics {
 	if err == nil {
 		return nil
 	}
-	domainsBadRequest, ok := err.(*domains.ValidateDomainsOperationsBadRequest)
+	domainsBadRequest, ok := err.(*domains.ValidateDomainCreationSpecBadRequest)
 	if ok {
 		return convertVcfErrorsToDiagErrors(domainsBadRequest.Payload)
 	}
-	clustersBadRequest, ok := err.(*clusters.ValidateClusterOperationsBadRequest)
+	clustersBadRequest, ok := err.(*clusters.ValidateClusterCreationSpecBadRequest)
 	if ok {
 		return convertVcfErrorsToDiagErrors(clustersBadRequest.Payload)
 	}

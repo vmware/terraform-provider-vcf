@@ -299,11 +299,11 @@ func createCluster(ctx context.Context, domainId string, clusterSpec *models.Clu
 		DomainID: resource_utils.ToStringPointer(domainId),
 	}
 
-	validateClusterSpec := clusters.NewValidateClustersOperationsParamsWithContext(ctx).
+	validateClusterSpec := clusters.NewValidateClusterCreationSpecParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	validateClusterSpec.ClusterCreationSpec = &clusterCreationSpec
 
-	validateResponse, err := apiClient.Clusters.ValidateClustersOperations(validateClusterSpec)
+	validateResponse, err := apiClient.Clusters.ValidateClusterCreationSpec(validateClusterSpec)
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
