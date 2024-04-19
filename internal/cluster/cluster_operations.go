@@ -37,7 +37,7 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 			oldHostsValue.([]interface{}), newHostsValue.([]interface{}))
 	}
 
-	if data.HasChange("stretch_configuration") {
+	if data.HasChange("vsan_stretch_configuration") {
 		return SetStretchOrUnstretchSpec(result, data)
 	}
 
@@ -87,7 +87,7 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 // SetStretchOrUnstretchSpec sets ClusterStretchSpec or ClusterUnstretchSpec to a provided
 // ClusterUpdateSpec depending on weather a witness host is being added or removed.
 func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schema.ResourceData) (*models.ClusterUpdateSpec, error) {
-	configOld, configNew := data.GetChange("stretch_configuration")
+	configOld, configNew := data.GetChange("vsan_stretch_configuration")
 
 	if len(configOld.([]interface{})) == len(configNew.([]interface{})) {
 		return nil, fmt.Errorf("updating the stretch configuration is not supported")
@@ -173,7 +173,7 @@ func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.Clu
 	intermediaryMap["vsan_remote_datastore_cluster"] = data.Get("vsan_remote_datastore_cluster")
 	intermediaryMap["nfs_datastores"] = data.Get("nfs_datastores")
 	intermediaryMap["vvol_datastores"] = data.Get("vvol_datastores")
-	intermediaryMap["stretch_configuration"] = data.Get("stretch_configuration")
+	intermediaryMap["vsan_stretch_configuration"] = data.Get("vsan_stretch_configuration")
 	return TryConvertToClusterSpec(intermediaryMap)
 }
 
@@ -271,7 +271,7 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 		result.DatastoreSpec = datastoreSpec
 	}
 
-	if stretchConf, ok := object["stretch_configuration"]; ok && !validationUtils.IsEmpty(stretchConf) {
+	if stretchConf, ok := object["vsan_stretch_configuration"]; ok && !validationUtils.IsEmpty(stretchConf) {
 		return nil, fmt.Errorf("cannot create stretched cluster, create the cluster first and apply the strech configuration later")
 	}
 

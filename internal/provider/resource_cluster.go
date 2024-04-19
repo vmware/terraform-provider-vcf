@@ -174,7 +174,7 @@ func clusterSubresourceSchema() *schema.Resource {
 				Description: "vSphere Distributed Switches to add to the cluster",
 				Elem:        network.VdsSchema(),
 			},
-			"stretch_configuration": {
+			"vsan_stretch_configuration": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "Settings for stretched vSAN clusters",

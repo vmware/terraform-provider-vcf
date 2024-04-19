@@ -73,7 +73,7 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 					getStretchConfig()),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("vcf_cluster.cluster", "is_stretched", "true"),
-					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "stretch_configuration.0.%"),
+					resource.TestCheckResourceAttrSet("vcf_cluster.cluster", "vsan_stretch_configuration.0.%"),
 				),
 			},
 			// Restore to single site mode
@@ -490,7 +490,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 
 func getStretchConfig() string {
 	return fmt.Sprintf(`
-	stretch_configuration {
+	vsan_stretch_configuration {
 		witness_host {
 			vsan_ip = %q
 			vsan_cidr = %q
