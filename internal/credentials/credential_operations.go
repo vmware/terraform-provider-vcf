@@ -179,7 +179,7 @@ func makeAutoRotatePolicySpec(autoRotateEnabled bool, autoRotateDays int32, reso
 	operation := ConfigAutoRotate
 	return &models.CredentialsUpdateSpec{
 		AutoRotatePolicy: &models.AutoRotateCredentialPolicyInputSpec{
-			EnableAutoRotatePolicy: autoRotateEnabled,
+			EnableAutoRotatePolicy: &autoRotateEnabled,
 			FrequencyInDays:        autoRotateDays,
 		},
 		Elements: []*models.ResourceCredentials{

@@ -108,7 +108,7 @@ func GetCertificateForResourceInDomain(ctx context.Context, client *vcfclient.Vc
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	viewCertificatesParams.ID = domainId
 
-	certificatesResponse, err := client.Certificates.GetCertificatesByDomain(viewCertificatesParams)
+	certificatesResponse, _, err := client.Certificates.GetCertificatesByDomain(viewCertificatesParams)
 	if err != nil {
 		return nil, err
 	}

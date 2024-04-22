@@ -214,7 +214,8 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec = &models.NsxTClusterSpec{}
 
 	if geneveVlanId, ok := object["geneve_vlan_id"]; ok && !validationUtils.IsEmpty(geneveVlanId) {
-		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = int32(geneveVlanId.(int))
+		vlanValue := int32(geneveVlanId.(int))
+		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = &vlanValue
 	}
 
 	if ipAddressPoolRaw, ok := object["ip_address_pool"]; ok && !validationUtils.IsEmpty(ipAddressPoolRaw) {
