@@ -15,6 +15,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/terraform-provider-vcf/internal/vsan"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
@@ -172,6 +173,30 @@ func clusterSubresourceSchema() *schema.Resource {
 				MinItems:    1,
 				Description: "vSphere Distributed Switches to add to the cluster",
 				Elem:        network.VdsSchema(),
+			},
+			"vsan_stretch_configuration": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Settings for stretched vSAN clusters",
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"witness_host": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							MaxItems:    1,
+							Description: "Configuration for the witness host",
+							Elem:        vsan.WitnessHostSubresource(),
+						},
+						"secondary_fd_host": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							MinItems:    1,
+							Description: "The list of hosts that will go into the secondary fault domain",
+							Elem:        cluster.HostSpecSchema(),
+						},
+					},
+				},
 			},
 			"primary_datastore_name": {
 				Type:        schema.TypeString,

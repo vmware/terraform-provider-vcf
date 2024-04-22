@@ -31,15 +31,14 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 		result.Name = data.Get("name").(string)
 	}
 
-	// TODO support vSAN stretch/unstretch operations by adding a "witness" attribute to vcf_cluster and checking for change on it.
 	if data.HasChange("host") {
 		oldHostsValue, newHostsValue := data.GetChange("host")
-		resultUpdated, err := SetExpansionOrContractionSpec(result,
+		return SetExpansionOrContractionSpec(result,
 			oldHostsValue.([]interface{}), newHostsValue.([]interface{}))
-		if err != nil {
-			return nil, err
-		}
-		return resultUpdated, nil
+	}
+
+	if data.HasChange("vsan_stretch_configuration") {
+		return SetStretchOrUnstretchSpec(result, data)
 	}
 
 	return result, nil
@@ -85,6 +84,63 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 	}
 }
 
+// SetStretchOrUnstretchSpec sets ClusterStretchSpec or ClusterUnstretchSpec to a provided
+// ClusterUpdateSpec depending on weather a witness host is being added or removed.
+func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schema.ResourceData) (*models.ClusterUpdateSpec, error) {
+	configOld, configNew := data.GetChange("vsan_stretch_configuration")
+
+	if len(configOld.([]interface{})) == len(configNew.([]interface{})) {
+		return nil, fmt.Errorf("updating the stretch configuration is not supported")
+	}
+
+	configRaw := configNew.([]interface{})
+
+	if len(configRaw) > 0 {
+		// stretch
+		config := configRaw[0].(map[string]interface{})
+		witnessHosts := config["witness_host"].([]interface{})
+		witnessHost := witnessHosts[0].(map[string]interface{})
+
+		ip := witnessHost["vsan_ip"].(string)
+		cidr := witnessHost["vsan_cidr"].(string)
+		fqdn := witnessHost["fqdn"].(string)
+
+		witnessSpec := models.WitnessSpec{
+			Fqdn:     &fqdn,
+			VSANCidr: &cidr,
+			VSANIP:   &ip,
+		}
+
+		// All new hosts are added to the secondary fault domain. All existing hosts in the cluster go into the primary domain.
+		secondaryFdHosts := config["secondary_fd_host"].([]interface{})
+		var hostSpecs []*models.HostSpec
+		for _, addedHostRaw := range secondaryFdHosts {
+			hostSpec, err := TryConvertToHostSpec(addedHostRaw.(map[string]interface{}))
+			if err != nil {
+				return nil, err
+			}
+			hostSpecs = append(hostSpecs, hostSpec)
+		}
+
+		// MultiAZ support is not yet implemented
+		var secondaryAzOverlayVlanId int32 = 0
+
+		stretchSpec := &models.ClusterStretchSpec{
+			HostSpecs:                         hostSpecs,
+			SecondaryAzOverlayVlanID:          &secondaryAzOverlayVlanId,
+			WitnessSpec:                       &witnessSpec,
+			IsEdgeClusterConfiguredForMultiAZ: false,
+		}
+		updateSpec.ClusterStretchSpec = stretchSpec
+	} else {
+		// unstretch
+		updateSpec.ClusterUnstretchSpec = EmptySpec{}
+	}
+	return updateSpec, nil
+}
+
+type EmptySpec struct{}
+
 func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
 	validateClusterSpec := clusters.NewValidateClusterOperationsParamsWithContext(ctx).
@@ -117,6 +173,7 @@ func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.Clu
 	intermediaryMap["vsan_remote_datastore_cluster"] = data.Get("vsan_remote_datastore_cluster")
 	intermediaryMap["nfs_datastores"] = data.Get("nfs_datastores")
 	intermediaryMap["vvol_datastores"] = data.Get("vvol_datastores")
+	intermediaryMap["vsan_stretch_configuration"] = data.Get("vsan_stretch_configuration")
 	return TryConvertToClusterSpec(intermediaryMap)
 }
 
@@ -212,6 +269,10 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 		return nil, err
 	} else {
 		result.DatastoreSpec = datastoreSpec
+	}
+
+	if stretchConf, ok := object["vsan_stretch_configuration"]; ok && !validationUtils.IsEmpty(stretchConf) {
+		return nil, fmt.Errorf("cannot create stretched cluster, create the cluster first and apply the strech configuration later")
 	}
 
 	return result, nil
