@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [v0.8.5](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.8.5)
+
+> Release Date: Apr 26 2024
+
+FEATURES:
+* New resource for exporting cluster personality [\#143](https://github.com/vmware/terraform-provider-vcf/pull/143)
+* Support configuring vSAN in stretched mode [\#154](https://github.com/vmware/terraform-provider-vcf/pull/154)
+
+BUG FIXES:
+* Fix cluster creation with vLCM image [\#148](https://github.com/vmware/terraform-provider-vcf/pull/148)
+* Remove BGP Peer password requirements [\#150](https://github.com/vmware/terraform-provider-vcf/pull/150)
+
 ## [v0.8.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.8.1)
 
 > Release Date: Feb 6 2024
