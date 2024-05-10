@@ -7,7 +7,7 @@ variable "vcenter_password" {
 }
 
 variable "vcenter_server" {
-  description = "FQDN or IP Address of the vCenter Server"
+  description = "FQDN or IP Address of the vCenter Server for the workload domain"
 }
 
 variable "datacenter_name" {
