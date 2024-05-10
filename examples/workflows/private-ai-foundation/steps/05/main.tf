@@ -1,3 +1,8 @@
+# This step enables Workload Management (Supervisor) on the compute cluster
+# created on the workload domain in step 2.
+# It also creates a custom namespace that is configured with the subscribed content
+# library from step 4 and a custom VM class with a vGPU device
+
 terraform {
   required_providers {
     vsphere = {

@@ -1,3 +1,6 @@
+# This step creates a new workload domain with the custom image
+# from step 1.
+
 terraform {
   required_providers {
     vcf = {

@@ -1,3 +1,8 @@
+# This step generates a custom host image with vGPU drivers
+# on the vCenter for the management domain.
+# The source for the offline software depot for this step has to
+# contain the drivers.
+
 terraform {
   required_providers {
     vsphere = {

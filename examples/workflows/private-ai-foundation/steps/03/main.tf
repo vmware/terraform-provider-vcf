@@ -1,3 +1,6 @@
+# This step creates an NSX edge cluster on the NSX manager for the workload domain.
+# You may scale the number of edge nodes to fit your needs.
+
 terraform {
   required_providers {
     vcf = {

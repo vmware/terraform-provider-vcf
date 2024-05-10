@@ -1,3 +1,7 @@
+# This step creates a subscribed content library.
+# You can use a custom subscription URL or you can use
+# the content published by Broadcom
+
 terraform {
   required_providers {
     vsphere = {
