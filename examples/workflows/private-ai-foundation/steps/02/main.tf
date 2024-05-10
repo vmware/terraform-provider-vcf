@@ -1,10 +1,8 @@
 terraform {
   required_providers {
-    # Request the VCF provider
     vcf = {
       source = "vmware/vcf"
     }
-    # Request the vSphere provider
     vsphere = {
       source = "hashicorp/vsphere"
     }
@@ -16,7 +14,6 @@ provider "vcf" {
   sddc_manager_host     = var.sddc_manager_host
   sddc_manager_username = var.sddc_manager_username
   sddc_manager_password = var.sddc_manager_password
-  allow_unverified_tls = true
 }
 
 # Connect to the vCenter Server backing the management domain
@@ -24,7 +21,6 @@ provider "vsphere" {
   user                 = var.vcenter_username
   password             = var.vcenter_password
   vsphere_server       = var.vcenter_server
-  allow_unverified_ssl = true
 }
 
 # Request the same datacenter which you created your cluster on in step 1
