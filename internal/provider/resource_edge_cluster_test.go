@@ -78,7 +78,7 @@ func getEdgeClusterConfigInitial() string {
 			profile_type = "DEFAULT"
 			routing_type = "EBGP"
 			high_availability = "ACTIVE_ACTIVE"
-			mtu = 9000
+			mtu = 8940
 			asn = 65004
 			%s
 			%s
@@ -109,7 +109,7 @@ func getEdgeClusterConfigExpansion() string {
 		"192.168.19.3/24")
 	edgeNode3 := getEdgeNodeConfig(
 		edgeNode3Name,
-		"10.0.0.54/24",
+		"10.0.0.55/24",
 		"192.168.52.16/24",
 		"192.168.52.17/24",
 		"192.168.18.6/24",
@@ -127,7 +127,7 @@ func getEdgeClusterConfigExpansion() string {
 			profile_type = "DEFAULT"
 			routing_type = "EBGP"
 			high_availability = "ACTIVE_ACTIVE"
-			mtu = 9000
+			mtu = 8940
 			asn = 65004
 			%s
 			%s

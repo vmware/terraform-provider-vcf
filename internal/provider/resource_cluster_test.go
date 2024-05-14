@@ -362,7 +362,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		network {
 			gateway   = "192.168.12.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.12.0"
 			type      = "VSAN"
 			vlan_id   = 100
@@ -374,7 +374,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		network {
 			gateway   = "192.168.13.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.13.0"
 			type      = "vMotion"
 			vlan_id   = 100
