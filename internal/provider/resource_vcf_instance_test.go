@@ -148,7 +148,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 		ip_address_pool {
 		  name = "static-pool-1"
 		  subnet {
-		    cidr = "10.0.8.4/24"
+		    cidr = "10.0.8.0/24"
 		    gateway = "10.0.8.253"
 		    ip_address_pool_range {
 		      start = "10.0.8.4"
