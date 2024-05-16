@@ -145,17 +145,6 @@ func testAccCheckVcfSddcConfigBasic() string {
 		vip_fqdn = "vip-nsx-mgmt"
 		license = %q
 		transport_vlan_id = 0
-		ip_address_pool {
-		  name = "static-pool-1"
-		  subnet {
-		    cidr = "10.0.8.0/24"
-		    gateway = "10.0.8.253"
-		    ip_address_pool_range {
-		      start = "10.0.8.4"
-		      end = "10.0.8.16"
-		    }
-		  }
-		}
 	  }
 	  vsan {
 		license = %q
