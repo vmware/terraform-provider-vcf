@@ -5,6 +5,9 @@ terraform {
     }
   }
 }
+
+# If you wish to automate your Cloud Builder setup
+# you can use the vSphere Terraform Provider - https://github.com/hashicorp/terraform-provider-vsphere
 provider "vcf" {
   cloud_builder_host     = var.cloud_builder_host
   cloud_builder_username = var.cloud_builder_username

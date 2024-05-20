@@ -15,7 +15,15 @@ Create an SDDC workflow (bringup) executes automatically the following:
 * Deploys and configures the management stack - vCenter and NSX
 * Deploys and configures SDDC Manager which provides the ability to perform Day 2 operations
 
-The following data is required:
+## Prerequisites
+
+* Cloud Builder appliance
+
+The procedure for deploying the appliance is described in this [KB article](https://docs.vmware.com/en/VMware-Cloud-Foundation/5.1/vcf-deploy/GUID-78EEF782-CF21-4228-97E0-37B8D2165B81.html).
+You can use the [Terraform Provider for vSphere](https://github.com/hashicorp/terraform-provider-vsphere) if you wish to fully
+automate this with Terraform.
+
+## The following data is required:
 
 * ID of the SDDC instance
 * Detailed list of host
@@ -27,7 +35,7 @@ The following data is required:
 * List of NTP servers
 * Name of the task to execute
 
-The following data is optional:
+## The following data is optional:
 
 * vSAN details
 * NSX-T details
