@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [v0.9.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.9.0)
+
+> Release Date: May 23 2024
+
+FEATURES:
+* Official support for VCF 5.1.1 [\#173](https://github.com/vmware/terraform-provider-vcf/pull/173)
+
 ## [v0.8.5](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.8.5)
 
 > Release Date: Apr 26 2024
