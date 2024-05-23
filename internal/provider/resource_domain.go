@@ -118,11 +118,11 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	validateDomainSpec := domains.NewValidateDomainsOperationsParamsWithContext(ctx).
+	validateDomainSpec := domains.NewValidateDomainCreationSpecParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	validateDomainSpec.DomainCreationSpec = domainCreationSpec
 
-	validateResponse, err := apiClient.Domains.ValidateDomainsOperations(validateDomainSpec)
+	validateResponse, err := apiClient.Domains.ValidateDomainCreationSpec(validateDomainSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}

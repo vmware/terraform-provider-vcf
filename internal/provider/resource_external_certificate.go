@@ -127,15 +127,12 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	replaceResourceCertificatesParams.SetResourceCertificateSpecs(resourceCertificateSpecs)
 
 	var taskId string
-	responseOk, responseAccepted, err := apiClient.Certificates.ReplaceResourceCertificates(replaceResourceCertificatesParams)
+	_, responseAcc, err := apiClient.Certificates.ReplaceResourceCertificates(replaceResourceCertificatesParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if responseOk != nil {
-		taskId = responseOk.Payload.ID
-	}
-	if responseAccepted != nil {
-		taskId = responseAccepted.Payload.ID
+	if responseAcc != nil {
+		taskId = responseAcc.Payload.ID
 	}
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {

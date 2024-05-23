@@ -151,10 +151,10 @@ func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef *models.NsxTCluste
 	flattenedNsxCluster["vip"] = nsxtClusterRef.Vip
 	flattenedNsxCluster["vip_fqdn"] = nsxtClusterRef.VipFqdn
 
-	getNsxTClusterParams := nsxt_clusters.NewGetNSXTClusterParamsWithContext(ctx).
+	getNsxTClusterParams := nsxt_clusters.NewGetNsxClusterParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(nsxtClusterRef.ID)
 
-	nsxtClusterResponse, err := apiClient.NSXTClusters.GetNSXTCluster(getNsxTClusterParams)
+	nsxtClusterResponse, err := apiClient.NSXTClusters.GetNsxCluster(getNsxTClusterParams)
 	if err != nil {
 		return nil, err
 	}

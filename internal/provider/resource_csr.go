@@ -143,7 +143,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 
 	generateCsrParams := certificatesSdk.NewGeneratesCSRsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithDomainName(domainId).
+		WithID(domainId).
 		WithCSRSGenerationSpec(csrsGenerationSpec)
 
 	var taskId string
@@ -162,7 +162,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 
 	getCsrsParams := certificatesSdk.NewGetCSRsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithDomainName(domainId)
+		WithID(domainId)
 	getCsrResponse, err := apiClient.Certificates.GetCSRs(getCsrsParams)
 	if err != nil {
 		return diag.FromErr(err)

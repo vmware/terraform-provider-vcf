@@ -158,12 +158,12 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
-	params := users.NewDeleteUserParamsWithContext(ctx).
+	params := users.NewRemoveUserParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	params.ID = d.Id()
 
 	log.Println(params)
-	_, err := client.Users.DeleteUser(params)
+	_, err := client.Users.RemoveUser(params)
 	if err != nil {
 		log.Println("error = ", err)
 		return diag.FromErr(err)

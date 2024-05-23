@@ -362,7 +362,7 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 		network {
 			gateway   = "192.168.10.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.10.0"
 			type      = "VSAN"
 			vlan_id   = 100
@@ -374,7 +374,7 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 		network {
 			gateway   = "192.168.11.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.11.0"
 			type      = "vMotion"
 			vlan_id   = 100

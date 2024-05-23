@@ -36,7 +36,7 @@ func testAccVcfNetworkPoolConfig(networkPoolName string) string {
 		network {
 			gateway   = "192.168.4.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.4.0"
 			type      = "VSAN"
 			vlan_id   = 100
@@ -48,7 +48,7 @@ func testAccVcfNetworkPoolConfig(networkPoolName string) string {
 		network {
 			gateway   = "192.168.5.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.5.0"
 			type      = "vMotion"
 			vlan_id   = 100
@@ -64,7 +64,7 @@ func testCheckVcfNetworkPoolDestroy(_ *terraform.State) error {
 	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	hosts, err := apiClient.NetworkPools.GetNetworkPools(nil)
+	hosts, err := apiClient.NetworkPools.GetNetworkPool(nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return err

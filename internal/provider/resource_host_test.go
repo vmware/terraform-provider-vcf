@@ -46,7 +46,7 @@ func testAccVcfHostConfig(hostFqdn, hostSshPassword string) string {
 		network {
 			gateway   = "192.168.8.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.8.0"
 			type      = "VSAN"
 			vlan_id   = 100
@@ -58,7 +58,7 @@ func testAccVcfHostConfig(hostFqdn, hostSshPassword string) string {
 		network {
 			gateway   = "192.168.9.1"
 			mask      = "255.255.255.0"
-			mtu       = 9000
+			mtu       = 8940
 			subnet    = "192.168.9.0"
 			type      = "vMotion"
 			vlan_id   = 100

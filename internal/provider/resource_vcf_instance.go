@@ -285,10 +285,10 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 			return bringUpID, diags
 		}
 
-		bringupParams := sddc_api.NewCreateSDDCParamsWithContext(ctx).
+		bringupParams := sddc_api.NewStartBringupParamsWithContext(ctx).
 			WithTimeout(constants.DefaultVcfApiCallTimeout).WithSDDCSpec(sddcSpec)
 
-		okResponse, acceptedResponse, err := client.ApiClient.SDDC.CreateSDDC(bringupParams)
+		okResponse, acceptedResponse, err := client.ApiClient.SDDC.StartBringup(bringupParams)
 		if okResponse != nil {
 			bringUpID = okResponse.Payload.ID
 		}
@@ -328,8 +328,8 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 }
 
 func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) (*models.SDDCTask, error) {
-	retrieveAllSddcsResp, err := client.ApiClient.SDDC.RetrieveAllSddcs(
-		sddc_api.NewRetrieveAllSddcsParamsWithTimeout(constants.DefaultVcfApiCallTimeout).WithContext(ctx))
+	retrieveAllSddcsResp, err := client.ApiClient.SDDC.GetBringupTasks(
+		sddc_api.NewGetBringupTasksParamsWithTimeout(constants.DefaultVcfApiCallTimeout).WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -340,11 +340,11 @@ func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) 
 }
 
 func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *models.SDDCSpec) diag.Diagnostics {
-	validateSddcSpec := sddc_api.NewValidateSDDCSpecParams().WithContext(ctx).
+	validateSddcSpec := sddc_api.NewValidateBringupSpecParams().WithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).WithSDDCSpec(sddcSpec).WithRedo(utils.ToBoolPointer(true))
 
 	var validationResponse *models.Validation
-	okResponse, acceptedResponse, err := client.ApiClient.SDDC.ValidateSDDCSpec(validateSddcSpec)
+	okResponse, acceptedResponse, err := client.ApiClient.SDDC.ValidateBringupSpec(validateSddcSpec)
 	if okResponse != nil {
 		validationResponse = okResponse.Payload
 	}
@@ -359,10 +359,10 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	}
 	validationId := validationResponse.ID
 	for {
-		getSddcValidationParams := sddc_api.NewGetSDDCValidationParamsWithContext(ctx).
+		getSddcValidationParams := sddc_api.NewGetBringupValidationParamsWithContext(ctx).
 			WithTimeout(constants.DefaultVcfApiCallTimeout)
 		getSddcValidationParams.SetID(validationId)
-		getValidationResponse, err := client.ApiClient.SDDC.GetSDDCValidation(getSddcValidationParams)
+		getValidationResponse, err := client.ApiClient.SDDC.GetBringupValidation(getSddcValidationParams)
 		if err != nil {
 			return validation_utils.ConvertVcfErrorToDiag(err)
 		}
@@ -383,8 +383,8 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 }
 
 func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*models.SDDCTask, error) {
-	retrieveSddcResponse, err := client.ApiClient.SDDC.RetrieveSDDC(
-		sddc_api.NewRetrieveSDDCParamsWithContext(ctx).WithID(bringupId).WithTimeout(constants.DefaultVcfApiCallTimeout))
+	retrieveSddcResponse, err := client.ApiClient.SDDC.GetBringupTaskByID(
+		sddc_api.NewGetBringupTaskByIDParamsWithContext(ctx).WithID(bringupId).WithTimeout(constants.DefaultVcfApiCallTimeout))
 	if err != nil {
 		return nil, err
 	}

@@ -148,7 +148,7 @@ func GetNsxSpecFromSchema(rawData []interface{}) *models.SDDCNSXTSpec {
 		NSXTLicense:             nsxLicense,
 		NSXTManagerSize:         utils.ToStringPointer(nsxManagerSize),
 		RootNSXTManagerPassword: utils.ToStringPointer(rootNsxManagerPassword),
-		TransportVlanID:         transportVlanID,
+		TransportVlanID:         &transportVlanID,
 		Vip:                     utils.ToStringPointer(vip),
 		VipFqdn:                 utils.ToStringPointer(vipFqdn),
 	}

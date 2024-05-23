@@ -210,7 +210,7 @@ func getResourcePoolSpecsFromSchema(rawData []interface{}) []*models.ResourcePoo
 			MemoryReservationPercentage: memoryReservationPercentage,
 			MemoryReservationExpandable: memoryReservationExpandable,
 			MemoryReservationMb:         memoryReservationMB,
-			MemorySharesValue:           memorySharesValue,
+			MemorySharesValue:           &memorySharesValue,
 			Name:                        name,
 			Type:                        resourcePoolType,
 		}

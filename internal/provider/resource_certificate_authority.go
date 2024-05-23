@@ -217,10 +217,10 @@ func resourceCertificateAuthorityDelete(ctx context.Context, data *schema.Resour
 	if caType == nil {
 		return diag.FromErr(fmt.Errorf("error deleting Certificate Authority: could not determine CA type"))
 	}
-	deleteCaConfigurationParams := certificates.NewDeleteCaConfigurationParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithCaType(*caType)
+	deleteCaConfigurationParams := certificates.NewRemoveCertificateAuthorityParamsWithContext(ctx).
+		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(*caType)
 
-	_, _, err := apiClient.Certificates.DeleteCaConfiguration(deleteCaConfigurationParams)
+	_, _, err := apiClient.Certificates.RemoveCertificateAuthority(deleteCaConfigurationParams)
 	if err != nil {
 		return diag.FromErr(err)
 	}

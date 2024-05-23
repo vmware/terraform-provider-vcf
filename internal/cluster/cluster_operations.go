@@ -127,7 +127,7 @@ func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schem
 
 		stretchSpec := &models.ClusterStretchSpec{
 			HostSpecs:                         hostSpecs,
-			SecondaryAzOverlayVlanID:          &secondaryAzOverlayVlanId,
+			SecondaryAzOverlayVlanID:          secondaryAzOverlayVlanId,
 			WitnessSpec:                       &witnessSpec,
 			IsEdgeClusterConfiguredForMultiAZ: false,
 		}
@@ -143,12 +143,12 @@ type EmptySpec struct{}
 
 func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
-	validateClusterSpec := clusters.NewValidateClusterOperationsParamsWithContext(ctx).
+	validateClusterSpec := clusters.NewValidateClusterUpdateSpecParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	validateClusterSpec.ClusterUpdateSpec = clusterUpdateSpec
 	validateClusterSpec.ID = clusterId
 
-	validateResponse, err := apiClient.Clusters.ValidateClusterOperations(validateClusterSpec)
+	validateResponse, err := apiClient.Clusters.ValidateClusterUpdateSpec(validateClusterSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
@@ -214,7 +214,8 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec = &models.NsxTClusterSpec{}
 
 	if geneveVlanId, ok := object["geneve_vlan_id"]; ok && !validationUtils.IsEmpty(geneveVlanId) {
-		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = int32(geneveVlanId.(int))
+		vlanValue := int32(geneveVlanId.(int))
+		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = &vlanValue
 	}
 
 	if ipAddressPoolRaw, ok := object["ip_address_pool"]; ok && !validationUtils.IsEmpty(ipAddressPoolRaw) {

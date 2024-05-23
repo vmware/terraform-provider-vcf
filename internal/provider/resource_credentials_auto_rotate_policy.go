@@ -78,7 +78,7 @@ func resourceCredentialsAutoRotatePolicyCreate(ctx context.Context, d *schema.Re
 func resourceCredentialsAutoRotatePolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 	matchedCredentials, err := credentials.ReadCredentials(ctx, d, apiClient)
-	matchedCredentials = filterCredentialsByUsername(d.Get("user_name").(string), matchedCredentials)
+	matchedCredentials = filterCredentials(d.Get("user_name").(string), d.Get("resource_id").(string), matchedCredentials)
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -129,10 +129,10 @@ func createAutorotateID(data *schema.ResourceData) (string, error) {
 	return credentials.HashFields(params)
 }
 
-func filterCredentialsByUsername(userName string, creds []*models.Credential) []*models.Credential {
+func filterCredentials(userName, resourceId string, creds []*models.Credential) []*models.Credential {
 	result := make([]*models.Credential, 0)
 	for _, cred := range creds {
-		if *cred.Username == userName {
+		if *cred.Username == userName && cred.Resource != nil && *cred.Resource.ResourceID == resourceId {
 			result = append(result, cred)
 		}
 	}

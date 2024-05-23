@@ -163,12 +163,12 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 		return validationErr
 	}
 
-	createClusterParams := &nsxt_edge_clusters.CreateEdgeParams{
+	createClusterParams := &nsxt_edge_clusters.CreateEdgeClusterParams{
 		EdgeCreationSpec: spec,
 		Context:          ctx,
 	}
 
-	_, task, err := client.NSXTEdgeClusters.CreateEdge(createClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
+	_, task, err := client.NSXTEdgeClusters.CreateEdgeCluster(createClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -276,11 +276,11 @@ func getEdgeCluster(ctx context.Context, client *vcfClient.VcfClient, id string)
 }
 
 func validateClusterCreationSpec(client *vcfClient.VcfClient, ctx context.Context, spec *models.EdgeClusterCreationSpec) diag.Diagnostics {
-	validateClusterParams := &nsxt_edge_clusters.ValidateEdgeClusterSpecParams{
+	validateClusterParams := &nsxt_edge_clusters.ValidateEdgeClusterCreationSpecParams{
 		EdgeCreationSpec: spec,
 	}
 
-	_, validateResponse, err := client.NSXTEdgeClusters.ValidateEdgeClusterSpec(validateClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
+	_, validateResponse, err := client.NSXTEdgeClusters.ValidateEdgeClusterCreationSpec(validateClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
 
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
@@ -292,10 +292,10 @@ func validateClusterCreationSpec(client *vcfClient.VcfClient, ctx context.Contex
 	}
 
 	for {
-		getClusterValidationParams := nsxt_edge_clusters.NewGetValidationForCreateEdgeClusterParamsWithContext(ctx).
+		getClusterValidationParams := nsxt_edge_clusters.NewGetEdgeClusterValidationByIDParamsWithContext(ctx).
 			WithTimeout(constants.DefaultVcfApiCallTimeout)
 		getClusterValidationParams.SetID(validateResponse.Payload.ID)
-		getValidationResponse, err := client.NSXTEdgeClusters.GetValidationForCreateEdgeCluster(getClusterValidationParams)
+		getValidationResponse, err := client.NSXTEdgeClusters.GetEdgeClusterValidationByID(getClusterValidationParams)
 		if err != nil {
 			return validationUtils.ConvertVcfErrorToDiag(err)
 		}

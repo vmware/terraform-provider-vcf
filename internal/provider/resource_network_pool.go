@@ -153,11 +153,11 @@ func resourceNetworkPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 func resourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
-	params := network_pools.NewGetNetworkPoolParamsWithContext(ctx).
+	params := network_pools.NewGetNetworkPoolByIDParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
 	params.ID = d.Id()
 
-	networkPoolPayload, err := apiClient.NetworkPools.GetNetworkPool(params)
+	networkPoolPayload, err := apiClient.NetworkPools.GetNetworkPoolByID(params)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -75,7 +75,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := ceip.NewUpdateCEIPStatusParamsWithTimeout(2 * time.Minute)
+	params := ceip.NewSetCEIPStatusParamsWithTimeout(2 * time.Minute)
 	updateSpec := models.CEIPUpdateSpec{}
 
 	if status, ok := d.GetOk("status"); ok {
@@ -91,7 +91,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	params.CEIPUpdateSpec = &updateSpec
-	_, ceipAccepted, err := apiClient.CEIP.UpdateCEIPStatus(params)
+	_, ceipAccepted, err := apiClient.CEIP.SetCEIPStatus(params)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -111,13 +111,13 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := ceip.NewUpdateCEIPStatusParams()
+	params := ceip.NewSetCEIPStatusParams()
 	updateSpec := models.CEIPUpdateSpec{}
 	statusVal := DisableApiParam
 	updateSpec.Status = &statusVal
 	params.CEIPUpdateSpec = &updateSpec
 
-	_, ceipAccepted, err := apiClient.CEIP.UpdateCEIPStatus(params)
+	_, ceipAccepted, err := apiClient.CEIP.SetCEIPStatus(params)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)

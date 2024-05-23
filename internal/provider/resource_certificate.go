@@ -90,7 +90,7 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 	}
 	replaceCertificatesParams := certificatesSdk.NewReplaceCertificatesParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithDomainName(domainID)
+		WithID(domainID)
 	replaceCertificatesParams.SetCertificateOperationSpec(certificateOperationSpec)
 
 	var taskId string
