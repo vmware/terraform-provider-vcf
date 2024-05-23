@@ -127,7 +127,7 @@ func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schem
 
 		stretchSpec := &models.ClusterStretchSpec{
 			HostSpecs:                         hostSpecs,
-			SecondaryAzOverlayVlanID:          &secondaryAzOverlayVlanId,
+			SecondaryAzOverlayVlanID:          secondaryAzOverlayVlanId,
 			WitnessSpec:                       &witnessSpec,
 			IsEdgeClusterConfiguredForMultiAZ: false,
 		}
