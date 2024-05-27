@@ -8,9 +8,9 @@ description: |-
 
 # Terraform Provider for VMware Cloud Foundation
 
-This provider works with VMware Cloud Foundation 4.4.0 to 4.5.2
+This provider works with VMware Cloud Foundation 4.4.0 to 5.1.1
 
-See the [release notes](https://docs.vmware.com/en/VMware-Cloud-Foundation/4.5.2/rn/vmware-cloud-foundation-452-release-notes/index.html) for the individual build numbers.
+See the [release notes](https://docs.vmware.com/en/VMware-Cloud-Foundation/5.0/rn/vmware-cloud-foundation-50-release-notes/index.html) for the individual build numbers.
 
 Interoperability with other versions of VMware Cloud Foundation is not assured.
 
