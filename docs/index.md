@@ -3,16 +3,29 @@
 page_title: "Terraform Provider for VMware Cloud Foundation"
 subcategory: ""
 description: |-
-  
+
 ---
+
+<img src="https://raw.githubusercontent.com/vmware/terraform-provider-vcf/main/docs/images/icon-color.svg" alt="VMware Cloud Foundation" width="150">
 
 # Terraform Provider for VMware Cloud Foundation
 
-This provider works with VMware Cloud Foundation 4.4.0 to 5.1.1
+The following table lists the supported platforms for this provider.
 
-See the [release notes](https://docs.vmware.com/en/VMware-Cloud-Foundation/5.0/rn/vmware-cloud-foundation-50-release-notes/index.html) for the individual build numbers.
+| Platform                    | Support |
+|-----------------------------|---------|
+| VMware Cloud Foundation 5.1 | <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#00ff00" d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-111 111-47-47c9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L369 209z"/></svg> &nbsp; `≥ v0.9.0` |
+| VMware Cloud Foundation 5.0 | <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#00ff00" d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-111 111-47-47c9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L369 209z"/></svg> &nbsp; `≥ v0.9.0` |
+| VMware Cloud Foundation 4.5 | <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#00ff00" d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-111 111-47-47c9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L369 209z"/></svg> &nbsp; `≤ v0.8.0` |
+| VMware Cloud Foundation 4.4 | <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="#00ff00" d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-111 111-47-47c9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L369 209z"/></svg> &nbsp; `≤ v0.8.0` |
 
-Interoperability with other versions of VMware Cloud Foundation is not assured.
+[^1]: VMware Cloud Foundation on Dell VxRAIL is **not supported** by this provider.
+
+The plugin supports versions in accordance with the [Broadcom Product Lifecycle][product-lifecycle]. [^1]
+
+See the VMware Cloud Foundation [release notes](https://docs.vmware.com/en/VMware-Cloud-Foundation/) for the individual build numbers.
+
+[product-lifecycle]: https://support.broadcom.com/group/ecx/productlifecycle
 
 ## Example Usage
 
