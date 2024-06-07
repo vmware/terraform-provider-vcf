@@ -69,7 +69,7 @@ func ResourceNetworkPool() *schema.Resource {
 						"vlan_id": {
 							Type:        schema.TypeInt,
 							Description: "VLAN ID associated with the network",
-							Optional:    true,
+							Required:    true,
 						},
 						"ip_pools": {
 							Type:        schema.TypeList,

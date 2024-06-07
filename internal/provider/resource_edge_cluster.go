@@ -65,13 +65,13 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"tier0_name": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "Name for the Tier-0 gateway",
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"tier1_name": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "Name for the Tier-1 gateway",
 				ValidateFunc: validation.NoZeroValues,
 			},
@@ -90,7 +90,8 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"routing_type": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
+				RequiredWith: []string{"tier0_name"},
 				Description:  "One among: EBGP, STATIC",
 				ValidateFunc: validation.StringInSlice([]string{"EBGP", "STATIC"}, false),
 			},
@@ -102,7 +103,8 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"high_availability": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
+				RequiredWith: []string{"tier0_name"},
 				Description:  "One among: ACTIVE_ACTIVE, ACTIVE_STANDBY",
 				ValidateFunc: validation.StringInSlice([]string{"ACTIVE_ACTIVE", "ACTIVE_STANDBY"}, false),
 			},

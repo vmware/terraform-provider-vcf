@@ -30,6 +30,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData) *models.EdgeCluste
 	mtu := int32(data.Get("mtu").(int))
 	asn := int64(data.Get("asn").(int))
 	tier1Unhosted := data.Get("tier1_unhosted").(bool)
+	skipTepRoutabilityCheck := data.Get("skip_tep_routability_check").(bool)
 
 	transitSubnets := resource_utils.ToStringSlice(data.Get("transit_subnets").([]interface{}))
 	internalTransitSubnets := resource_utils.ToStringSlice(data.Get("internal_transit_subnets").([]interface{}))
@@ -62,6 +63,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData) *models.EdgeCluste
 		Tier1Name:                     tier1Name,
 		Tier1Unhosted:                 tier1Unhosted,
 		TransitSubnets:                transitSubnets,
+		SkipTepRoutabilityCheck:       skipTepRoutabilityCheck,
 	}
 
 	return spec
@@ -162,6 +164,16 @@ func getNodeSpec(node map[string]interface{}) *models.NsxTEdgeNodeSpec {
 		SecondNsxVdsUplink: secondVdsUplink,
 		InterRackCluster:   &interRackCluster,
 		UplinkNetwork:      getUplinkNetworkSpecs(node),
+	}
+
+	mgmtNetworkRaw := node["management_network"].([]interface{})
+	if len(mgmtNetworkRaw) > 0 {
+		mgmtNetworkData := mgmtNetworkRaw[0].(map[string]interface{})
+		name := mgmtNetworkData["portgroup_name"].(string)
+		vlan := int32(mgmtNetworkData["vlan_id"].(int))
+
+		nodeSpec.VMManagementPortgroupName = &name
+		nodeSpec.VMManagementPortgroupVlan = &vlan
 	}
 
 	return nodeSpec

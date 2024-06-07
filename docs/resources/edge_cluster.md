@@ -36,21 +36,21 @@ Review the documentation for VMware Cloud Foundation for more information about 
 - `audit_password` (String) Audit user password for the NSX manager
 - `edge_node` (Block List, Min: 1) The nodes in the edge cluster (see [below for nested schema](#nestedblock--edge_node))
 - `form_factor` (String) One among: XLARGE, LARGE, MEDIUM, SMALL
-- `high_availability` (String) One among: ACTIVE_ACTIVE, ACTIVE_STANDBY
 - `mtu` (Number) Maximum transmission unit size for the cluster
 - `name` (String) The name of the edge cluster
 - `profile_type` (String) One among: DEFAULT, CUSTOM. If set to CUSTOM a 'profile' must be provided
 - `root_password` (String) Root user password for the NSX manager
-- `routing_type` (String) One among: EBGP, STATIC
-- `tier0_name` (String) Name for the Tier-0 gateway
-- `tier1_name` (String) Name for the Tier-1 gateway
 
 ### Optional
 
 - `asn` (Number) ASN for the cluster
+- `high_availability` (String) One among: ACTIVE_ACTIVE, ACTIVE_STANDBY
 - `internal_transit_subnets` (List of String) Subnet addresses in CIDR notation that are used to assign addresses to logical links connecting service routers and distributed routers
 - `profile` (Block List, Max: 1) The specification for the edge cluster profile (see [below for nested schema](#nestedblock--profile))
+- `routing_type` (String) One among: EBGP, STATIC
 - `skip_tep_routability_check` (Boolean) Set to true to bypass normal ICMP-based check of Edge TEP / host TEP routability (default is false, meaning do check)
+- `tier0_name` (String) Name for the Tier-0 gateway
+- `tier1_name` (String) Name for the Tier-1 gateway
 - `tier1_unhosted` (Boolean) Select whether Tier-1 being created per this spec is hosted on the new Edge cluster or not (default value is false, meaning hosted)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `transit_subnets` (List of String) Transit subnet addresses in CIDR notation that are used to assign addresses to logical links connecting Tier-0 and Tier-1s
@@ -80,8 +80,18 @@ Required:
 Optional:
 
 - `first_nsx_vds_uplink` (String) The name of the first NSX-enabled VDS uplink
+- `management_network` (Block List, Max: 1) The management network which will be created for this node (see [below for nested schema](#nestedblock--edge_node--management_network))
 - `second_nsx_vds_uplink` (String) The name of the second NSX-enabled VDS uplink
 - `uplink` (Block List) Specifications of Tier-0 uplinks for the edge node (see [below for nested schema](#nestedblock--edge_node--uplink))
+
+<a id="nestedblock--edge_node--management_network"></a>
+### Nested Schema for `edge_node.management_network`
+
+Required:
+
+- `portgroup_name` (String) The name of the portgroup
+- `vlan_id` (Number) The VLAN ID for the portgroup
+
 
 <a id="nestedblock--edge_node--uplink"></a>
 ### Nested Schema for `edge_node.uplink`
@@ -102,7 +112,7 @@ Required:
 
 - `asn` (Number) ASN
 - `ip` (String) IP address
-- `password` (String) Password - can be empty.
+- `password` (String) Password
 
 
 
