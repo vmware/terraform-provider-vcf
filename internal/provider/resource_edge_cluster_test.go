@@ -109,7 +109,7 @@ func getEdgeClusterConfigExpansion() string {
 		"192.168.19.3/24")
 	edgeNode3 := getEdgeNodeConfig(
 		edgeNode3Name,
-		"10.0.0.55/24",
+		"10.0.0.54/24",
 		"192.168.52.16/24",
 		"192.168.52.17/24",
 		"192.168.18.6/24",

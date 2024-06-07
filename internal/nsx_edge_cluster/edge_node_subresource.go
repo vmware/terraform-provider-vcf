@@ -84,6 +84,28 @@ func EdgeNodeSchema() *schema.Resource {
 				Description:  "The gateway address for the management network",
 				ValidateFunc: validationUtils.ValidateIPv4AddressSchema,
 			},
+			"management_network": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "The management network which will be created for this node",
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"portgroup_name": {
+							Type:         schema.TypeString,
+							Required:     true,
+							Description:  "The name of the portgroup",
+							ValidateFunc: validation.NoZeroValues,
+						},
+						"vlan_id": {
+							Type:         schema.TypeInt,
+							Required:     true,
+							Description:  "The VLAN ID for the portgroup",
+							ValidateFunc: validation.IntBetween(0, 4095),
+						},
+					},
+				},
+			},
 			"first_nsx_vds_uplink": {
 				Type:         schema.TypeString,
 				Optional:     true,

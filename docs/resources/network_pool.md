@@ -44,6 +44,10 @@ The following data is prerequisite for creating a new Network Pool
 <a id="nestedblock--network"></a>
 ### Nested Schema for `network`
 
+Required:
+
+- `vlan_id` (Number) VLAN ID associated with the network
+
 Optional:
 
 - `gateway` (String) Gateway for the network
@@ -52,7 +56,6 @@ Optional:
 - `mtu` (Number) Gateway for the network
 - `subnet` (String) Subnet associated with the network
 - `type` (String) Network Type of the network
-- `vlan_id` (Number) VLAN ID associated with the network
 
 <a id="nestedblock--network--ip_pools"></a>
 ### Nested Schema for `network.ip_pools`
@@ -70,5 +73,3 @@ Optional:
 Optional:
 
 - `create` (String)
-
-
