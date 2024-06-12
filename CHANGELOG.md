@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [v0.9.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.9.1)
+
+> Release Date: June 12 2024
+
+BUG FIXES:
+* Tier 0 and Tier 1 routers are now optional for Edge Clusters [\#177](https://github.com/vmware/terraform-provider-vcf/issues/177)
+* Accept VLAN "0" for network pools [\#175](https://github.com/vmware/terraform-provider-vcf/issues/175)
+* New properties for management network configuration on edge nodes [\#147](https://github.com/vmware/terraform-provider-vcf/issues/147)
+
 ## [v0.9.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.9.0)
 
 > Release Date: May 23 2024
