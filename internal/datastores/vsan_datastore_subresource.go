@@ -40,6 +40,11 @@ func VsanDatastoreSchema() *schema.Resource {
 				Optional:    true,
 				Description: "Enable vSAN deduplication and compression",
 			},
+			"esa_enabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enable vSAN ESA",
+			},
 		},
 	}
 }
@@ -58,6 +63,11 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSAND
 	result.LicenseKey = licenseKey
 	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validationutils.IsEmpty(dedupAndCompressionEnabled) {
 		result.DedupAndCompressionEnabled = dedupAndCompressionEnabled.(bool)
+	}
+	if esaEnabled, ok := object["esa_enabled"]; ok && !validationutils.IsEmpty(esaEnabled) {
+		value := esaEnabled.(bool)
+		esaConfig := models.EsaConfig{Enabled: &value}
+		result.EsaConfig = &esaConfig
 	}
 	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validationutils.IsEmpty(failuresToTolerate) {
 		failuresToTolerateInt := int32(failuresToTolerate.(int))

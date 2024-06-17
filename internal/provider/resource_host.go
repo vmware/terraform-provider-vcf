@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
@@ -58,9 +59,10 @@ func ResourceHost() *schema.Resource {
 				ConflictsWith: []string{"network_pool_name"},
 			},
 			"storage_type": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Storage Type. One among: VSAN, VSAN_REMOTE, NFS, VMFS_FC, VVOL",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Storage Type. One among: VSAN, VSAN_ESA, VSAN_REMOTE, NFS, VMFS_FC, VVOL",
+				ValidateFunc: validation.StringInSlice([]string{"VSAN", "VSAN_ESA", "VSAN_REMOTE", "NFS", "VMFS_FC", "VVOL"}, false),
 			},
 			"username": {
 				Type:        schema.TypeString,
