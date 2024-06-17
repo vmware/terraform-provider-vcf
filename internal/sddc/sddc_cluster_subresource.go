@@ -37,6 +37,12 @@ func GetSddcClusterSchema() *schema.Schema {
 					Optional:     true,
 					ValidateFunc: validation.IntBetween(0, 3),
 				},
+				"cluster_image_enabled": {
+					Type:        schema.TypeBool,
+					Description: "Whether to enable vSphere Lifecycle Manager images for this cluster",
+					Optional:    true,
+					Default:     true,
+				},
 				"resource_pool": getResourcePoolSchema(),
 				"vm_folder": {
 					Type:        schema.TypeMap,
@@ -159,6 +165,7 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *models.SDDCClusterSpec
 	clusterName := utils.ToStringPointer(data["cluster_name"])
 	clusterEvcMode := data["cluster_evc_mode"].(string)
 	hostFailuresToTolerate := utils.ToInt32Pointer(data["host_failures_to_tolerate"])
+	clusterImageEnabled := data["cluster_image_enabled"].(bool)
 	var vmFolder map[string]string
 	if !validation2.IsEmpty(data["vm_folder"]) {
 		vmFolder = data["vm_folder"].(map[string]string)
@@ -169,6 +176,7 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *models.SDDCClusterSpec
 		ClusterName:            clusterName,
 		HostFailuresToTolerate: hostFailuresToTolerate,
 		VMFolders:              vmFolder,
+		ClusterImageEnabled:    clusterImageEnabled,
 	}
 
 	if resourcePoolSpecs := getResourcePoolSpecsFromSchema(
