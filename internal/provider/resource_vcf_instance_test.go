@@ -90,7 +90,6 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  dns {
 		domain = "vrack.vsphere.local"
 		name_server = "10.0.0.250"
-		secondary_name_server = "10.0.0.250"
 	  }
 	  network {
 		subnet = "10.0.0.0/22"
