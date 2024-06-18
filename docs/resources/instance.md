@@ -103,6 +103,7 @@ Required:
 Optional:
 
 - `cluster_evc_mode` (String) vCenter cluster EVC mode
+- `cluster_image_enabled` (Boolean) Whether to enable vSphere Lifecycle Manager images for this cluster
 - `host_failures_to_tolerate` (Number) Host failures to tolerate. In between 0 and 3
 - `resource_pool` (Block List) (see [below for nested schema](#nestedblock--cluster--resource_pool))
 - `vm_folder` (Map of String) Virtual Machine folders map. One among: MANAGEMENT, NETWORKING
