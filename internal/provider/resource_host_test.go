@@ -39,6 +39,25 @@ func TestAccResourceVcfHost(t *testing.T) {
 	})
 }
 
+// Verifies host commissioning when the network pool is specified by its name
+func TestAccResourceVcfHost_networkPoolName(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testCheckVcfHostDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfHostConfig_networkPoolName(
+					os.Getenv(constants.VcfTestHost1Fqdn),
+					os.Getenv(constants.VcfTestHost1Pass)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_host.host1", "id"),
+				),
+			},
+		},
+	})
+}
+
 func testAccVcfHostConfig(hostFqdn, hostSshPassword string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "eng_pool" {
@@ -74,6 +93,45 @@ func testAccVcfHostConfig(hostFqdn, hostSshPassword string) string {
 		username  = "root"
 		password  = %q
 		network_pool_id = vcf_network_pool.eng_pool.id
+		storage_type = "VSAN"
+	}`, hostFqdn, hostSshPassword)
+}
+
+func testAccVcfHostConfig_networkPoolName(hostFqdn, hostSshPassword string) string {
+	return fmt.Sprintf(`
+	resource "vcf_network_pool" "eng_pool" {
+		name    = "engineering-pool"
+		network {
+			gateway   = "192.168.8.1"
+			mask      = "255.255.255.0"
+			mtu       = 8940
+			subnet    = "192.168.8.0"
+			type      = "VSAN"
+			vlan_id   = 100
+			ip_pools {
+				start = "192.168.8.5"
+				end   = "192.168.8.50"
+			}
+		}
+		network {
+			gateway   = "192.168.9.1"
+			mask      = "255.255.255.0"
+			mtu       = 8940
+			subnet    = "192.168.9.0"
+			type      = "vMotion"
+			vlan_id   = 100
+			ip_pools {
+			  start = "192.168.9.5"
+			  end   = "192.168.9.50"
+			}
+		  }
+	}
+
+	resource "vcf_host" "host1" {
+		fqdn      = %q
+		username  = "root"
+		password  = %q
+		network_pool_name = vcf_network_pool.eng_pool.name
 		storage_type = "VSAN"
 	}`, hostFqdn, hostSshPassword)
 }

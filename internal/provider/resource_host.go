@@ -5,14 +5,17 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/credentials"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
+	"github.com/vmware/vcf-sdk-go/client/network_pools"
 	"github.com/vmware/vcf-sdk-go/models"
 
 	"log"
@@ -40,10 +43,19 @@ func ResourceHost() *schema.Resource {
 				Required:    true,
 				Description: "Fully qualified domain name of ESXi host",
 			},
+			"network_pool_name": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				Description:   "Name of the network pool to associate the ESXi host with",
+				ConflictsWith: []string{"network_pool_id"},
+			},
 			"network_pool_id": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "ID of the network pool to associate the ESXi host with",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				Description:   "ID of the network pool to associate the ESXi host with",
+				ConflictsWith: []string{"network_pool_name"},
 			},
 			"storage_type": {
 				Type:        schema.TypeString,
@@ -99,6 +111,14 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if networkPoolId, ok := d.GetOk("network_pool_id"); ok {
 		networkPoolIdStr := networkPoolId.(string)
 		commissionSpec.NetworkPoolID = &networkPoolIdStr
+	} else if networkPoolName, ok := d.GetOk("network_pool_name"); ok {
+		networkPool, err := getNetworkPool(networkPoolName.(string), apiClient)
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		commissionSpec.NetworkPoolID = &networkPool.ID
 	}
 
 	params.HostCommissionSpecs = []*models.HostCommissionSpec{&commissionSpec}
@@ -145,6 +165,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	host := hostResponse.Payload
 
 	_ = d.Set("network_pool_id", host.Networkpool.ID)
+	_ = d.Set("network_pool_name", host.Networkpool.Name)
 	_ = d.Set("fqdn", host.Fqdn)
 	_ = d.Set("status", host.Status)
 
@@ -204,4 +225,26 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	return nil
+}
+
+func getNetworkPool(name string, client *client.VcfClient) (*models.NetworkPool, error) {
+	params := network_pools.NewGetNetworkPoolParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
+
+	ok, err := client.NetworkPools.GetNetworkPool(params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	networkPools := ok.Payload.Elements
+
+	if len(networkPools) > 0 {
+		for _, v := range networkPools {
+			if v.Name == name {
+				return v, nil
+			}
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("Network pool %s not found", name))
 }
