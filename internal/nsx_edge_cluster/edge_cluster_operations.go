@@ -43,8 +43,8 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *client.Vcf
 	nodes := data.Get("edge_node").([]interface{})
 	nodeSpecs := make([]*models.NsxTEdgeNodeSpec, 0, len(nodes))
 
-	for _, n := range nodes {
-		node := n.(map[string]interface{})
+	for _, node := range nodes {
+		node := node.(map[string]interface{})
 		nodeSpec, err := getNodeSpec(node, client)
 		if err != nil {
 			return nil, err
@@ -98,7 +98,8 @@ func GetNsxEdgeClusterShrinkageSpec(currentNodes []*models.EdgeNodeReference, ne
 	}
 }
 
-func GetNsxEdgeClusterExpansionSpec(currentNodes []*models.EdgeNodeReference, newNodesRaw []interface{}, client *client.VcfClient) (*models.EdgeClusterExpansionSpec, error) {
+func GetNsxEdgeClusterExpansionSpec(currentNodes []*models.EdgeNodeReference,
+	newNodesRaw []interface{}, client *client.VcfClient) (*models.EdgeClusterExpansionSpec, error) {
 	newNodes := getNewNodes(currentNodes, newNodesRaw)
 	nodeSpecs := make([]*models.NsxTEdgeNodeSpec, 0, len(newNodes))
 	spec := &models.EdgeClusterExpansionSpec{}

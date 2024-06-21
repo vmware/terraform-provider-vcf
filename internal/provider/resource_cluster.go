@@ -464,5 +464,5 @@ func getDomain(name string, client *client.VcfClient) (*models.Domain, error) {
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("Domain %s not found", name))
+	return nil, fmt.Errorf("domain %s not found", name)
 }

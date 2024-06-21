@@ -47,7 +47,7 @@ func TestAccResourceVcfHost_networkPoolName(t *testing.T) {
 		CheckDestroy:      testCheckVcfHostDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVcfHostConfig_networkPoolName(
+				Config: testAccVcfHostConfigNetworkPoolName(
 					os.Getenv(constants.VcfTestHost1Fqdn),
 					os.Getenv(constants.VcfTestHost1Pass)),
 				Check: resource.ComposeTestCheckFunc(
@@ -97,7 +97,7 @@ func testAccVcfHostConfig(hostFqdn, hostSshPassword string) string {
 	}`, hostFqdn, hostSshPassword)
 }
 
-func testAccVcfHostConfig_networkPoolName(hostFqdn, hostSshPassword string) string {
+func testAccVcfHostConfigNetworkPoolName(hostFqdn, hostSshPassword string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "eng_pool" {
 		name    = "engineering-pool"
@@ -124,7 +124,7 @@ func testAccVcfHostConfig_networkPoolName(hostFqdn, hostSshPassword string) stri
 			  start = "192.168.9.5"
 			  end   = "192.168.9.50"
 			}
-		  }
+		}
 	}
 
 	resource "vcf_host" "host1" {

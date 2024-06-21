@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -110,7 +111,13 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if networkPoolId, ok := d.GetOk("network_pool_id"); ok {
 		networkPoolIdStr := networkPoolId.(string)
 		commissionSpec.NetworkPoolID = &networkPoolIdStr
-	} else if networkPoolName, ok := d.GetOk("network_pool_name"); ok {
+	}
+
+	if networkPoolName, ok := d.GetOk("network_pool_name"); ok {
+		if commissionSpec.NetworkPoolID != nil {
+			return diag.FromErr(errors.New("you cannot set network_pool_id and network_pool_name at the same time"))
+		}
+
 		networkPool, err := getNetworkPool(networkPoolName.(string), apiClient)
 
 		if err != nil {
