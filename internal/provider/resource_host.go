@@ -5,7 +5,6 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -239,12 +238,12 @@ func getNetworkPool(name string, client *client.VcfClient) (*models.NetworkPool,
 	networkPools := ok.Payload.Elements
 
 	if len(networkPools) > 0 {
-		for _, v := range networkPools {
-			if v.Name == name {
-				return v, nil
+		for _, pool := range networkPools {
+			if pool.Name == name {
+				return pool, nil
 			}
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("Network pool %s not found", name))
+	return nil, fmt.Errorf("network pool %s not found", name)
 }

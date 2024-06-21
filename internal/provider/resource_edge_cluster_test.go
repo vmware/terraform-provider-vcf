@@ -18,7 +18,7 @@ const (
 	edgeNode3Name   = "nsxt-edge-node-5.vrack.vsphere.local"
 )
 
-// Same as the "full" test but will most optional inputs omitted
+// same as the "full" test but will most optional inputs omitted.
 func TestAccResourceEdgeCluster_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

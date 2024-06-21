@@ -285,12 +285,12 @@ func getComputeCluster(name string, client *client.VcfClient) (*models.Cluster, 
 	computeClusters := ok.Payload.Elements
 
 	if len(computeClusters) > 0 {
-		for _, v := range computeClusters {
-			if v.Name == name {
-				return v, nil
+		for _, cluster := range computeClusters {
+			if cluster.Name == name {
+				return cluster, nil
 			}
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("Cluster %s not found", name))
+	return nil, fmt.Errorf("cluster %s not found", name)
 }

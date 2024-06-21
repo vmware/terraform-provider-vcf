@@ -39,7 +39,7 @@ func TestAccResourceVcfHost(t *testing.T) {
 	})
 }
 
-// Verifies host commissioning when the network pool is specified by its name
+// Verifies host commissioning when the network pool is specified by its name.
 func TestAccResourceVcfHost_networkPoolName(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

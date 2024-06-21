@@ -457,9 +457,9 @@ func getDomain(name string, client *client.VcfClient) (*models.Domain, error) {
 	domainsList := ok.Payload.Elements
 
 	if len(domainsList) > 0 {
-		for _, v := range domainsList {
-			if v.Name == name {
-				return v, nil
+		for _, domain := range domainsList {
+			if domain.Name == name {
+				return domain, nil
 			}
 		}
 	}
