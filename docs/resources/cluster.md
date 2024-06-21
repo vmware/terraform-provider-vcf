@@ -49,7 +49,6 @@ The following data is prerequisite for creation:
 
 ### Required
 
-- `domain_id` (String) The ID of a workload domain that the cluster belongs to
 - `host` (Block List, Min: 2) List of ESXi host information from the free pool to consume in a workload domain/ The minimum of 3 hosts is required for vSAN based clusters. For external storage, 2 host clusters are also supported. (see [below for nested schema](#nestedblock--host))
 - `name` (String) Name of the cluster to add to the workload domain
 - `vds` (Block List, Min: 1) vSphere Distributed Switches to add to the cluster (see [below for nested schema](#nestedblock--vds))
@@ -57,6 +56,8 @@ The following data is prerequisite for creation:
 ### Optional
 
 - `cluster_image_id` (String) ID of the cluster image to be used with the cluster
+- `domain_id` (String) The ID of a workload domain that the cluster belongs to. You cannot specify a value for `domain_name` if you set this attribute.
+- `domain_name` (String) The name of a workload domain that the cluster belongs to. You cannot specify a value for `domain_id` if you set this attribute.
 - `evc_mode` (String) EVC mode for new cluster, if needed. One among: INTEL_MEROM, INTEL_PENRYN, INTEL_NEALEM, INTEL_WESTMERE, INTEL_SANDYBRIDGE, INTEL_IVYBRIDGE, INTEL_HASWELL, INTEL_BROADWELL, INTEL_SKYLAKE, INTEL_CASCADELAKE, AMD_REV_E, AMD_REV_F, AMD_GREYHOUND_NO3DNOW, AMD_GREYHOUND, AMD_BULLDOZER, AMD_PILEDRIVER, AMD_STREAMROLLER, AMD_ZEN
 - `geneve_vlan_id` (Number) VLAN ID use for NSX Geneve in the workload domain
 - `high_availability_enabled` (Boolean) vSphere High Availability settings for the cluster

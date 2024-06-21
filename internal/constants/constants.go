@@ -123,7 +123,7 @@ const (
 	// already created during bringup.
 	VcfTestClusterDataSourceId = "VCF_CLUSTER_DATA_SOURCE_ID"
 
-	// VcfTestDomainName id of the workload domain used in the acceptance tests
+	// VcfTestDomainName display name of the workload domain used in the acceptance tests.
 	VcfTestDomainName = "VCF_DOMAIN_NAME"
 
 	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
