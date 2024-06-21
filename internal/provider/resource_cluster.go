@@ -5,6 +5,8 @@ package provider
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -16,7 +18,9 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/vsan"
+	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
+	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
 	"strings"
@@ -27,8 +31,17 @@ func ResourceCluster() *schema.Resource {
 	clusterResourceSchema := clusterSubresourceSchema().Schema
 	clusterResourceSchema["domain_id"] = &schema.Schema{
 		Type:         schema.TypeString,
-		Required:     true,
+		Optional:     true,
+		Computed:     true,
 		Description:  "The ID of a workload domain that the cluster belongs to",
+		ValidateFunc: validation.NoZeroValues,
+	}
+
+	clusterResourceSchema["domain_name"] = &schema.Schema{
+		Type:         schema.TypeString,
+		Optional:     true,
+		Computed:     true,
+		Description:  "The name of a workload domain that the cluster belongs to",
 		ValidateFunc: validation.NoZeroValues,
 	}
 
@@ -229,8 +242,13 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	clusterId, diagnostics := createCluster(ctx, data.Get("domain_id").(string),
-		clusterSpec, vcfClient)
+
+	domainId, err := getDomainId(data, vcfClient.ApiClient)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	clusterId, diagnostics := createCluster(ctx, domainId, clusterSpec, vcfClient)
 	if diagnostics != nil {
 		return diagnostics
 	}
@@ -404,4 +422,47 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 		return diag.FromErr(err)
 	}
 	return nil
+}
+
+func getDomainId(data *schema.ResourceData, client *client.VcfClient) (string, error) {
+	domainId := data.Get("domain_id").(string)
+	domainName := data.Get("domain_name").(string)
+
+	if domainName != "" {
+		if domainId != "" {
+			return "", errors.New("you cannot set domain_id and domain_name at the same time")
+		}
+
+		domain, err := getDomain(domainName, client)
+
+		if err != nil {
+			return "", err
+		}
+
+		domainId = domain.ID
+	}
+
+	return domainId, nil
+}
+
+func getDomain(name string, client *client.VcfClient) (*models.Domain, error) {
+	params := domains.NewGetDomainsParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
+
+	ok, err := client.Domains.GetDomains(params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	domainsList := ok.Payload.Elements
+
+	if len(domainsList) > 0 {
+		for _, v := range domainsList {
+			if v.Name == name {
+				return v, nil
+			}
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("Domain %s not found", name))
 }

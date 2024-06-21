@@ -19,9 +19,17 @@ func EdgeNodeSchema() *schema.Resource {
 				Description:  "The name of the edge node",
 				ValidateFunc: validation.NoZeroValues,
 			},
+			"compute_cluster_name": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				Description:  "The name of the compute cluster",
+				ValidateFunc: validation.NoZeroValues,
+			},
 			"compute_cluster_id": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
+				Computed:     true,
 				Description:  "The id of the compute cluster",
 				ValidateFunc: validation.NoZeroValues,
 			},
@@ -145,7 +153,6 @@ func UplinkNetworkSchema() *schema.Resource {
 			},
 			"bgp_peer": {
 				Type:        schema.TypeList,
-				Required:    false,
 				Optional:    true,
 				Description: "List of BGP Peer configurations",
 				Elem:        BgpPeerSchema(),

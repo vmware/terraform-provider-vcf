@@ -4,8 +4,13 @@
 package nsx_edge_cluster
 
 import (
+	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/client"
+	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -13,7 +18,7 @@ const (
 	clusterTypeNsxT = "NSX-T"
 )
 
-func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData) *models.EdgeClusterCreationSpec {
+func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *client.VcfClient) (*models.EdgeClusterCreationSpec, error) {
 	// No other types are supported yet
 	clusterType := clusterTypeNsxT
 	adminPassword := data.Get("admin_password").(string)
@@ -40,7 +45,10 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData) *models.EdgeCluste
 
 	for _, n := range nodes {
 		node := n.(map[string]interface{})
-		nodeSpec := getNodeSpec(node)
+		nodeSpec, err := getNodeSpec(node, client)
+		if err != nil {
+			return nil, err
+		}
 		nodeSpecs = append(nodeSpecs, nodeSpec)
 	}
 
@@ -66,7 +74,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData) *models.EdgeCluste
 		SkipTepRoutabilityCheck:       skipTepRoutabilityCheck,
 	}
 
-	return spec
+	return spec, nil
 }
 
 func GetNsxEdgeClusterShrinkageSpec(currentNodes []*models.EdgeNodeReference, newNodes []interface{}) *models.EdgeClusterShrinkageSpec {
@@ -90,7 +98,7 @@ func GetNsxEdgeClusterShrinkageSpec(currentNodes []*models.EdgeNodeReference, ne
 	}
 }
 
-func GetNsxEdgeClusterExpansionSpec(currentNodes []*models.EdgeNodeReference, newNodesRaw []interface{}) *models.EdgeClusterExpansionSpec {
+func GetNsxEdgeClusterExpansionSpec(currentNodes []*models.EdgeNodeReference, newNodesRaw []interface{}, client *client.VcfClient) (*models.EdgeClusterExpansionSpec, error) {
 	newNodes := getNewNodes(currentNodes, newNodesRaw)
 	nodeSpecs := make([]*models.NsxTEdgeNodeSpec, 0, len(newNodes))
 	spec := &models.EdgeClusterExpansionSpec{}
@@ -106,12 +114,15 @@ func GetNsxEdgeClusterExpansionSpec(currentNodes []*models.EdgeNodeReference, ne
 		spec.EdgeNodeAuditPassword = &auditPassword
 		spec.EdgeNodeRootPassword = &rootPassword
 
-		nodeSpec := getNodeSpec(node)
+		nodeSpec, err := getNodeSpec(node, client)
+		if err != nil {
+			return nil, err
+		}
 		nodeSpecs = append(nodeSpecs, nodeSpec)
 	}
 
 	spec.EdgeNodeSpecs = nodeSpecs
-	return spec
+	return spec, nil
 }
 
 func getNewNodes(currentNodes []*models.EdgeNodeReference, newNodesRaw []interface{}) []interface{} {
@@ -135,9 +146,8 @@ func getNewNodes(currentNodes []*models.EdgeNodeReference, newNodesRaw []interfa
 	return result
 }
 
-func getNodeSpec(node map[string]interface{}) *models.NsxTEdgeNodeSpec {
+func getNodeSpec(node map[string]interface{}, client *client.VcfClient) (*models.NsxTEdgeNodeSpec, error) {
 	name := node["name"].(string)
-	clusterId := node["compute_cluster_id"].(string)
 	tep1IP := node["tep1_ip"].(string)
 	tep2IP := node["tep2_ip"].(string)
 	tepGateway := node["tep_gateway"].(string)
@@ -150,6 +160,24 @@ func getNodeSpec(node map[string]interface{}) *models.NsxTEdgeNodeSpec {
 	secondVdsUplink := node["second_nsx_vds_uplink"].(string)
 
 	interRackCluster := node["inter_rack_cluster"].(bool)
+
+	var clusterId string
+	if computeClusterId, contains := node["compute_cluster_id"]; contains {
+		clusterId = computeClusterId.(string)
+	}
+
+	if computeClusterName, contains := node["compute_cluster_name"]; contains {
+		if clusterId != "" {
+			return nil, errors.New("you cannot set compute_cluster_id and compute_cluster_name at the same time")
+		}
+		cluster, err := getComputeCluster(computeClusterName.(string), client)
+
+		if err != nil {
+			return nil, err
+		}
+
+		clusterId = cluster.ID
+	}
 
 	nodeSpec := &models.NsxTEdgeNodeSpec{
 		ClusterID:          &clusterId,
@@ -176,7 +204,7 @@ func getNodeSpec(node map[string]interface{}) *models.NsxTEdgeNodeSpec {
 		nodeSpec.VMManagementPortgroupVlan = &vlan
 	}
 
-	return nodeSpec
+	return nodeSpec, nil
 }
 
 func getUplinkNetworkSpecs(node map[string]interface{}) []*models.NsxTEdgeUplinkNetwork {
@@ -243,4 +271,26 @@ func getClusterProfileSpec(data *schema.ResourceData) *models.NsxTEdgeClusterPro
 	}
 
 	return profileSpec
+}
+
+func getComputeCluster(name string, client *client.VcfClient) (*models.Cluster, error) {
+	params := clusters.NewGetClustersParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
+
+	ok, err := client.Clusters.GetClusters(params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	computeClusters := ok.Payload.Elements
+
+	if len(computeClusters) > 0 {
+		for _, v := range computeClusters {
+			if v.Name == name {
+				return v, nil
+			}
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("Cluster %s not found", name))
 }

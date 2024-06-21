@@ -12,20 +12,21 @@ import (
 )
 
 const (
-	clusterName   = "testCluster1"
-	edgeNode1Name = "nsxt-edge-node-3.vrack.vsphere.local"
-	edgeNode2Name = "nsxt-edge-node-4.vrack.vsphere.local"
-	edgeNode3Name = "nsxt-edge-node-5.vrack.vsphere.local"
+	edgeClusterName = "testCluster1"
+	edgeNode1Name   = "nsxt-edge-node-3.vrack.vsphere.local"
+	edgeNode2Name   = "nsxt-edge-node-4.vrack.vsphere.local"
+	edgeNode3Name   = "nsxt-edge-node-5.vrack.vsphere.local"
 )
 
-func TestAccResourceEdgeCluster(t *testing.T) {
+// Same as the "full" test but will most optional inputs omitted
+func TestAccResourceEdgeCluster_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			// Create
 			{
-				Config: getEdgeClusterConfigInitial(),
+				Config: getEdgeClusterConfigBasicInitial(),
 				Check: resource.ComposeTestCheckFunc(
 					getEdgeClusterChecks(2)...,
 				),
@@ -33,7 +34,7 @@ func TestAccResourceEdgeCluster(t *testing.T) {
 			// Update
 			// Expand the cluster with an additional node
 			{
-				Config: getEdgeClusterConfigExpansion(),
+				Config: getEdgeClusterConfigBasicExpansion(),
 				Check: resource.ComposeTestCheckFunc(
 					getEdgeClusterChecks(3)...,
 				),
@@ -41,7 +42,7 @@ func TestAccResourceEdgeCluster(t *testing.T) {
 			// Update
 			// Shrink the cluster to its original set of nodes
 			{
-				Config: getEdgeClusterConfigInitial(),
+				Config: getEdgeClusterConfigBasicInitial(),
 				Check: resource.ComposeTestCheckFunc(
 					getEdgeClusterChecks(2)...,
 				),
@@ -50,15 +51,47 @@ func TestAccResourceEdgeCluster(t *testing.T) {
 	})
 }
 
-func getEdgeClusterConfigInitial() string {
-	edgeNode1 := getEdgeNodeConfig(
+func TestAccResourceEdgeCluster_full(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			// Create
+			{
+				Config: getEdgeClusterConfigFullInitial(),
+				Check: resource.ComposeTestCheckFunc(
+					getEdgeClusterChecks(2)...,
+				),
+			},
+			// Update
+			// Expand the cluster with an additional node
+			{
+				Config: getEdgeClusterConfigFullExpansion(),
+				Check: resource.ComposeTestCheckFunc(
+					getEdgeClusterChecks(3)...,
+				),
+			},
+			// Update
+			// Shrink the cluster to its original set of nodes
+			{
+				Config: getEdgeClusterConfigFullInitial(),
+				Check: resource.ComposeTestCheckFunc(
+					getEdgeClusterChecks(2)...,
+				),
+			},
+		},
+	})
+}
+
+func getEdgeClusterConfigFullInitial() string {
+	edgeNode1 := getEdgeNodeConfigFull(
 		edgeNode1Name,
 		"10.0.0.52/24",
 		"192.168.52.12/24",
 		"192.168.52.13/24",
 		"192.168.18.2/24",
 		"192.168.19.2/24")
-	edgeNode2 := getEdgeNodeConfig(
+	edgeNode2 := getEdgeNodeConfigFull(
 		edgeNode2Name,
 		"10.0.0.53/24",
 		"192.168.52.14/24",
@@ -84,7 +117,7 @@ func getEdgeClusterConfigInitial() string {
 			%s
 		}
 		`,
-		clusterName,
+		edgeClusterName,
 		os.Getenv(constants.VcfTestEdgeClusterRootPass),
 		os.Getenv(constants.VcfTestEdgeClusterAdminPass),
 		os.Getenv(constants.VcfTestEdgeClusterAuditPass),
@@ -92,22 +125,22 @@ func getEdgeClusterConfigInitial() string {
 		edgeNode2)
 }
 
-func getEdgeClusterConfigExpansion() string {
-	edgeNode1 := getEdgeNodeConfig(
+func getEdgeClusterConfigFullExpansion() string {
+	edgeNode1 := getEdgeNodeConfigFull(
 		edgeNode1Name,
 		"10.0.0.52/24",
 		"192.168.52.12/24",
 		"192.168.52.13/24",
 		"192.168.18.2/24",
 		"192.168.19.2/24")
-	edgeNode2 := getEdgeNodeConfig(
+	edgeNode2 := getEdgeNodeConfigFull(
 		edgeNode2Name,
 		"10.0.0.53/24",
 		"192.168.52.14/24",
 		"192.168.52.15/24",
 		"192.168.18.3/24",
 		"192.168.19.3/24")
-	edgeNode3 := getEdgeNodeConfig(
+	edgeNode3 := getEdgeNodeConfigFull(
 		edgeNode3Name,
 		"10.0.0.54/24",
 		"192.168.52.16/24",
@@ -134,7 +167,7 @@ func getEdgeClusterConfigExpansion() string {
 			%s
 		}
 		`,
-		clusterName,
+		edgeClusterName,
 		os.Getenv(constants.VcfTestEdgeClusterRootPass),
 		os.Getenv(constants.VcfTestEdgeClusterAdminPass),
 		os.Getenv(constants.VcfTestEdgeClusterAuditPass),
@@ -143,7 +176,90 @@ func getEdgeClusterConfigExpansion() string {
 		edgeNode3)
 }
 
-func getEdgeNodeConfig(name, ip, tep1, tep2, uplink1, uplink2 string) string {
+func getEdgeClusterConfigBasicInitial() string {
+	edgeNode1 := getEdgeNodeConfigBasic(
+		edgeNode1Name,
+		"10.0.0.52/24",
+		"192.168.52.12/24",
+		"192.168.52.13/24",
+		"192.168.18.2/24",
+		"192.168.19.2/24")
+	edgeNode2 := getEdgeNodeConfigBasic(
+		edgeNode2Name,
+		"10.0.0.53/24",
+		"192.168.52.14/24",
+		"192.168.52.15/24",
+		"192.168.18.3/24",
+		"192.168.19.3/24")
+
+	return fmt.Sprintf(`
+		resource "vcf_edge_cluster" "testCluster1" {
+			name      = %q
+			root_password = %q
+			admin_password = %q
+			audit_password = %q
+			form_factor = "MEDIUM"
+			profile_type = "DEFAULT"
+			mtu = 8940
+			%s
+			%s
+		}
+		`,
+		edgeClusterName,
+		os.Getenv(constants.VcfTestEdgeClusterRootPass),
+		os.Getenv(constants.VcfTestEdgeClusterAdminPass),
+		os.Getenv(constants.VcfTestEdgeClusterAuditPass),
+		edgeNode1,
+		edgeNode2)
+}
+
+func getEdgeClusterConfigBasicExpansion() string {
+	edgeNode1 := getEdgeNodeConfigBasic(
+		edgeNode1Name,
+		"10.0.0.52/24",
+		"192.168.52.12/24",
+		"192.168.52.13/24",
+		"192.168.18.2/24",
+		"192.168.19.2/24")
+	edgeNode2 := getEdgeNodeConfigBasic(
+		edgeNode2Name,
+		"10.0.0.53/24",
+		"192.168.52.14/24",
+		"192.168.52.15/24",
+		"192.168.18.3/24",
+		"192.168.19.3/24")
+	edgeNode3 := getEdgeNodeConfigBasic(
+		edgeNode3Name,
+		"10.0.0.54/24",
+		"192.168.52.16/24",
+		"192.168.52.17/24",
+		"192.168.18.6/24",
+		"192.168.19.6/24")
+
+	return fmt.Sprintf(`
+		resource "vcf_edge_cluster" "testCluster1" {
+			name      = %q
+			root_password = %q
+			admin_password = %q
+			audit_password = %q
+			form_factor = "MEDIUM"
+			mtu = 8940
+			asn = 65004
+			%s
+			%s
+			%s
+		}
+		`,
+		edgeClusterName,
+		os.Getenv(constants.VcfTestEdgeClusterRootPass),
+		os.Getenv(constants.VcfTestEdgeClusterAdminPass),
+		os.Getenv(constants.VcfTestEdgeClusterAuditPass),
+		edgeNode1,
+		edgeNode2,
+		edgeNode3)
+}
+
+func getEdgeNodeConfigFull(name, ip, tep1, tep2, uplink1, uplink2 string) string {
 	return fmt.Sprintf(`
 		edge_node {
 			name = %q
@@ -182,6 +298,45 @@ func getEdgeNodeConfig(name, ip, tep1, tep2, uplink1, uplink2 string) string {
 		`,
 		name,
 		os.Getenv(constants.VcfTestComputeClusterId),
+		os.Getenv(constants.VcfTestEdgeNodeRootPass),
+		os.Getenv(constants.VcfTestEdgeNodeAdminPass),
+		os.Getenv(constants.VcfTestEdgeNodeAuditPass),
+		ip,
+		tep1,
+		tep2,
+		uplink1,
+		uplink2)
+}
+
+func getEdgeNodeConfigBasic(name, ip, tep1, tep2, uplink1, uplink2 string) string {
+	return fmt.Sprintf(`
+		edge_node {
+			name = %q
+			compute_cluster_name = %q
+			root_password = %q
+			admin_password = %q
+			audit_password = %q
+			management_ip = %q
+			management_gateway = "10.0.0.250"
+			tep_gateway = "192.168.52.1"
+			tep1_ip = %q
+			tep2_ip = %q
+			tep_vlan = 1252
+			inter_rack_cluster = false
+
+			uplink {
+				vlan = 2083
+				interface_ip = %q
+			}
+
+			uplink {
+				vlan = 2084
+				interface_ip = %q
+			}
+		}
+		`,
+		name,
+		os.Getenv(constants.VcfTestComputeClusterName),
 		os.Getenv(constants.VcfTestEdgeNodeRootPass),
 		os.Getenv(constants.VcfTestEdgeNodeAdminPass),
 		os.Getenv(constants.VcfTestEdgeNodeAuditPass),
