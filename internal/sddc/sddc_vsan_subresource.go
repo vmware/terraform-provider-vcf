@@ -6,6 +6,7 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -36,6 +37,11 @@ func GetVsanSchema() *schema.Schema {
 					Description: "VSAN feature Deduplication and Compression flag, one flag for both features",
 					Optional:    true,
 				},
+				"esa_enabled": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: "Enable vSAN ESA",
+				},
 			},
 		},
 	}
@@ -57,5 +63,12 @@ func GetVsanSpecFromSchema(rawData []interface{}) *models.VSANSpec {
 		LicenseFile:   license,
 		VSANDedup:     vsanDedup,
 	}
+
+	if esaEnabled, ok := data["esa_enabled"]; ok && !validationutils.IsEmpty(esaEnabled) {
+		value := esaEnabled.(bool)
+		esaConfig := models.VSANEsaConfig{Enabled: value}
+		vsanSpecBinding.EsaConfig = &esaConfig
+	}
+
 	return vsanSpecBinding
 }

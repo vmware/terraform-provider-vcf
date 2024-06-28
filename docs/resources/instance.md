@@ -413,6 +413,7 @@ Required:
 
 Optional:
 
+- `esa_enabled` (Boolean) Enable vSAN ESA
 - `hcl_file` (String) A path (URL or local path) to an HCL file that will be uploaded to vCenter prior to configuring vSAN
 - `license` (String) VSAN License
 - `vsan_dedup` (Boolean) VSAN feature Deduplication and Compression flag, one flag for both features
