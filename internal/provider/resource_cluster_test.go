@@ -26,7 +26,7 @@ func TestAccResourceVcfClusterCreate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterResourceConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestDomainName),
 					os.Getenv(constants.VcfTestHost5Fqdn),
 					os.Getenv(constants.VcfTestHost5Pass),
 					os.Getenv(constants.VcfTestHost6Fqdn),
@@ -353,7 +353,7 @@ func testAccVcfClusterResourcеStretchTestConfig(name, stretchConfig string) str
 	)
 }
 
-func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, host2Pass,
+func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn, host2Pass,
 	host3Fqdn, host3Pass, esxLicenseKey, vsanLicenseKey,
 	additionalCommissionHostConfig, additionalHostInClusterConfig string) string {
 	return fmt.Sprintf(`
@@ -408,7 +408,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 	}
 	%s
 	resource "vcf_cluster" "cluster1" {
-		domain_id = %q
+		domain_name = %q
 		name = "sfo-m01-cl01"
 		host {
 			id = vcf_host.host1.id
@@ -484,7 +484,7 @@ func testAccVcfClusterResourceConfig(domainId, host1Fqdn, host1Pass, host2Fqdn, 
 		}
 		geneve_vlan_id = 3
 	}
-	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, additionalCommissionHostConfig, domainId,
+	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, additionalCommissionHostConfig, domainName,
 		esxLicenseKey, esxLicenseKey, esxLicenseKey, additionalHostInClusterConfig, vsanLicenseKey)
 }
 

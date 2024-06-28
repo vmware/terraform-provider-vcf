@@ -43,13 +43,14 @@ BIOS, HBA, SSD, HDD, etc. of the host must match the VMware Hardware Compatibili
 ### Required
 
 - `fqdn` (String) FQDN of the host
-- `network_pool_id` (String) ID of the network pool to associate the host with
 - `password` (String, Sensitive) Password of the host
 - `storage_type` (String) Storage Type. One among: VSAN, VSAN_REMOTE, NFS, VMFS_FC, VVOL
-- `username` (String) Username of the host
+- `username` (String) Username to authenticate to the ESXi host
 
 ### Optional
 
+- `network_pool_id` (String) ID of the network pool to associate the ESXi host with. You cannot specify a value for `network_pool_name` if you set this attribute.
+- `network_pool_name` (String) Name of the network pool to associate the ESXi host with. You cannot specify a value for `network_pool_id` if you set this attribute.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

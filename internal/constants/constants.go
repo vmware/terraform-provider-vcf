@@ -123,6 +123,9 @@ const (
 	// already created during bringup.
 	VcfTestClusterDataSourceId = "VCF_CLUSTER_DATA_SOURCE_ID"
 
+	// VcfTestDomainName display name of the workload domain used in the acceptance tests.
+	VcfTestDomainName = "VCF_DOMAIN_NAME"
+
 	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
 	VcfTestNetworkPoolName = "terraform-test-pool"
 
@@ -164,6 +167,9 @@ const (
 
 	// VcfTestComputeClusterId the identifier of the compute cluster that will contain the edge nodes.
 	VcfTestComputeClusterId = "VCF_TEST_COMPUTE_CLUSTER_ID"
+
+	// VcfTestComputeClusterName the display name of the compute cluster that will contain the edge nodes.
+	VcfTestComputeClusterName = "VCF_TEST_COMPUTE_CLUSTER_NAME"
 )
 
 func GetIso3166CountryCodes() []string {

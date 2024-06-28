@@ -157,7 +157,11 @@ func ResourceEdgeCluster() *schema.Resource {
 func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
-	spec := nsx_edge_cluster.GetNsxEdgeClusterCreationSpec(data)
+	spec, err := nsx_edge_cluster.GetNsxEdgeClusterCreationSpec(data, client)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	validationErr := validateClusterCreationSpec(client, ctx, spec)
 
@@ -251,8 +255,12 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 		if len(oldNodes) < len(newNodes) {
 			operation := expansion
 			updateParams.EdgeClusterUpdateSpec.Operation = &operation
-			updateParams.EdgeClusterUpdateSpec.EdgeClusterExpansionSpec =
-				nsx_edge_cluster.GetNsxEdgeClusterExpansionSpec(edgeClusterOk.Payload.EdgeNodes, newNodes)
+			spec, err := nsx_edge_cluster.GetNsxEdgeClusterExpansionSpec(edgeClusterOk.Payload.EdgeNodes, newNodes, client)
+
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			updateParams.EdgeClusterUpdateSpec.EdgeClusterExpansionSpec = spec
 			tflog.Info(ctx, "Expanding edge cluster")
 		}
 

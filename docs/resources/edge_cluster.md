@@ -66,7 +66,6 @@ Required:
 
 - `admin_password` (String) The administrator password for the edge node
 - `audit_password` (String) The audit password for the edge node
-- `compute_cluster_id` (String) The id of the compute cluster
 - `inter_rack_cluster` (Boolean) Whether or not this is an inter-rack cluster. True for L2 non-uniform and L3, false for L2 uniform
 - `management_gateway` (String) The gateway address for the management network
 - `management_ip` (String) The IP address (CIDR) for the management network
@@ -79,6 +78,8 @@ Required:
 
 Optional:
 
+- `compute_cluster_id` (String) The id of the compute cluster. You cannot specify a value for `compute_cluster_name` if you set this attribute.
+- `compute_cluster_name` (String) The name of the compute cluster. You cannot specify a value for `compute_cluster_id` if you set this attribute.
 - `first_nsx_vds_uplink` (String) The name of the first NSX-enabled VDS uplink
 - `management_network` (Block List, Max: 1) The management network which will be created for this node (see [below for nested schema](#nestedblock--edge_node--management_network))
 - `second_nsx_vds_uplink` (String) The name of the second NSX-enabled VDS uplink
