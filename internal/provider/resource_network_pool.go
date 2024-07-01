@@ -1,91 +1,140 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/network_pools"
 	"github.com/vmware/vcf-sdk-go/models"
 	"log"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func ResourceNetworkPool() *schema.Resource {
-	return &schema.Resource{
-		CreateContext: resourceNetworkPoolCreate,
-		ReadContext:   resourceNetworkPoolRead,
-		DeleteContext: resourceNetworkPoolDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(12 * time.Hour),
-		},
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true, // Updating network pools is partially supported in VCF API.
-				Description: "The name of the network pool",
+type IpPoolModel struct {
+	Start types.String `tfsdk:"start"`
+	End   types.String `tfsdk:"end"`
+}
+
+type NetworkModel struct {
+	Gateway types.String `tfsdk:"gateway"`
+	Mask    types.String `tfsdk:"mask"`
+	Subnet  types.String `tfsdk:"subnet"`
+	Type    types.String `tfsdk:"type"`
+	Mtu     types.Int64  `tfsdk:"mtu"`
+	VlanId  types.Int64  `tfsdk:"vlan_id"`
+	IpPools types.List   `tfsdk:"ip_pools"`
+}
+
+type ResourceNetworkPoolModel struct {
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
+	Id       types.String   `tfsdk:"id"`
+	Name     types.String   `tfsdk:"name"`
+	Networks types.List     `tfsdk:"network"`
+}
+
+type ResourceNetworkPool struct {
+	client *client.VcfClient
+}
+
+func (r *ResourceNetworkPool) Metadata(ctx context.Context, req resource.MetadataRequest, res *resource.MetadataResponse) {
+	res.TypeName = "vcf_network_pool"
+}
+
+func (r *ResourceNetworkPool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+	r.client = req.ProviderData.(*api_client.SddcManagerClient).ApiClient
+}
+
+func (r *ResourceNetworkPool) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func (r *ResourceNetworkPool) Schema(ctx context.Context, req resource.SchemaRequest, res *resource.SchemaResponse) {
+	res.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
+				Create: true,
+			}),
+			"id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "Service generated identifier for the network pool.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-			"network": {
-				Type:        schema.TypeList,
+			"name": schema.StringAttribute{
 				Required:    true,
-				ForceNew:    true, // Updating network pools is partially supported in VCF API.
+				Description: "The name of the network pool",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"network": schema.ListNestedBlock{
 				Description: "Represents a network in a network pool",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"gateway": {
-							Type:        schema.TypeString,
-							Description: "Gateway for the network",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.List{
+					listvalidator.IsRequired(),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"gateway": schema.StringAttribute{
 							Optional:    true,
+							Description: "Gateway for the network",
 						},
-						"mask": {
-							Type:        schema.TypeString,
+						"mask": schema.StringAttribute{
+							Optional:    true,
 							Description: "Subnet mask for the subnet of the network",
-							Optional:    true,
 						},
-						"mtu": {
-							Type:        schema.TypeInt,
-							Description: "Gateway for the network",
+						"subnet": schema.StringAttribute{
 							Optional:    true,
-						},
-						"subnet": {
-							Type:        schema.TypeString,
 							Description: "Subnet associated with the network",
-							Optional:    true,
 						},
-						"type": {
-							Type:        schema.TypeString,
+						"mtu": schema.Int64Attribute{
+							Optional:    true,
+							Description: "Gateway for the network",
+						},
+						"type": schema.StringAttribute{
+							Optional:    true,
 							Description: "Network Type of the network",
-							Optional:    true,
 						},
-						"vlan_id": {
-							Type:        schema.TypeInt,
-							Description: "VLAN ID associated with the network",
+						"vlan_id": schema.Int64Attribute{
 							Required:    true,
+							Description: "VLAN ID associated with the network",
 						},
-						"ip_pools": {
-							Type:        schema.TypeList,
+					},
+					Blocks: map[string]schema.Block{
+						"ip_pools": schema.ListNestedBlock{
 							Description: "List of IP pool ranges to use",
-							Optional:    true,
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"start": {
-										Type:        schema.TypeString,
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"start": schema.StringAttribute{
+										Optional:    true,
 										Description: "Start IP address of the IP pool",
-										Optional:    true,
 									},
-									"end": {
-										Type:        schema.TypeString,
-										Description: "End IP address of the IP pool",
+									"end": schema.StringAttribute{
 										Optional:    true,
+										Description: "End IP address of the IP pool",
 									},
 								},
 							},
@@ -97,40 +146,46 @@ func ResourceNetworkPool() *schema.Resource {
 	}
 }
 
-func resourceNetworkPoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
+func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateRequest, res *resource.CreateResponse) {
+	var data ResourceNetworkPoolModel
+
+	res.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	timeout, diags := data.Timeouts.Create(ctx, 30*time.Minute)
+	res.Diagnostics.Append(diags...)
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	createParams := network_pools.NewCreateNetworkPoolParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	networkPool := models.NetworkPool{}
-
-	if name, ok := d.GetOk("name"); ok {
-		networkPool.Name = name.(string)
+	networkPool := models.NetworkPool{
+		Name: data.Name.ValueString(),
 	}
 
-	if len(d.Get("network").([]interface{})) > 0 {
-		networks := d.Get("network").([]interface{})
+	var networks []NetworkModel
+	res.Diagnostics.Append(types.List.ElementsAs(data.Networks, ctx, &networks, false)...)
+
+	if len(networks) > 0 {
 		networkPool.Networks = make([]*models.Network, len(networks))
 
 		for i, network := range networks {
-			networkMap := network.(map[string]interface{})
 			networkPool.Networks[i] = &models.Network{
-				Gateway: networkMap["gateway"].(string),
-				Mask:    networkMap["mask"].(string),
-				Mtu:     int32(networkMap["mtu"].(int)),
-				Subnet:  networkMap["subnet"].(string),
-				Type:    networkMap["type"].(string),
-				VlanID:  int32(networkMap["vlan_id"].(int)),
+				VlanID:  int32(network.VlanId.ValueInt64()),
+				Gateway: network.Gateway.ValueString(),
+				Mask:    network.Mask.ValueString(),
+				Subnet:  network.Subnet.ValueString(),
+				Mtu:     int32(network.Mtu.ValueInt64()),
+				Type:    network.Type.ValueString(),
 			}
 
-			ipPools := networkMap["ip_pools"].([]interface{})
+			var ipPools []IpPoolModel
+			res.Diagnostics.Append(types.List.ElementsAs(network.IpPools, ctx, &ipPools, false)...)
 			networkPool.Networks[i].IPPools = make([]*models.IPPool, len(ipPools))
 			for j, ipPool := range ipPools {
-				ipPoolMap := ipPool.(map[string]interface{})
-
 				networkPool.Networks[i].IPPools[j] = &models.IPPool{
-					Start: ipPoolMap["start"].(string),
-					End:   ipPoolMap["end"].(string),
+					Start: ipPool.Start.ValueString(),
+					End:   ipPool.End.ValueString(),
 				}
 			}
 		}
@@ -138,51 +193,56 @@ func resourceNetworkPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	createParams.NetworkPool = &networkPool
 
-	_, created, err := apiClient.NetworkPools.CreateNetworkPool(createParams)
+	_, created, err := r.client.NetworkPools.CreateNetworkPool(createParams)
 	if err != nil {
-		return diag.FromErr(err)
+		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to create network pool", err.Error()))
+		return
 	}
 
 	log.Println("created = ", created)
 	createdNetworkPool := created.Payload
-	d.SetId(createdNetworkPool.ID)
+	data.Id = types.StringValue(createdNetworkPool.ID)
 
-	return nil
+	res.Diagnostics.Append(res.State.Set(ctx, &data)...)
 }
 
-func resourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
+func (r *ResourceNetworkPool) Read(ctx context.Context, req resource.ReadRequest, res *resource.ReadResponse) {
+	var data ResourceNetworkPoolModel
+	res.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	params := network_pools.NewGetNetworkPoolByIDParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	params.ID = d.Id()
 
-	networkPoolPayload, err := apiClient.NetworkPools.GetNetworkPoolByID(params)
+	networkPoolPayload, err := r.client.NetworkPools.GetNetworkPoolByID(params)
 	if err != nil {
-		return diag.FromErr(err)
+		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to retrieve network pool", err.Error()))
+		return
 	}
-	networkPool := networkPoolPayload.Payload
-	d.SetId(networkPool.ID)
-	_ = d.Set("name", networkPool.Name)
 
-	return nil
+	networkPool := networkPoolPayload.Payload
+	data.Id = types.StringValue(networkPool.ID)
+	data.Name = types.StringValue(networkPool.Name)
 }
 
-func resourceNetworkPoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
+func (r *ResourceNetworkPool) Update(ctx context.Context, req resource.UpdateRequest, res *resource.UpdateResponse) {
+	/* ... */
+}
+
+func (r *ResourceNetworkPool) Delete(ctx context.Context, req resource.DeleteRequest, res *resource.DeleteResponse) {
+	var data ResourceNetworkPoolModel
+	res.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	params := network_pools.NewDeleteNetworkPoolParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	params.ID = d.Id()
+	params.ID = data.Id.ValueString()
 
 	log.Println(params)
-	_, err := apiClient.NetworkPools.DeleteNetworkPool(params)
+	_, err := r.client.NetworkPools.DeleteNetworkPool(params)
 	if err != nil {
 		log.Println("error = ", err)
-		return diag.FromErr(err)
+		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to delete network pool", err.Error()))
+		return
 	}
 
-	log.Printf("%s: Delete complete", d.Id())
-	d.SetId("")
-	return nil
+	log.Printf("%s: Delete complete", data.Id)
 }

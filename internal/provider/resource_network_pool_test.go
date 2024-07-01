@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"log"
 	"testing"
@@ -15,9 +14,9 @@ import (
 
 func TestAccResourceVcfNetworkPool(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfNetworkPoolDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: protoV6ProviderFactories(),
+		CheckDestroy:             testCheckVcfNetworkPoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfNetworkPoolConfig(constants.VcfTestNetworkPoolName),
@@ -61,8 +60,7 @@ func testAccVcfNetworkPoolConfig(networkPoolName string) string {
 }
 
 func testCheckVcfNetworkPoolDestroy(_ *terraform.State) error {
-	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := (interface{}(testAccFrameworkProvider)).(*FrameworkProvider).SddcManagerClient.ApiClient
 
 	hosts, err := apiClient.NetworkPools.GetNetworkPool(nil)
 	if err != nil {
