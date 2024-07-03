@@ -170,6 +170,15 @@ const (
 
 	// VcfTestComputeClusterName the display name of the compute cluster that will contain the edge nodes.
 	VcfTestComputeClusterName = "VCF_TEST_COMPUTE_CLUSTER_NAME"
+
+	// VcfTestVcenterFqdn the FQDN of the vcenter server.
+	VcfTestVcenterFqdn = "VCF_TEST_VCENTER_FQDN"
+
+	// VcfTestSddcManagerFqdn the FQDN of the SDDC manager.
+	VcfTestSddcManagerFqdn = "VCF_TEST_SDDC_MANAGER_FQDN"
+
+	// VcfTestNsxManagerFqdn the FQDN of the NSX manager.
+	VcfTestNsxManagerFqdn = "VCF_TEST_NSX_MANAGER_FQDN"
 )
 
 func GetIso3166CountryCodes() []string {

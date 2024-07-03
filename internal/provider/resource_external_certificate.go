@@ -78,20 +78,13 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 
 	csrID := data.Get("csr_id").(string)
 	csrIdComponents := strings.Split(csrID, ":")
-	if len(csrIdComponents) != 4 {
+	if len(csrIdComponents) != 5 {
 		return diag.FromErr(fmt.Errorf("CSR ID invalid"))
 	}
 
 	domainID := csrIdComponents[1]
 	resourceType := csrIdComponents[2]
-
-	resourceFqdn, err := certificates.GetFqdnOfResourceTypeInDomain(ctx, domainID, resourceType, apiClient)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if resourceFqdn == nil {
-		return diag.FromErr(fmt.Errorf("could not determine FQDN for resourceType %s in domain %s", resourceType, domainID))
-	}
+	resourceFqdn := csrIdComponents[3]
 
 	caCertificate := data.Get("ca_certificate").(string)
 	certificateChain := data.Get("certificate_chain").(string)
@@ -101,13 +94,13 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 
 	if !validation_utils.IsEmpty(resourceCertificate) && !validation_utils.IsEmpty(caCertificate) {
 		resourceCertificateSpec = &models.ResourceCertificateSpec{
-			ResourceFqdn:        *resourceFqdn,
+			ResourceFqdn:        resourceFqdn,
 			CaCertificate:       caCertificate,
 			ResourceCertificate: resourceCertificate,
 		}
 	} else if !validation_utils.IsEmpty(certificateChain) {
 		resourceCertificateSpec = &models.ResourceCertificateSpec{
-			ResourceFqdn:     *resourceFqdn,
+			ResourceFqdn:     resourceFqdn,
 			CertificateChain: certificateChain,
 		}
 	} else {
@@ -149,7 +142,7 @@ func resourceResourceExternalCertificateRead(ctx context.Context, data *schema.R
 
 	csrID := data.Get("csr_id").(string)
 	csrIdComponents := strings.Split(csrID, ":")
-	if len(csrIdComponents) != 4 {
+	if len(csrIdComponents) != 5 {
 		return diag.FromErr(fmt.Errorf("CSR ID invalid"))
 	}
 
