@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -60,23 +60,16 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 
 	csrID := data.Get("csr_id").(string)
 	csrIdComponents := strings.Split(csrID, ":")
-	if len(csrIdComponents) != 4 {
+	if len(csrIdComponents) != 5 {
 		return diag.FromErr(fmt.Errorf("CSR ID invalid"))
 	}
 
 	domainID := csrIdComponents[1]
 	resourceType := csrIdComponents[2]
+	resourceFqdn := csrIdComponents[3]
 	caType := data.Get("ca_id").(string)
 
-	resourceFqdn, err := certificates.GetFqdnOfResourceTypeInDomain(ctx, domainID, resourceType, apiClient)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if resourceFqdn == nil {
-		return diag.FromErr(fmt.Errorf("could not determine FQDN for resourceType %s in domain %s", resourceType, domainID))
-	}
-
-	err = certificates.GenerateCertificateForResource(ctx, vcfClient, &domainID, &resourceType, resourceFqdn, &caType)
+	err := certificates.GenerateCertificateForResource(ctx, vcfClient, &domainID, &resourceType, &resourceFqdn, &caType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -84,7 +77,7 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 	certificateOperationSpec := &models.CertificateOperationSpec{
 		OperationType: resource_utils.ToStringPointer("INSTALL"),
 		Resources: []*models.Resource{{
-			Fqdn: *resourceFqdn,
+			Fqdn: resourceFqdn,
 			Type: &resourceType,
 		}},
 	}
@@ -119,14 +112,14 @@ func resourceResourceCertificateRead(ctx context.Context, data *schema.ResourceD
 
 	csrID := data.Get("csr_id").(string)
 	csrIdComponents := strings.Split(csrID, ":")
-	if len(csrIdComponents) != 4 {
+	if len(csrIdComponents) != 5 {
 		return diag.FromErr(fmt.Errorf("CSR ID invalid"))
 	}
 
 	domainID := csrIdComponents[1]
-	resourceType := csrIdComponents[2]
+	resourceFqdn := csrIdComponents[3]
 
-	cert, err := certificates.GetCertificateForResourceInDomain(ctx, apiClient, domainID, resourceType)
+	cert, err := certificates.GetCertificateForResourceInDomain(ctx, apiClient, domainID, resourceFqdn)
 	if err != nil {
 		return diag.FromErr(err)
 	}

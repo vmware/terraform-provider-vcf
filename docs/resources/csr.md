@@ -23,11 +23,12 @@ external or internal CA.
 - `country` (String) ISO 3166 country code where company is legally registered
 - `domain_id` (String) Domain Id or Name for which the CSRs should be generated
 - `email` (String) Contact email address
+- `fqdn` (String) FQDN of the resource
 - `key_size` (Number) Certificate public key size. One among: 2048, 3072, 4096
 - `locality` (String) The city or locality where company is legally registered
 - `organization` (String) The name under which your company is known. The listed organization must be the legal registrant of the domain name in the certificate request.
 - `organization_unit` (String) Organization with which the certificate is associated
-- `resource` (String) Resources for which the CSRs are to be generated. One among: SDDC_MANAGER, VCENTER, NSX_MANAGER, NSXT_MANAGER, VROPS, VRSLCM, VXRAIL_MANAGER
+- `resource` (String) Resources for which the CSRs are to be generated. One among: SDDC_MANAGER, PSC, VCENTER, NSX_MANAGER, NSXT_MANAGER, VROPS, VRSLCM, VXRAIL_MANAGER
 - `state` (String) Full name (do not abbreviate) of the state, province, region, or territory where your company is legally registered.
 
 ### Optional

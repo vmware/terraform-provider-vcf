@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -11,8 +11,8 @@ import (
 	"testing"
 )
 
-func TestAccResourceVcfResourceCertificate(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+func TestAccResourceVcfResourceCertificate_vCenter(t *testing.T) {
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 			testAccVcfCertificateAuthorityPreCheck(t)
@@ -24,7 +24,9 @@ func TestAccResourceVcfResourceCertificate(t *testing.T) {
 					os.Getenv(constants.VcfTestDomainDataSourceId),
 					os.Getenv(constants.VcfTestMsftCaServerUrl),
 					os.Getenv(constants.VcfTestMsftCaUser),
-					os.Getenv(constants.VcfTestMsftCaSecret)),
+					os.Getenv(constants.VcfTestMsftCaSecret),
+					"VCENTER",
+					os.Getenv(constants.VcfTestVcenterFqdn)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.issued_by"),
 					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.issued_to"),
@@ -49,7 +51,87 @@ func TestAccResourceVcfResourceCertificate(t *testing.T) {
 	})
 }
 
-func testAccVcfResourceCertificate(domainID, msftCaServerUrl, msftCaUser, msftCaSecret string) string {
+func TestAccResourceVcfResourceCertificate_sddcManager(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccVcfCertificateAuthorityPreCheck(t)
+		},
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfResourceCertificate(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestMsftCaServerUrl),
+					os.Getenv(constants.VcfTestMsftCaUser),
+					os.Getenv(constants.VcfTestMsftCaSecret),
+					"SDDC_MANAGER",
+					os.Getenv(constants.VcfTestSddcManagerFqdn)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.issued_by"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.issued_to"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.expiration_status"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.certificate_error"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.key_size"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.not_after"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.not_before"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.pem_encoded"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.public_key"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.public_key_algorithm"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.serial_number"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.signature_algorithm"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.subject"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.subject_alternative_name.#"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.thumbprint"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.thumbprint_algorithm"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.version"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.number_of_days_to_expire")),
+			},
+		},
+	})
+}
+
+func TestAccResourceVcfResourceCertificate_nsx(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			testAccVcfCertificateAuthorityPreCheck(t)
+		},
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfResourceCertificate(
+					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestMsftCaServerUrl),
+					os.Getenv(constants.VcfTestMsftCaUser),
+					os.Getenv(constants.VcfTestMsftCaSecret),
+					"NSXT_MANAGER",
+					os.Getenv(constants.VcfTestNsxManagerFqdn)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.issued_by"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.issued_to"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.expiration_status"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.certificate_error"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.key_size"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.not_after"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.not_before"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.pem_encoded"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.public_key"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.public_key_algorithm"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.serial_number"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.signature_algorithm"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.subject"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.subject_alternative_name.#"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.thumbprint"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.thumbprint_algorithm"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.version"),
+					resource.TestCheckResourceAttrSet("vcf_certificate.vcenter_cert", "certificate.0.number_of_days_to_expire")),
+			},
+		},
+	})
+}
+
+func testAccVcfResourceCertificate(domainID, msftCaServerUrl, msftCaUser, msftCaSecret, resource, fqdn string) string {
 	return fmt.Sprintf(`
 	resource "vcf_certificate_authority" "ca" {
   		microsoft {
@@ -69,7 +151,8 @@ func testAccVcfResourceCertificate(domainID, msftCaServerUrl, msftCaUser, msftCa
 		state = "Sofia-grad"
 		organization = "VMware Inc."
 		organization_unit = "VCF"
-		resource = "VCENTER"
+		resource = %q
+		fqdn = %q
 	}
 
 
@@ -82,5 +165,7 @@ func testAccVcfResourceCertificate(domainID, msftCaServerUrl, msftCaUser, msftCa
 		msftCaSecret,
 		msftCaServerUrl,
 		domainID,
+		resource,
+		fqdn,
 	)
 }

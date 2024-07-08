@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -11,15 +11,15 @@ import (
 	"testing"
 )
 
-func TestAccResourceVcfCsr(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+func TestAccResourceVcfCsr_vCenter(t *testing.T) {
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId)),
+				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId), "VCENTER", os.Getenv(constants.VcfTestVcenterFqdn)),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_pem"),
 					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_string"),
@@ -29,7 +29,43 @@ func TestAccResourceVcfCsr(t *testing.T) {
 	})
 }
 
-func testAccVcfCsrConfig(domainID string) string {
+func TestAccResourceVcfCsr_sddcManager(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId), "SDDC_MANAGER", os.Getenv(constants.VcfTestSddcManagerFqdn)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_pem"),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_string"),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.resource.0.fqdn")),
+			},
+		},
+	})
+}
+
+func TestAccResourceVcfCsr_nsxManager(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId), "NSXT_MANAGER", os.Getenv(constants.VcfTestNsxManagerFqdn)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_pem"),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.csr_string"),
+					resource.TestCheckResourceAttrSet("vcf_csr.csr1", "csr.0.resource.0.fqdn")),
+			},
+		},
+	})
+}
+
+func testAccVcfCsrConfig(domainID, resource, fqdn string) string {
 	return fmt.Sprintf(`
 	resource "vcf_csr" "csr1" {
   		domain_id = %q
@@ -40,8 +76,9 @@ func testAccVcfCsrConfig(domainID string) string {
 		state = "Sofia-grad"
 		organization = "VMware Inc."
 		organization_unit = "VCF"
-		resource = "VCENTER"
+		resource = %q
+		fqdn = %q
 	}`,
-		domainID,
+		domainID, resource, fqdn,
 	)
 }

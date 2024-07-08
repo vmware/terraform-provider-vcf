@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -81,11 +81,16 @@ func ResourceCsr() *schema.Resource {
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"resource": {
-				Type:     schema.TypeString,
-				Required: true,
-				// TODO when migrating to 5.x.x support check if these are still accurate
-				Description:  "Resources for which the CSRs are to be generated. One among: SDDC_MANAGER, VCENTER, NSX_MANAGER, NSXT_MANAGER, VROPS, VRSLCM, VXRAIL_MANAGER",
-				ValidateFunc: validation.StringInSlice([]string{"SDDC_MANAGER", "VCENTER", "NSX_MANAGER", "NSXT_MANAGER", "VROPS", "VRSLCM", "VXRAIL_MANAGER"}, false),
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "Resources for which the CSRs are to be generated. One among: SDDC_MANAGER, PSC, VCENTER, NSX_MANAGER, NSXT_MANAGER, VROPS, VRSLCM, VXRAIL_MANAGER",
+				ValidateFunc: validation.StringInSlice([]string{"SDDC_MANAGER", "PSC", "VCENTER", "NSX_MANAGER", "NSXT_MANAGER", "VROPS", "VRSLCM", "VXRAIL_MANAGER"}, false),
+			},
+			"fqdn": {
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "FQDN of the resource",
+				ValidateFunc: validation.NoZeroValues,
 			},
 			"csr": {
 				Type:        schema.TypeList,
@@ -103,14 +108,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 
 	domainId := data.Get("domain_id").(string)
 	resourceType := data.Get("resource").(string)
-
-	resourceFqdn, err := certificates.GetFqdnOfResourceTypeInDomain(ctx, domainId, resourceType, apiClient)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if resourceFqdn == nil {
-		return diag.FromErr(fmt.Errorf("could not determine FQDN for resourceType %s in domain %s", resourceType, domainId))
-	}
+	resourceFqdn := data.Get("fqdn").(string)
 
 	country := data.Get("country").(string)
 	email := data.Get("email").(string)
@@ -135,7 +133,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 		CSRGenerationSpec: csrGenerationSpec,
 		Resources: []*models.Resource{
 			{
-				Fqdn: *resourceFqdn,
+				Fqdn: resourceFqdn,
 				Type: &resourceType,
 			},
 		},
@@ -158,7 +156,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	data.SetId("csr:" + domainId + ":" + resourceType + ":" + taskId)
+	data.SetId(fmt.Sprintf("csr:%s:%s:%s:%s", domainId, resourceType, resourceFqdn, taskId))
 
 	getCsrsParams := certificatesSdk.NewGetCSRsParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout).
@@ -168,7 +166,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	csr := getCsrByResourceFqdn(*resourceFqdn, getCsrResponse.Payload.Elements)
+	csr := getCsrByResourceFqdn(resourceFqdn, getCsrResponse.Payload.Elements)
 	flattenedCsr := certificates.FlattenCsr(csr)
 	_ = data.Set("csr", []interface{}{flattenedCsr})
 
