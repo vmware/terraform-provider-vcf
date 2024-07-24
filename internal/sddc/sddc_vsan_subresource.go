@@ -6,7 +6,6 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
-	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
 )
 
@@ -56,18 +55,14 @@ func GetVsanSpecFromSchema(rawData []interface{}) *models.VSANSpec {
 	hclFile := data["hcl_file"].(string)
 	license := data["license"].(string)
 	vsanDedup := data["vsan_dedup"].(bool)
+	esaEnabled := data["esa_enabled"].(bool)
 
 	vsanSpecBinding := &models.VSANSpec{
 		DatastoreName: utils.ToStringPointer(datastoreName),
 		HclFile:       hclFile,
 		LicenseFile:   license,
 		VSANDedup:     vsanDedup,
-	}
-
-	if esaEnabled, ok := data["esa_enabled"]; ok && !validationutils.IsEmpty(esaEnabled) {
-		value := esaEnabled.(bool)
-		esaConfig := models.VSANEsaConfig{Enabled: value}
-		vsanSpecBinding.EsaConfig = &esaConfig
+		EsaConfig:     &models.VSANEsaConfig{Enabled: &esaEnabled},
 	}
 
 	return vsanSpecBinding
