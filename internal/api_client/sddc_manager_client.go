@@ -94,6 +94,26 @@ func (c *sddcManagerCustomHttpTransport) RoundTrip(r *http.Request) (*http.Respo
 	return resp, nil
 }
 
+func (sddcManagerClient *SddcManagerClient) authEditor(ctx context.Context, req *http.Request) error {
+	// Refresh the access token every 20 minutes so that SDK operations won't start to
+	// fail with 401, 403 because of token expiration, during long-running tasks
+	if time.Since(sddcManagerClient.lastRefreshTime) > 20*time.Minute &&
+		!sddcManagerClient.isRefreshing {
+		err := sddcManagerClient.Connect()
+		if err != nil {
+			return err
+		}
+	}
+
+	if accessToken != nil {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *accessToken))
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return nil
+}
+
 func (sddcManagerClient *SddcManagerClient) Connect() error {
 	sddcManagerClient.isRefreshing = true
 	// Disable cert checks
@@ -130,9 +150,7 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 
 	// Ex
 	clientEx, err := vcf.NewClientWithResponses(fmt.Sprintf("https://%s", sddcManagerClient.sddcManagerUrl),
-		vcf.WithHTTPClient(&http.Client{
-			Transport: sddcManagerClient.newTransport(),
-		}))
+		vcf.WithRequestEditorFn(sddcManagerClient.authEditor))
 	if err != nil {
 		return err
 	}
