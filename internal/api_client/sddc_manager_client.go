@@ -6,6 +6,7 @@ package api_client
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -263,7 +264,7 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx 
 func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*vcf.Task, error) {
 	apiClient := sddcManagerClient.ApiClientEx
 	res, err := apiClient.GetTaskWithResponse(ctx, taskId)
-	if err != nil {
+	if err != nil || res.StatusCode() != 200 {
 		// retry the task up to maxGetTaskRetries
 		if sddcManagerClient.getTaskRetries < maxGetTaskRetries {
 			sddcManagerClient.getTaskRetries++
@@ -288,4 +289,18 @@ func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskI
 		return err
 	}
 	return nil
+}
+
+// GetError when the API responds with an error code the response is unmarshalled into the appropriate field for that code
+// all error code fields are of type *vcf.Error and only one can be != nil at any time
+// if the status code is an error code the body is always *vcf.Error
+//
+// use this method if you are not interested in the error code but only in the error itself
+func GetError(body []byte) *vcf.Error {
+	var dest vcf.Error
+	if err := json.Unmarshal(body, &dest); err != nil {
+		return nil
+	}
+
+	return &dest
 }
