@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 // VdsSchema this helper function extracts the VDS Schema, so that
@@ -93,28 +94,21 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error)
 	return result, nil
 }
 
-func FlattenVdsSpec(vdsSpec *models.VdsSpec) map[string]interface{} {
+func FlattenVdsSpec(vdsSpec vcf.VdsSpec) map[string]interface{} {
 	result := make(map[string]interface{})
-	if vdsSpec == nil {
-		return result
-	}
-	result["name"] = *vdsSpec.Name
-	result["is_used_by_nsx"] = vdsSpec.IsUsedByNSXT
+	result["name"] = vdsSpec.Name
+	result["is_used_by_nsx"] = vdsSpec.IsUsedByNsxt
 	flattenedNiocBandwidthAllocationSpecs := *new([]map[string]interface{})
-	for _, niocBandwidthAllocationSpec := range vdsSpec.NiocBandwidthAllocationSpecs {
-		if niocBandwidthAllocationSpec != nil {
-			flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
-				flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
-		}
+	for _, niocBandwidthAllocationSpec := range *vdsSpec.NiocBandwidthAllocationSpecs {
+		flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
+			flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
 	}
 	result["nioc_bandwidth_allocations"] = flattenedNiocBandwidthAllocationSpecs
 
 	flattenedPortgroupSpecs := *new([]map[string]interface{})
-	for _, portgroupSpec := range vdsSpec.PortGroupSpecs {
-		if portgroupSpec != nil {
-			flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,
-				flattenPortgroupSpec(portgroupSpec))
-		}
+	for _, portgroupSpec := range *vdsSpec.PortGroupSpecs {
+		flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,
+			flattenPortgroupSpec(portgroupSpec))
 	}
 	result["portgroup"] = flattenedPortgroupSpecs
 

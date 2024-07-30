@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -82,7 +82,7 @@ func DataSourceDomain() *schema.Resource {
 
 func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := vcfClient.ApiClientEx
 	domainId := data.Get("domain_id").(string)
 
 	_, err := domain.ImportDomain(ctx, data, apiClient, domainId, true)

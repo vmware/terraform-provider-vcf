@@ -10,6 +10,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 // HostSpecSchema this helper function extracts the Host
@@ -97,15 +98,13 @@ func FlattenHostReference(host *models.HostReference) *map[string]interface{} {
 	return &result
 }
 
-func FlattenHost(host *models.Host) *map[string]interface{} {
+func FlattenHost(host vcf.Host) *map[string]interface{} {
 	result := make(map[string]interface{})
-	if host == nil {
-		return &result
-	}
-	result["id"] = host.ID
+	result["id"] = host.Id
 	result["host_name"] = host.Fqdn
-	if len(host.IPAddresses) > 0 && host.IPAddresses[0] != nil {
-		result["ip_address"] = host.IPAddresses[0].IPAddress
+	ipAddresses := *host.IpAddresses
+	if len(ipAddresses) > 0 {
+		result["ip_address"] = ipAddresses[0].IpAddress
 	}
 
 	return &result

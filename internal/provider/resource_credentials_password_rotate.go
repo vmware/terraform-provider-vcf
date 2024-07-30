@@ -1,3 +1,6 @@
+// Copyright 2024 Broadcom. All Rights Reserved.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (
@@ -76,7 +79,7 @@ func ResourceCredentialsRotate() *schema.Resource {
 }
 
 func resourceCredentialsPasswordRotationRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClientEx
 	creds, err := credentials.ReadCredentials(ctx, data, apiClient)
 	if err != nil {
 		return diag.FromErr(err)

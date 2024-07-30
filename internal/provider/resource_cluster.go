@@ -53,7 +53,7 @@ func ResourceCluster() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				vcfClient := meta.(*api_client.SddcManagerClient)
-				apiClient := vcfClient.ApiClient
+				apiClient := vcfClient.ApiClientEx
 				clusterId := data.Id()
 				return cluster.ImportCluster(ctx, data, apiClient, clusterId)
 			},

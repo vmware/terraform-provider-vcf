@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/nsxt_clusters"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"sort"
 	"strings"
 )
@@ -141,40 +140,40 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 	return result, nil
 }
 
-func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef *models.NsxTClusterReference,
-	apiClient *client.VcfClient) (*[]interface{}, error) {
+func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef vcf.NsxTClusterReference,
+	apiClient *vcf.ClientWithResponses) (*[]interface{}, error) {
 	flattenedNsxCluster := make(map[string]interface{})
-	if nsxtClusterRef == nil {
-		return new([]interface{}), nil
-	}
-	flattenedNsxCluster["id"] = nsxtClusterRef.ID
+	flattenedNsxCluster["id"] = nsxtClusterRef.Id
 	flattenedNsxCluster["vip"] = nsxtClusterRef.Vip
 	flattenedNsxCluster["vip_fqdn"] = nsxtClusterRef.VipFqdn
 
-	getNsxTClusterParams := nsxt_clusters.NewGetNsxClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(nsxtClusterRef.ID)
-
-	nsxtClusterResponse, err := apiClient.NSXTClusters.GetNsxCluster(getNsxTClusterParams)
+	res, err := apiClient.GetNsxClusterWithResponse(ctx, *nsxtClusterRef.Id)
 	if err != nil {
 		return nil, err
 	}
-	nsxtCluster := nsxtClusterResponse.Payload
-	nsxtManagerNodes := nsxtCluster.Nodes
-	// Since backend API returns objects in random order sort nsxtManagerNodes list to ensure
-	// import is reproducible
-	sort.SliceStable(nsxtManagerNodes, func(i, j int) bool {
-		return nsxtManagerNodes[i].ID < nsxtManagerNodes[j].ID
-	})
-	nsxtManagersNodesRaw := *new([]map[string]interface{})
-	for _, nsxtManagerNode := range nsxtManagerNodes {
-		nsxtManagersNodeRaw := make(map[string]interface{})
-		nsxtManagersNodeRaw["name"] = nsxtManagerNode.Name
-		nsxtManagersNodeRaw["ip_address"] = nsxtManagerNode.IPAddress
-		nsxtManagersNodeRaw["fqdn"] = nsxtManagerNode.Fqdn
-		nsxtManagersNodesRaw = append(nsxtManagersNodesRaw, nsxtManagersNodeRaw)
+	if res.StatusCode() != 200 {
+		vcfError := api_client.GetError(res.Body)
+		return nil, fmt.Errorf(*vcfError.Message)
+	}
+	nsxtCluster := res.JSON200
+	if nsxtCluster.Nodes != nil {
+		nsxtManagerNodes := *nsxtCluster.Nodes
+		// Since backend API returns objects in random order sort nsxtManagerNodes list to ensure
+		// import is reproducible
+		sort.SliceStable(nsxtManagerNodes, func(i, j int) bool {
+			return *(nsxtManagerNodes[i].Id) < *(nsxtManagerNodes[j].Id)
+		})
+		nsxtManagersNodesRaw := *new([]map[string]interface{})
+		for _, nsxtManagerNode := range nsxtManagerNodes {
+			nsxtManagersNodeRaw := make(map[string]interface{})
+			nsxtManagersNodeRaw["name"] = nsxtManagerNode.Name
+			nsxtManagersNodeRaw["ip_address"] = nsxtManagerNode.IpAddress
+			nsxtManagersNodeRaw["fqdn"] = nsxtManagerNode.Fqdn
+			nsxtManagersNodesRaw = append(nsxtManagersNodesRaw, nsxtManagersNodeRaw)
+		}
+		flattenedNsxCluster["nsx_manager_node"] = nsxtManagersNodesRaw
 	}
 
-	flattenedNsxCluster["nsx_manager_node"] = nsxtManagersNodesRaw
 	result := *new([]interface{})
 	result = append(result, flattenedNsxCluster)
 

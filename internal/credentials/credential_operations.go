@@ -9,70 +9,73 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/credentials"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"io"
 	"log"
 	"strconv"
 	"strings"
 )
 
-func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) ([]*models.Credential, error) {
-	getCredentialsParam := credentials.NewGetCredentialsParamsWithContext(ctx)
+func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *vcf.ClientWithResponses) ([]vcf.Credential, error) {
+	getCredentialsParam := &vcf.GetCredentialsParams{}
 	resourceName, nameOk := data.Get("resource_name").(string)
 	if nameOk && len(resourceName) > 0 {
-		getCredentialsParam.WithResourceName(&resourceName)
+		getCredentialsParam.ResourceName = &resourceName
 	}
 
 	ip, ipOk := data.Get("resource_ip").(string)
 	if ipOk && len(ip) > 0 {
-		getCredentialsParam.WithResourceIP(&ip)
+		getCredentialsParam.ResourceIp = &ip
 	}
 
 	resType, resTypeOK := data.Get("resource_type").(string)
 	if resTypeOK && len(resType) > 0 {
-		getCredentialsParam.WithResourceType(&resType)
+		getCredentialsParam.ResourceType = &resType
 	}
 
 	domainName, domainNameOk := data.Get("domain_name").(string)
 	if domainNameOk && len(domainName) > 0 {
-		getCredentialsParam.WithDomainName(&domainName)
+		getCredentialsParam.DomainName = &domainName
 	}
 
 	accountType, accountTypeOk := data.Get("account_type").(string)
 	if accountTypeOk && len(accountType) > 0 {
-		getCredentialsParam.WithAccountType(&accountType)
+		getCredentialsParam.AccountType = &accountType
 	}
 
 	page, pageOk := data.Get("page").(int)
 	if pageOk && page > 0 {
 		pageNum := strconv.Itoa(page)
-		getCredentialsParam.WithPageNumber(&pageNum)
+		getCredentialsParam.PageNumber = &pageNum
 	}
 
 	pageSize, pageSizeOk := data.Get("page_size").(int)
 	if pageSizeOk && pageSize > 0 {
 		pageSizeNum := strconv.Itoa(pageSize)
-		getCredentialsParam.WithPageSize(&pageSizeNum)
+		getCredentialsParam.PageSize = &pageSizeNum
 	}
 
-	creds, err := apiClient.Credentials.GetCredentials(getCredentialsParam)
+	res, err := apiClient.GetCredentialsWithResponse(ctx, getCredentialsParam)
 	if err != nil {
 		return nil, err
 	}
 
-	result := creds.Payload.Elements
+	if res.StatusCode() != 200 {
+		vcfError := api_client.GetError(res.Body)
+		return nil, fmt.Errorf(*vcfError.Message)
+	}
 
-	return result, nil
+	return *res.JSON200.Elements, nil
 }
 
-func FlattenCredentials(creds []*models.Credential) []map[string]interface{} {
+func FlattenCredentials(creds []vcf.Credential) []map[string]interface{} {
 	credsArray := make([]map[string]interface{}, 0)
 
 	for _, entry := range creds {
 		entryMap := map[string]interface{}{
-			"id":                entry.ID,
+			"id":                entry.Id,
 			"account_type":      entry.AccountType,
 			"creation_time":     entry.CreationTimestamp,
 			"credential_type":   entry.CredentialType,
@@ -80,11 +83,11 @@ func FlattenCredentials(creds []*models.Credential) []map[string]interface{} {
 			"user_name":         entry.Username,
 			"password":          entry.Password,
 			"resource": []map[string]string{{
-				"id":     *entry.Resource.ResourceID,
+				"id":     entry.Resource.ResourceId,
 				"domain": *entry.Resource.DomainName,
-				"ip":     *entry.Resource.ResourceIP,
-				"name":   *entry.Resource.ResourceName,
-				"type":   *entry.Resource.ResourceType,
+				"ip":     entry.Resource.ResourceIp,
+				"name":   entry.Resource.ResourceName,
+				"type":   entry.Resource.ResourceType,
 			}},
 		}
 

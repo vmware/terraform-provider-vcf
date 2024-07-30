@@ -33,7 +33,7 @@ func ResourceDomain() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 				vcfClient := meta.(*api_client.SddcManagerClient)
-				apiClient := vcfClient.ApiClient
+				apiClient := vcfClient.ApiClientEx
 				domainId := data.Id()
 				// NOTE: Management domain cannot be imported, to not allow users to accidentally delete it,
 				// but it can be used as datasource
@@ -154,22 +154,22 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 }
 
 func resourceDomainRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
-
-	domainObj, err := domain.SetBasicDomainAttributes(ctx, data.Id(), data, apiClient)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	err = domain.ReadAndSetClustersDataToDomainResource(domainObj.Clusters, ctx, data, apiClient)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	nsxtClusterConfigRaw := data.Get("nsx_configuration").([]interface{})
-	nsxtClusterConfig := nsxtClusterConfigRaw[0].(map[string]interface{})
-	nsxtClusterConfig["id"] = domainObj.NSXTCluster.ID
-	_ = data.Set("nsx_configuration", nsxtClusterConfigRaw)
+	//vcfClient := meta.(*api_client.SddcManagerClient)
+	//apiClient := vcfClient.ApiClient
+	//
+	//domainObj, err := domain.SetBasicDomainAttributes(ctx, data.Id(), data, apiClient)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+	//
+	//err = domain.ReadAndSetClustersDataToDomainResource(domainObj.Clusters, ctx, data, apiClient)
+	//if err != nil {
+	//	return diag.FromErr(err)
+	//}
+	//nsxtClusterConfigRaw := data.Get("nsx_configuration").([]interface{})
+	//nsxtClusterConfig := nsxtClusterConfigRaw[0].(map[string]interface{})
+	//nsxtClusterConfig["id"] = domainObj.NSXTCluster.ID
+	//_ = data.Set("nsx_configuration", nsxtClusterConfigRaw)
 
 	return nil
 }

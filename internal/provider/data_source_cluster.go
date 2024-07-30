@@ -1,4 +1,4 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -75,7 +75,7 @@ func DataSourceCluster() *schema.Resource {
 
 func dataSourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := vcfClient.ApiClientEx
 	clusterId := data.Get("cluster_id").(string)
 	_, err := cluster.ImportCluster(ctx, data, apiClient, clusterId)
 	if err != nil {

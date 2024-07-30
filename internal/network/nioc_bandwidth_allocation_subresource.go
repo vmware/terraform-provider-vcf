@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"strings"
 )
 
@@ -103,18 +104,13 @@ func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*mo
 	return result, nil
 }
 
-func flattenNiocBandwidthAllocationSpec(spec *models.NiocBandwidthAllocationSpec) map[string]interface{} {
+func flattenNiocBandwidthAllocationSpec(spec vcf.NiocBandwidthAllocationSpec) map[string]interface{} {
 	result := make(map[string]interface{})
-	if spec == nil {
-		return result
-	}
-	result["type"] = *spec.Type
+	result["type"] = spec.Type
 	result["limit"] = *spec.NiocTrafficResourceAllocation.Limit
-	if spec.NiocTrafficResourceAllocation != nil {
-		result["reservation"] = *spec.NiocTrafficResourceAllocation.Reservation
-		result["shares"] = spec.NiocTrafficResourceAllocation.SharesInfo.Shares
-		result["shares_level"] = spec.NiocTrafficResourceAllocation.SharesInfo.Level
-	}
+	result["reservation"] = *spec.NiocTrafficResourceAllocation.Reservation
+	result["shares"] = spec.NiocTrafficResourceAllocation.SharesInfo.Shares
+	result["shares_level"] = spec.NiocTrafficResourceAllocation.SharesInfo.Level
 
 	return result
 }

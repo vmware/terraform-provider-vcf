@@ -1,3 +1,6 @@
+// Copyright 2024 Broadcom. All Rights Reserved.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (
@@ -8,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/credentials"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"regexp"
 )
 
@@ -76,7 +79,7 @@ func resourceCredentialsAutoRotatePolicyCreate(ctx context.Context, d *schema.Re
 }
 
 func resourceCredentialsAutoRotatePolicyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClientEx
 	matchedCredentials, err := credentials.ReadCredentials(ctx, d, apiClient)
 	matchedCredentials = filterCredentials(d.Get("user_name").(string), d.Get("resource_id").(string), matchedCredentials)
 
@@ -129,10 +132,10 @@ func createAutorotateID(data *schema.ResourceData) (string, error) {
 	return credentials.HashFields(params)
 }
 
-func filterCredentials(userName, resourceId string, creds []*models.Credential) []*models.Credential {
-	result := make([]*models.Credential, 0)
+func filterCredentials(userName, resourceId string, creds []vcf.Credential) []vcf.Credential {
+	result := make([]vcf.Credential, 0)
 	for _, cred := range creds {
-		if *cred.Username == userName && cred.Resource != nil && *cred.Resource.ResourceID == resourceId {
+		if *cred.Username == userName && cred.Resource != nil && cred.Resource.ResourceId == resourceId {
 			result = append(result, cred)
 		}
 	}

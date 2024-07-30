@@ -1,3 +1,6 @@
+// Copyright 2024 Broadcom. All Rights Reserved.
+// SPDX-License-Identifier: MPL-2.0
+
 package provider
 
 import (

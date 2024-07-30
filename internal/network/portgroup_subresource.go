@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"strings"
 )
 
@@ -67,13 +68,10 @@ func tryConvertToPortgroupSpec(object map[string]interface{}) (*models.Portgroup
 	return result, nil
 }
 
-func flattenPortgroupSpec(spec *models.PortgroupSpec) map[string]interface{} {
+func flattenPortgroupSpec(spec vcf.PortgroupSpec) map[string]interface{} {
 	result := make(map[string]interface{})
-	if spec == nil {
-		return result
-	}
-	result["name"] = *spec.Name
-	result["transport_type"] = *spec.TransportType
+	result["name"] = spec.Name
+	result["transport_type"] = spec.TransportType
 	result["active_uplinks"] = spec.ActiveUplinks
 
 	return result
