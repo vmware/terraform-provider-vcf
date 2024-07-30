@@ -1,10 +1,11 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// Copyright 2023-2024 Broadcom. All Rights Reserved.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -12,6 +13,7 @@ import (
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/ceip"
 	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"strings"
 
 	"time"
@@ -73,31 +75,30 @@ func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := vcfClient.ApiClientEx
 
-	params := ceip.NewSetCEIPStatusParamsWithTimeout(2 * time.Minute)
-	updateSpec := models.CEIPUpdateSpec{}
-
+	var enableApiParam string
 	if status, ok := d.GetOk("status"); ok {
 		statusVal := status.(string)
 		// the VCF PATCH API requires the params "ENABLE/DISABLE" while the resource states are "ENABLED/DISABLED"
-		var enableApiParam string
 		if statusVal == EnabledState {
 			enableApiParam = EnableApiParam
 		} else if statusVal == DisabledState {
 			enableApiParam = DisableApiParam
 		}
-		updateSpec.Status = &enableApiParam
 	}
 
-	params.CEIPUpdateSpec = &updateSpec
-	_, ceipAccepted, err := apiClient.CEIP.SetCEIPStatus(params)
+	res, err := apiClient.SetCeipStatusWithResponse(ctx, vcf.CeipUpdateSpec{Status: enableApiParam})
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
+	if res.StatusCode() != 202 {
+		vcfError := api_client.GetError(res.Body)
+		return diag.FromErr(fmt.Errorf(*vcfError.Message))
+	}
 
-	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, *res.JSON202.Id) != nil {
 		return diag.FromErr(err)
 	}
 
