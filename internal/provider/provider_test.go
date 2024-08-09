@@ -4,6 +4,9 @@
 package provider
 
 import (
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -12,6 +15,7 @@ import (
 )
 
 var testAccProvider *schema.Provider
+var testAccFrameworkProvider provider.Provider
 
 func init() {
 	testAccProvider = Provider()
@@ -27,6 +31,13 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 	"vcf": func() (*schema.Provider, error) {
 		return testAccProvider, nil
 	},
+}
+
+func protoV6ProviderFactories() map[string]func() (tfprotov6.ProviderServer, error) {
+	testAccFrameworkProvider = New()
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"vcf": providerserver.NewProtocol6WithError(testAccFrameworkProvider),
+	}
 }
 
 // testAccPreCheck validates all required environment variables for running acceptance
