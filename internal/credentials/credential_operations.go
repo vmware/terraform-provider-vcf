@@ -6,16 +6,17 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"strconv"
+	"strings"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/credentials"
 	"github.com/vmware/vcf-sdk-go/models"
-	"io"
-	"log"
-	"strconv"
-	"strings"
 )
 
 func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) ([]*models.Credential, error) {
@@ -68,6 +69,10 @@ func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *
 }
 
 func FlattenCredentials(creds []*models.Credential) []map[string]interface{} {
+	if creds == nil {
+		return []map[string]interface{}{}
+	}
+
 	credsArray := make([]map[string]interface{}, 0)
 
 	for _, entry := range creds {
