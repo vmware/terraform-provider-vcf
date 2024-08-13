@@ -23,7 +23,7 @@ Datasource used to extract credentials for different resources that are part of 
 - `page_size` (Number) the size of the credentials list . Default is 0 so the user will get all records in one page
 - `resource_ip` (String) The IP Address of the resource
 - `resource_name` (String) The name of the resource
-- `resource_type` (String) The type of the resource. One among ESXI, VCENTER, PSC, NSX_MANAGER, NSX_CONTROLLER, NSX_EDGE, NSXT_MANAGER, VRLI, VROPS, VRA, WSA, VRSLCM, VXRAIL_MANAGER, NSX_ALB, BACKUP
+- `resource_type` (String) The type of the resource. One among ESXI, VCENTER, PSC, NSX_MANAGER, NSX_CONTROLLER, NSXT_EDGE, NSXT_MANAGER, VRLI, VROPS, VRA, WSA, VRSLCM, VXRAIL_MANAGER, NSX_ALB, BACKUP
 
 ### Read-Only
 
