@@ -32,7 +32,7 @@ func DataSourceCredentials() *schema.Resource {
 			"resource_type": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "The type of the resource. One among ESXI, VCENTER, PSC, NSX_MANAGER, NSX_CONTROLLER, NSX_EDGE, NSXT_MANAGER, VRLI, VROPS, VRA, WSA, VRSLCM, VXRAIL_MANAGER, NSX_ALB, BACKUP",
+				Description:  "The type of the resource. One among ESXI, VCENTER, PSC, NSX_MANAGER, NSX_CONTROLLER, NSXT_EDGE, NSXT_MANAGER, VRLI, VROPS, VRA, WSA, VRSLCM, VXRAIL_MANAGER, NSX_ALB, BACKUP",
 				ValidateFunc: validation.StringInSlice(credentials.AllResourceTypes(), true),
 			},
 			"domain_name": {

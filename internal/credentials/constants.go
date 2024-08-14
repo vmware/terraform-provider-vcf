@@ -12,7 +12,7 @@ const (
 	ResourceTypePsc           = "PSC"
 	ResourceTypeNsxManager    = "NSX_MANAGER"
 	ResourceTypeNsxController = "NSX_CONTROLLER"
-	ResourceTypeNsxEdge       = "NSX_EDGE"
+	ResourceTypeNsxEdge       = "NSXT_EDGE"
 	ResourceTypeNsxtManager   = "NSXT_MANAGER"
 	ResourceTypeVrli          = "VRLI"
 	ResourceTypeVra           = "VRA"
