@@ -21,6 +21,7 @@ const (
 	ResourceTypeVxrailManager = "VXRAIL_MANAGER"
 	ResourceTypeNsxAlb        = "NSX_ALB"
 	ResourceTypeBackup        = "BACKUP"
+	ResourceTypeVrops         = "VROPS"
 )
 
 const (
@@ -61,5 +62,6 @@ func AllResourceTypes() []string {
 		ResourceTypeWsa,
 		ResourceTypeVrslcm,
 		ResourceTypeVxrailManager,
+		ResourceTypeVrops,
 	}
 }
