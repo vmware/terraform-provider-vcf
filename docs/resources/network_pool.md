@@ -35,11 +35,12 @@ The following data is prerequisite for creating a new Network Pool
 
 ### Optional
 
-- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `network` (Block List) Represents a network in a network pool (see [below for nested schema](#nestedblock--network))
+- `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Service generated identifier for the network pool.
 
 <a id="nestedblock--network"></a>
 ### Nested Schema for `network`
@@ -67,9 +68,9 @@ Optional:
 
 
 
-<a id="nestedblock--timeouts"></a>
+<a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `create` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
