@@ -5,10 +5,12 @@ package provider
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"os"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 func TestAccDataSourceVcfCluster(t *testing.T) {

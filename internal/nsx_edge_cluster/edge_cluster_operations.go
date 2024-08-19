@@ -6,12 +6,14 @@ package nsx_edge_cluster
 import (
 	"errors"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/models"
+
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
 
 const (

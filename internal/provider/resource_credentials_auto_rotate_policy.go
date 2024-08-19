@@ -3,13 +3,15 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/vcf-sdk-go/models"
+
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/credentials"
-	"github.com/vmware/vcf-sdk-go/models"
-	"regexp"
 )
 
 func ResourceCredentialsAutoRotatePolicy() *schema.Resource {

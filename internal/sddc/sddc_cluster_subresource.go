@@ -6,9 +6,10 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
-	validation2 "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 var sharesLevelValues = []string{"custom", "high", "low", "normal"}
@@ -79,7 +80,7 @@ func getResourcePoolSchema() *schema.Schema {
 					Description:  "CPU limit, default -1 (unlimited)",
 					Optional:     true,
 					Default:      -1,
-					ValidateFunc: validation2.ValidateParsingFloatToInt,
+					ValidateFunc: validation_utils.ValidateParsingFloatToInt,
 				},
 				"cpu_reservation_expandable": {
 					Type:        schema.TypeBool,
@@ -91,7 +92,7 @@ func getResourcePoolSchema() *schema.Schema {
 					Type:         schema.TypeFloat,
 					Description:  "CPU reservation in Mhz",
 					Optional:     true,
-					ValidateFunc: validation2.ValidateParsingFloatToInt,
+					ValidateFunc: validation_utils.ValidateParsingFloatToInt,
 				},
 				"cpu_reservation_percentage": {
 					Type:         schema.TypeInt,
@@ -118,7 +119,7 @@ func getResourcePoolSchema() *schema.Schema {
 					Description:  "Memory limit, default -1 (unlimited)",
 					Optional:     true,
 					Default:      -1,
-					ValidateFunc: validation2.ValidateParsingFloatToInt,
+					ValidateFunc: validation_utils.ValidateParsingFloatToInt,
 				},
 				"memory_reservation_expandable": {
 					Type:        schema.TypeBool,
@@ -130,7 +131,7 @@ func getResourcePoolSchema() *schema.Schema {
 					Type:         schema.TypeFloat,
 					Description:  "Memory reservation in MB",
 					Optional:     true,
-					ValidateFunc: validation2.ValidateParsingFloatToInt,
+					ValidateFunc: validation_utils.ValidateParsingFloatToInt,
 				},
 				"memory_reservation_percentage": {
 					Type:         schema.TypeInt,
@@ -167,7 +168,7 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *models.SDDCClusterSpec
 	hostFailuresToTolerate := utils.ToInt32Pointer(data["host_failures_to_tolerate"])
 	clusterImageEnabled := data["cluster_image_enabled"].(bool)
 	var vmFolder map[string]string
-	if !validation2.IsEmpty(data["vm_folder"]) {
+	if !validation_utils.IsEmpty(data["vm_folder"]) {
 		vmFolder = data["vm_folder"].(map[string]string)
 	}
 

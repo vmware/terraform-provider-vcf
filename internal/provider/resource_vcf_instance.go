@@ -12,13 +12,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	sddc_api "github.com/vmware/vcf-sdk-go/client/sddc"
+	"github.com/vmware/vcf-sdk-go/models"
+
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/terraform-provider-vcf/internal/sddc"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	sddc_api "github.com/vmware/vcf-sdk-go/client/sddc"
-	"github.com/vmware/vcf-sdk-go/models"
 )
 
 var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3", "8.0.0"}

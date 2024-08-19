@@ -6,15 +6,17 @@ package network
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/nsxt_clusters"
 	"github.com/vmware/vcf-sdk-go/models"
-	"sort"
-	"strings"
+
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 // NsxSchema this helper function extracts the NSX schema, which

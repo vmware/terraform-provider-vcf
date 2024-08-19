@@ -5,11 +5,13 @@ package provider
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"log"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 )
 
 func TestAccResourceVcfCeip(t *testing.T) {

@@ -6,13 +6,14 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"net/netip"
+	"strings"
+	"unicode"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/models"
-	"net/netip"
-	"strings"
-	"unicode"
 )
 
 func ValidatePassword(v interface{}, k string) (warnings []string, errors []error) {

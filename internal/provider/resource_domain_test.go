@@ -6,15 +6,17 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	"github.com/vmware/vcf-sdk-go/client/domains"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/vmware/vcf-sdk-go/client/domains"
+
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 func TestAccResourceVcfDomainCreate(t *testing.T) {

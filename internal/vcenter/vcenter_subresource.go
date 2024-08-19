@@ -5,11 +5,13 @@ package vcenter
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
-	"strings"
+
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 // VCSubresourceSchema this helper function extracts the vcenter schema, which

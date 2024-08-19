@@ -5,10 +5,12 @@ package network
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/models"
+
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 // VdsSchema this helper function extracts the VDS Schema, so that

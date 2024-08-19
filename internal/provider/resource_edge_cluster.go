@@ -5,19 +5,21 @@ package provider
 
 import (
 	"context"
+	"math"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	vcfClient "github.com/vmware/vcf-sdk-go/client"
+	"github.com/vmware/vcf-sdk-go/client/nsxt_edge_clusters"
+	"github.com/vmware/vcf-sdk-go/models"
+
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/nsx_edge_cluster"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	vcfClient "github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/nsxt_edge_clusters"
-	"github.com/vmware/vcf-sdk-go/models"
-	"math"
-	"time"
 )
 
 const (

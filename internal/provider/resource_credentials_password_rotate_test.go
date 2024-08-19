@@ -2,9 +2,10 @@ package provider
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"testing"
 )
 
 func TestAccCredentialsResourcePasswordRotate(t *testing.T) {

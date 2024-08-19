@@ -5,10 +5,11 @@ package datastores
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/vcf-sdk-go/models"
-	"strings"
 )
 
 // VvolDatastoreSchema this helper function extracts the VVOL Datastore schema, so that

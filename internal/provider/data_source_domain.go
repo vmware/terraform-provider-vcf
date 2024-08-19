@@ -5,14 +5,16 @@ package provider
 
 import (
 	"context"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/domain"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
-	"time"
 )
 
 func DataSourceDomain() *schema.Resource {

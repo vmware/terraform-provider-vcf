@@ -6,8 +6,9 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/models"
+
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
 
 var teamingPolicies = []string{"loadbalance_loadbased", "loadbalance_ip", "loadbalance_srcmac", "loadbalance_srcid", "failover_explicit"}

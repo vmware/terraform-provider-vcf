@@ -6,7 +6,8 @@ package vsan
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
+
+	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 func WitnessHostSubresource() *schema.Resource {
@@ -22,7 +23,7 @@ func WitnessHostSubresource() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "CIDR address for the witness host on the vSAN network",
-				ValidateFunc: validationUtils.ValidateCidrIPv4AddressSchema,
+				ValidateFunc: validation_utils.ValidateCidrIPv4AddressSchema,
 			},
 			"fqdn": {
 				Type:         schema.TypeString,
