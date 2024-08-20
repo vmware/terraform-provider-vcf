@@ -1,6 +1,6 @@
 module github.com/vmware/terraform-provider-vcf
 
-go 1.21
+go 1.22.6
 
 require (
 	github.com/go-openapi/runtime v0.28.0
