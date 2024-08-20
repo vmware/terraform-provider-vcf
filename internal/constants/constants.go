@@ -119,6 +119,10 @@ const (
 	// Typically, the id of management domain is used as it is already created during bringup.
 	VcfTestDomainDataSourceId = "VCF_DOMAIN_DATA_SOURCE_ID"
 
+	// VcfTestDomainDataSourceName name of a workload domain used in workload domain data source acceptance test.
+	// Typically, the name of management domain is used as it is already created during bringup.
+	VcfTestDomainDataSourceName = "VCF_DOMAIN_DATA_SOURCE_NAME"
+
 	// VcfTestClusterDataSourceId id of cluster used in cluster data source acceptance test.
 	// Typically, the id of the default cluster in the management domain is used as it is
 	// already created during bringup.

@@ -12,6 +12,10 @@ provider "vcf" {
   sddc_manager_host     = var.sddc_manager_host
 }
 
-data "vcf_domain" "domain1" {
-  domain_id = var.vcf_domain_id
+data "vcf_domain" "sfo-m01" {
+  domain_id = var.domain_id
+}
+
+data "vcf_domain" "sfo-w01" {
+  name = var.domain_name
 }
