@@ -6,14 +6,16 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/vcf-sdk-go/client/personalities"
 	"github.com/vmware/vcf-sdk-go/client/vcenters"
 	"github.com/vmware/vcf-sdk-go/models"
-	"time"
+
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 )
 
 const (

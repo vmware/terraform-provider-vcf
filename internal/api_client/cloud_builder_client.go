@@ -5,10 +5,11 @@ package api_client
 
 import (
 	"crypto/tls"
+	"net/http"
+
 	openapiclient "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 	vcfclient "github.com/vmware/vcf-sdk-go/client"
-	"net/http"
 )
 
 // CloudBuilderClient is an API client that can execute the APIs of the CloudBuilder appliance.

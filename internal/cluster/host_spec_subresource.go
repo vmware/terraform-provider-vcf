@@ -5,11 +5,13 @@ package cluster
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/vcf-sdk-go/models"
+
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	"github.com/vmware/vcf-sdk-go/models"
 )
 
 // HostSpecSchema this helper function extracts the Host

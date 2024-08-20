@@ -13,10 +13,11 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/credentials"
 	"github.com/vmware/vcf-sdk-go/models"
+
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 )
 
 func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) ([]*models.Credential, error) {

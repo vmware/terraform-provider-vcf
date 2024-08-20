@@ -4,14 +4,16 @@
 package provider
 
 import (
+	"os"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	"os"
-	"testing"
 )
 
 var testAccProvider *schema.Provider

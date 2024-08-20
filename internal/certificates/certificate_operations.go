@@ -5,14 +5,16 @@ package certificates
 
 import (
 	"context"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	vcfclient "github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/certificates"
 	"github.com/vmware/vcf-sdk-go/models"
-	"time"
+
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 func ValidateResourceCertificates(ctx context.Context, client *vcfclient.VcfClient,

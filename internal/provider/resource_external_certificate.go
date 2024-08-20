@@ -6,17 +6,19 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
+	"github.com/vmware/vcf-sdk-go/models"
+
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/certificates"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/models"
-	"strings"
-	"time"
 )
 
 func ResourceExternalCertificate() *schema.Resource {

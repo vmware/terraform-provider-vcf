@@ -5,8 +5,9 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/models"
+
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
 
 func GetVxManagerSchema() *schema.Schema {

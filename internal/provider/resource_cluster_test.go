@@ -6,16 +6,18 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"log"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/vmware/vcf-sdk-go/client/clusters"
+
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 func TestAccResourceVcfClusterCreate(t *testing.T) {
@@ -200,7 +202,7 @@ func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey, clusterName st
 			id = "vmnic1"
 			vds_name = "%s-vds01"
 		}
-	}	
+	}
 	`, hostResourceId, esxLicenseKey, clusterName, clusterName)
 }
 

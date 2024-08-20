@@ -4,10 +4,12 @@
 package nsx_edge_cluster
 
 import (
+	"math"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
-	"math"
 )
 
 func EdgeNodeSchema() *schema.Resource {

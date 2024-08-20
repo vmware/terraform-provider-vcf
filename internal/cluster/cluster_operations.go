@@ -6,19 +6,21 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"sort"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	"github.com/vmware/terraform-provider-vcf/internal/datastores"
-	"github.com/vmware/terraform-provider-vcf/internal/network"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
-	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/clusters"
 	"github.com/vmware/vcf-sdk-go/client/domains"
 	"github.com/vmware/vcf-sdk-go/client/hosts"
 	"github.com/vmware/vcf-sdk-go/models"
-	"sort"
+
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/terraform-provider-vcf/internal/datastores"
+	"github.com/vmware/terraform-provider-vcf/internal/network"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*models.ClusterUpdateSpec, error) {

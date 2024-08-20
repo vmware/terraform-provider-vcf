@@ -8,12 +8,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	"github.com/vmware/vcf-sdk-go/client/tasks"
-	"github.com/vmware/vcf-sdk-go/client/tokens"
-	"github.com/vmware/vcf-sdk-go/models"
-	"golang.org/x/exp/slices"
 	"log"
 	"net/http"
 	"strings"
@@ -21,7 +15,14 @@ import (
 
 	openapiclient "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	vcfclient "github.com/vmware/vcf-sdk-go/client"
+	"github.com/vmware/vcf-sdk-go/client/tasks"
+	"github.com/vmware/vcf-sdk-go/client/tokens"
+	"github.com/vmware/vcf-sdk-go/models"
+	"golang.org/x/exp/slices"
+
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 // SddcManagerClient model that represents properties to authenticate against VCF instance.
