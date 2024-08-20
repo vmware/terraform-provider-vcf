@@ -5,16 +5,16 @@ package provider
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client/users"
 	"github.com/vmware/vcf-sdk-go/models"
-	"log"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -100,7 +100,6 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 
 		roleResult, err := client.Users.GetRoles(nil)
 		if err != nil {
-			log.Println("error = ", err)
 			return diag.FromErr(err)
 		}
 
@@ -114,15 +113,13 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		if !roleFound {
-			log.Println("Did not find role ", roleNameVal)
-			return diag.Errorf(fmt.Sprintf("Did not find role %s", roleNameVal))
+			return diag.Errorf("role not found: %s", roleNameVal)
 		}
 	}
 	params.Users = []*models.User{&user}
 
 	_, created, err := client.Users.AddUsers(params)
 	if err != nil {
-		log.Println("error = ", err)
 		return diag.FromErr(err)
 	}
 
@@ -139,7 +136,6 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	ok, err := client.Users.GetUsers(
 		users.NewGetUsersParamsWithContext(ctx).WithTimeout(constants.DefaultVcfApiCallTimeout))
 	if err != nil {
-		log.Println("error = ", err)
 		return diag.FromErr(err)
 	}
 
@@ -165,7 +161,6 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	log.Println(params)
 	_, err := client.Users.RemoveUser(params)
 	if err != nil {
-		log.Println("error = ", err)
 		return diag.FromErr(err)
 	}
 

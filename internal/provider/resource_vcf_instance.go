@@ -6,6 +6,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -17,7 +19,6 @@ import (
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	sddc_api "github.com/vmware/vcf-sdk-go/client/sddc"
 	"github.com/vmware/vcf-sdk-go/models"
-	"time"
 )
 
 var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3", "8.0.0"}
@@ -317,10 +318,8 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 		}
 
 		if task.Status == "COMPLETED_WITH_FAILURE" {
-			errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q is in state %s", bringUpID, task.Name, task.Status)
-
-			tflog.Error(ctx, errorMsg)
-			return diag.FromErr(fmt.Errorf(errorMsg))
+			err := fmt.Errorf("Task with ID = %s , Name: %q is in state %s", bringUpID, task.Name, task.Status)
+			return diag.FromErr(err)
 		}
 
 		return nil
