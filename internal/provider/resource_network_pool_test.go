@@ -55,10 +55,10 @@ func testAccVcfNetworkPoolConfig(networkPoolName string) string {
 			type      = "vMotion"
 			vlan_id   = 100
 			ip_pools {
-			  start = "192.168.5.5"
-			  end   = "192.168.5.50"
+				start = "192.168.5.5"
+				end   = "192.168.5.50"
 			}
-		  }
+		}
 	}`, networkPoolName)
 }
 
@@ -77,6 +77,5 @@ func testCheckVcfNetworkPoolDestroy(_ *terraform.State) error {
 		}
 	}
 
-	// Didn't find the networkPool
 	return nil
 }
