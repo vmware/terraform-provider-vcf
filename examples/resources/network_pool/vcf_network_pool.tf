@@ -12,8 +12,8 @@ provider "vcf" {
   sddc_manager_host     = var.sddc_manager_host
 }
 
-resource "vcf_network_pool" "eng_pool" {
-  name = "engineering-pool"
+resource "vcf_network_pool" "example" {
+  name = var.network_pool_name
   network {
     gateway = "192.168.8.1"
     mask    = "255.255.255.0"
