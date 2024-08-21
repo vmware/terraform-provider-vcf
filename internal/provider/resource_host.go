@@ -88,6 +88,7 @@ func ResourceHost() *schema.Resource {
 func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
+
 	params := hosts.NewCommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
 	commissionSpec := models.HostCommissionSpec{}
 
@@ -158,8 +159,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	hostId := d.Id()
 
@@ -209,8 +209,8 @@ func resourceHostUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
 
 	params := hosts.NewDecommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
 	decommissionSpec := models.HostDecommissionSpec{}

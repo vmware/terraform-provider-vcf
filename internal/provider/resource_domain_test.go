@@ -496,8 +496,7 @@ func testGenerateCommissionHostConfigs(numberOfCommissionedHosts int, commission
 }
 
 func testCheckVcfDomainDestroy(state *terraform.State) error {
-	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "vcf_domain" {

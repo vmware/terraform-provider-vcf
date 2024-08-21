@@ -55,8 +55,7 @@ func ResourceCluster() *schema.Resource {
 		DeleteContext: resourceClusterDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, data *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-				vcfClient := meta.(*api_client.SddcManagerClient)
-				apiClient := vcfClient.ApiClient
+				apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 				clusterId := data.Id()
 				return cluster.ImportCluster(ctx, data, apiClient, clusterId)
 			},
@@ -262,8 +261,7 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 }
 
 func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
 		WithTimeout(constants.DefaultVcfApiCallTimeout)
