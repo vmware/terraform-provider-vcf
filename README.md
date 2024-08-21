@@ -78,7 +78,8 @@ If you would like to submit a pull request, please read the [contribution guidel
 
 ## License
 
-Copyright 2023-2024 Broadcom. All Rights Reserved.
+© Broadcom. All Rights Reserved.
+The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
 
 The Terraform Provider for VMware Cloud Foundation is available under the [Mozilla Public License, version 2.0][provider-license] license.
 
