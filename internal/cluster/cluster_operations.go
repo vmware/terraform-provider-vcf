@@ -375,13 +375,12 @@ func FlattenCluster(ctx context.Context, clusterObj *vcf.Cluster, apiClient *vcf
 		result["vds"] = flattenedVdsSpecs
 	}
 
-	if clusterObj.Hosts != nil {
-		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
-		if err != nil {
-			return nil, err
-		}
-		result["host"] = flattenedHostSpecs
+	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
+	if err != nil {
+		return nil, err
 	}
+
+	result["host"] = flattenedHostSpecs
 
 	return &result, nil
 }
@@ -404,18 +403,11 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
 	_ = data.Set("is_default", clusterObj.IsDefault)
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
-	if clusterObj.VdsSpecs != nil {
-		flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(*clusterObj.VdsSpecs)
-		_ = data.Set("vds", flattenedVdsSpecs)
-	}
+	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
+	_ = data.Set("vds", flattenedVdsSpecs)
 
-	if clusterObj.Hosts != nil {
-		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
-		if err != nil {
-			return nil, err
-		}
-		_ = data.Set("host", flattenedHostSpecs)
-	}
+	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
+	_ = data.Set("host", flattenedHostSpecs)
 
 	// get all domains and find our cluster to set the "domain_id" attribute, because
 	// cluster API doesn't provide parent domain ID.

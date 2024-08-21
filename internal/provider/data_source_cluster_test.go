@@ -29,6 +29,7 @@ func TestAccDataSourceVcfCluster(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "primary_datastore_type"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "is_default"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "is_stretched"),
+					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "vds"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "host.0.id"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "host.0.host_name"),
 					resource.TestCheckResourceAttrSet("data.vcf_cluster.cluster1", "host.0.ip_address"),
