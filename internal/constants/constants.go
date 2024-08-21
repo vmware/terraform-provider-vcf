@@ -1,4 +1,5 @@
-// Copyright 2023 Broadcom. All Rights Reserved.
+// © Broadcom. All Rights Reserved.
+// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package constants
@@ -8,22 +9,22 @@ import "time"
 const (
 	DefaultVcfApiCallTimeout = 2 * time.Minute
 
-	// VcfTestUrl URL of a VCF instance, used for Acceptance tests.
+	// VcfTestUrl URL of a VCF instance, used for acceptance tests.
 	VcfTestUrl = "VCF_TEST_URL"
-	// VcfTestUsername username of SSO user, used for Acceptance tests.
+	// VcfTestUsername username of SSO user, used for acceptance tests.
 	VcfTestUsername = "VCF_TEST_USERNAME"
-	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for Acceptance tests.
+	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for acceptance tests.
 	VcfTestPassword = "VCF_TEST_PASSWORD"
 
-	// CloudBuilderTestUrl URL of a CloudBuilder instance, used for Acceptance tests.
+	// CloudBuilderTestUrl URL of a CloudBuilder instance, used for acceptance tests.
 	CloudBuilderTestUrl = "CLOUDBUILDER_TEST_URL"
-	// CloudBuilderTestUsername username of CloudBuilder user, used for Acceptance tests.
+	// CloudBuilderTestUsername username of CloudBuilder user, used for acceptance tests.
 	CloudBuilderTestUsername = "CLOUDBUILDER_TEST_USERNAME"
-	// CloudBuilderTestPassword an CloudBuilder user, used for Acceptance tests.
+	// CloudBuilderTestPassword an CloudBuilder user, used for acceptance tests.
 	CloudBuilderTestPassword = "CLOUDBUILDER_TEST_PASSWORD"
 
 	// VcfTestAllowUnverifiedTls allows VCF environments with self-signed certificates
-	// to be used in Acceptance tests.
+	// to be used in acceptance tests.
 	VcfTestAllowUnverifiedTls = "VCF_TEST_ALLOW_UNVERIFIED_TLS"
 
 	// VcfTestHost1Fqdn the FQDN of the first ESXi host, that has not been commissioned
@@ -126,7 +127,7 @@ const (
 	// VcfTestDomainName display name of the workload domain used in the acceptance tests.
 	VcfTestDomainName = "VCF_DOMAIN_NAME"
 
-	// VcfTestNetworkPoolName used in vcf_network_pool Acceptance tests.
+	// VcfTestNetworkPoolName used in vcf_network_pool acceptance tests.
 	VcfTestNetworkPoolName = "terraform-test-pool"
 
 	// VcfTestMsftCaServerUrl used in vcf_certificate_authority tests.
