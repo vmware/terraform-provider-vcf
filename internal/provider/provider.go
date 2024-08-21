@@ -37,7 +37,7 @@ func Provider() *schema.Provider {
 			"sddc_manager_host": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				Description:   "The fully qualified domain name or IP address of the SDDC Manager instance",
+				Description:   "The fully qualified domain name or IP address of the SDDC Manager instance.",
 				ConflictsWith: []string{"cloud_builder_username", "cloud_builder_password", "cloud_builder_host"},
 				RequiredWith:  []string{"sddc_manager_username", "sddc_manager_password"},
 				DefaultFunc:   schema.EnvDefaultFunc(constants.VcfTestUrl, nil),
@@ -110,7 +110,7 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		password, isSetPassword := data.GetOk("sddc_manager_password")
 		hostName, isSetHost := data.GetOk("sddc_manager_host")
 		if !isVcfUsernameSet || !isSetPassword || !isSetHost {
-			return nil, diag.Errorf("SDDC Manager username, password, and host must be provided")
+			return nil, diag.Errorf("SDDC Manager username, password, and host must be provided.")
 		}
 		var sddcManagerClient = api_client.NewSddcManagerClient(sddcManagerUsername.(string), password.(string),
 			hostName.(string), allowUnverifiedTLS.(bool))
@@ -124,7 +124,7 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		password, isSetPassword := data.GetOk("cloud_builder_password")
 		hostName, isSetHost := data.GetOk("cloud_builder_host")
 		if !isCbUsernameSet || !isSetPassword || !isSetHost {
-			return nil, diag.Errorf("Cloud Builder username, password, and host must be provided")
+			return nil, diag.Errorf("Cloud Builder username, password, and host must be provided.")
 		}
 		var cloudBuilderClient = api_client.NewCloudBuilderClient(cbUsername.(string), password.(string),
 			hostName.(string), allowUnverifiedTLS.(bool))

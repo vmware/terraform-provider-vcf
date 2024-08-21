@@ -52,7 +52,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 		Attributes: map[string]schema.Attribute{
 			"sddc_manager_username": schema.StringAttribute{
 				Optional:    true,
-				Description: "Username to authenticate to SDDC Manager",
+				Description: "The username to authenticate to the SDDC Manager instance.",
 				Validators: []validator.String{
 					getSddcManagerConflictsValidator(),
 					stringvalidator.AlsoRequires(
@@ -64,7 +64,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 			},
 			"sddc_manager_password": schema.StringAttribute{
 				Optional:    true,
-				Description: "Password to authenticate to SDDC Manager",
+				Description: "The password to authenticate to the SDDC Manager instance.",
 				Validators: []validator.String{
 					getSddcManagerConflictsValidator(),
 					stringvalidator.AlsoRequires(
@@ -76,7 +76,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 			},
 			"sddc_manager_host": schema.StringAttribute{
 				Optional:    true,
-				Description: "Fully qualified domain name or IP address of the SDDC Manager",
+				Description: "The fully qualified domain name or IP address of the SDDC Manager instance.",
 				Validators: []validator.String{
 					getSddcManagerConflictsValidator(),
 					stringvalidator.AlsoRequires(
@@ -88,7 +88,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 			},
 			"cloud_builder_username": schema.StringAttribute{
 				Optional:    true,
-				Description: "Username to authenticate to CloudBuilder",
+				Description: "The username to authenticate to the Cloud Builder instance.",
 				Validators: []validator.String{
 					getCloudBuilderConflictsValidator(),
 					stringvalidator.AlsoRequires(
@@ -100,7 +100,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 			},
 			"cloud_builder_password": schema.StringAttribute{
 				Optional:    true,
-				Description: "Password to authenticate to CloudBuilder",
+				Description: "The password to authenticate to the Cloud Builder instance.",
 				Validators: []validator.String{
 					getCloudBuilderConflictsValidator(),
 					stringvalidator.AlsoRequires(
@@ -112,7 +112,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 			},
 			"cloud_builder_host": schema.StringAttribute{
 				Optional:    true,
-				Description: "Fully qualified domain name or IP address of the CloudBuilder",
+				Description: "The fully qualified domain name or IP address of the Cloud Builder instance.",
 				Validators: []validator.String{
 					getCloudBuilderConflictsValidator(),
 					stringvalidator.AlsoRequires(
@@ -124,7 +124,7 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 			},
 			"allow_unverified_tls": schema.BoolAttribute{
 				Optional:    true,
-				Description: "If set, VMware VCF client will permit unverifiable TLS certificates.",
+				Description: "Allow unverified TLS certificates.",
 			},
 		},
 	}
