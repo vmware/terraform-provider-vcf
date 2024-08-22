@@ -16,8 +16,8 @@ import (
 
 func TestAccClusterPersonality_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPersonalityPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:                 func() { testAccPersonalityPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: getClusterPersonalityConfig(),

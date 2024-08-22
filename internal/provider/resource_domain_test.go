@@ -22,9 +22,9 @@ import (
 
 func TestAccResourceVcfDomainCreate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfDomainDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				// Initial config: 1 network pool, 3 commissioned hosts, Domain with cluster with those 3 hosts
@@ -76,9 +76,9 @@ func TestAccResourceVcfDomainCreate(t *testing.T) {
 
 func TestAccResourceVcfDomainFull(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfDomainDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				// Initial config: 1 network pool, 3 commissioned hosts, Domain with cluster with those 3 hosts

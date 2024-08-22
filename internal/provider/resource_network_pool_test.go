@@ -18,7 +18,7 @@ import (
 func TestAccResourceVcfNetworkPool(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: protoV6ProviderFactories(),
+		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfNetworkPoolDestroy,
 		Steps: []resource.TestStep{
 			{

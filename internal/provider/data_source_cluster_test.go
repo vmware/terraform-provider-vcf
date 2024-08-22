@@ -16,8 +16,8 @@ import (
 
 func TestAccDataSourceVcfCluster(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterDataSourceConfig(

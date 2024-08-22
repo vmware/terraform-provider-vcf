@@ -19,9 +19,9 @@ import (
 
 func TestAccResourceVcfHost(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfHostDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfHostDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfHostConfig(
@@ -45,9 +45,9 @@ func TestAccResourceVcfHost(t *testing.T) {
 // Verifies host commissioning when the network pool is specified by its name.
 func TestAccResourceVcfHost_networkPoolName(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfHostDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfHostDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfHostConfigNetworkPoolName(

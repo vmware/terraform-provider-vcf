@@ -26,7 +26,7 @@ func TestAccResourceVcfResourceExternalCertificate(t *testing.T) {
 			testAccPreCheck(t)
 			testAccVcfResourceExternalCertificatePreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfResourceExternalCertificate(

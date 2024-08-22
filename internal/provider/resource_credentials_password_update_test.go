@@ -17,8 +17,8 @@ func TestAccCredentialsResourcePasswordUpdate(t *testing.T) {
 	newPassword := fmt.Sprintf("%s$1A", acctest.RandString(7))
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
-		ProviderFactories: providerFactories,
+		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{
 			Config: testAccResourceCredentialsPasswordUpdateConfig(newPassword),
 			Check:  resource.TestCheckResourceAttr("data.vcf_credentials.esx_creds", "credentials.0.password", newPassword),
