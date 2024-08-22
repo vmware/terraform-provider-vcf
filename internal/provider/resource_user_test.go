@@ -22,9 +22,9 @@ const (
 
 func TestAccResourceVcfUser(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
+		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
-		CheckDestroy:      testCheckVcfUserDestroy,
+		CheckDestroy:             testCheckVcfUserDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfUserConfig(),

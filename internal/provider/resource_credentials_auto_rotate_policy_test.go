@@ -19,7 +19,7 @@ func TestAccResourceAutorotatePolicy_resourceId(t *testing.T) {
 	rotateDays := acctest.RandIntRange(credentials.AutoRotateDaysMin, credentials.AutorotateDaysMax)
 	timeAfter := time.Now().AddDate(0, 0, rotateDays)
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
+		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{
 			Config: testAccAutorotatePolicyResourceIdConfig(rotateDays),
