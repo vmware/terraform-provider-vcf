@@ -7,16 +7,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/client"
 	"github.com/vmware/vcf-sdk-go/client/tasks"
 	"github.com/vmware/vcf-sdk-go/models"
-	"time"
+
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 const (
-	defaultPollingInterval = time.Second * 20
+	// Default polling interval for task tracking.
+	defaultPollingInterval = 20 * time.Second
+
+	// Task status constants.
+	statusInProgress          = "In Progress"
+	statusInProgressUppercase = "IN_PROGRESS"
+	statusPending             = "Pending"
+	statusFailed              = "Failed"
+	statusCancelled           = "Cancelled"
+	statusNotApplicable       = "NOT_APPLICABLE"
 )
 
 type TaskTracker struct {
@@ -24,8 +35,7 @@ type TaskTracker struct {
 	client          *client.VcfClient
 	taskId          string
 	pollingInterval time.Duration
-
-	completedTasks map[string]bool
+	completedTasks  map[string]bool
 }
 
 func NewTaskTracker(ctx context.Context, client *client.VcfClient, taskId string) *TaskTracker {
@@ -46,6 +56,7 @@ func NewTaskTrackerWithCustomPollingInterval(ctx context.Context, client *client
 
 func (t *TaskTracker) WaitForTask() error {
 	ticker := time.NewTicker(t.pollingInterval)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -58,21 +69,20 @@ func (t *TaskTracker) WaitForTask() error {
 
 			t.logTask(task)
 
-			if task.Status == "In Progress" || task.Status == "Pending" || task.Status == "IN_PROGRESS" {
-				return nil
-			}
-
-			if task.Status == "Failed" || task.Status == "Cancelled" {
+			switch task.Status {
+			case statusInProgress, statusInProgressUppercase, statusPending:
+				continue
+			case statusFailed, statusCancelled:
 				errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s",
 					task.ID, task.Name, task.Type, task.Status)
 				tflog.Error(t.ctx, errorMsg)
 
 				return errors.New(errorMsg)
+			default:
+				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s is in state %s, completed at %s",
+					task.ID, task.Status, task.CompletionTimestamp))
+				return nil
 			}
-
-			tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s is in state %s, completed at %s",
-				task.ID, task.Status, task.CompletionTimestamp))
-			return nil
 		}
 	}
 }
@@ -105,7 +115,7 @@ func (t *TaskTracker) logTask(task *models.Task) {
 }
 
 func (t *TaskTracker) logSubTask(task *models.SubTask) {
-	if task.Status != "IN_PROGRESS" && task.Status != "PENDING" && task.Status != "NOT_APPLICABLE" {
+	if task.Status != statusInProgressUppercase && task.Status != statusPending && task.Status != statusNotApplicable {
 		if t.shouldLog(task.Description) {
 			t.log(task.Description, task.Status)
 		}
