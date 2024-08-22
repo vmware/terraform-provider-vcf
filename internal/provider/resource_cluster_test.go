@@ -23,9 +23,9 @@ import (
 
 func TestAccResourceVcfClusterCreate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfClusterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfClusterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterResourceConfig(
@@ -57,9 +57,9 @@ func TestAccResourceVcfClusterCreate(t *testing.T) {
 
 func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfClusterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfClusterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterResourcеStretchTestConfig(
@@ -94,9 +94,9 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 
 func TestAccResourceVcfClusterFull(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfClusterDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfClusterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterResourceConfig(

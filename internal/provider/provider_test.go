@@ -5,12 +5,16 @@
 package provider
 
 import (
+	"context"
+	"log"
 	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -30,16 +34,32 @@ func TestProvider(t *testing.T) {
 	}
 }
 
-var providerFactories = map[string]func() (*schema.Provider, error){
-	"vcf": func() (*schema.Provider, error) {
-		return testAccProvider, nil
-	},
-}
+func muxedFactories() map[string]func() (tfprotov6.ProviderServer, error) {
+	ctx := context.Background()
+	upgradedSdkServer, err := tf5to6server.UpgradeServer(
+		ctx,
+		testAccProvider.GRPCProvider,
+	)
 
-func protoV6ProviderFactories() map[string]func() (tfprotov6.ProviderServer, error) {
-	testAccFrameworkProvider = New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	providers := []func() tfprotov6.ProviderServer{
+		providerserver.NewProtocol6(New()),
+		func() tfprotov6.ProviderServer {
+			return upgradedSdkServer
+		},
+	}
+
+	muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return map[string]func() (tfprotov6.ProviderServer, error){
-		"vcf": providerserver.NewProtocol6WithError(testAccFrameworkProvider),
+		"vcf": func() (tfprotov6.ProviderServer, error) { return muxServer, err },
 	}
 }
 

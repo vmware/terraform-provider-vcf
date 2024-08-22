@@ -20,7 +20,7 @@ func TestAccResourceVcfResourceCertificate_vCenter(t *testing.T) {
 			testAccPreCheck(t)
 			testAccVcfCertificateAuthorityPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfResourceCertificate(
@@ -60,7 +60,7 @@ func TestAccResourceVcfResourceCertificate_sddcManager(t *testing.T) {
 			testAccPreCheck(t)
 			testAccVcfCertificateAuthorityPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfResourceCertificate(
@@ -100,7 +100,7 @@ func TestAccResourceVcfResourceCertificate_nsx(t *testing.T) {
 			testAccPreCheck(t)
 			testAccVcfCertificateAuthorityPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfResourceCertificate(

@@ -15,7 +15,7 @@ import (
 func TestAccCredentialsResourcePasswordRotate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{
 			Config: testAccResourceCredentialsPasswordRotateConfig(),
 			Check:  testAccResourceCredentialsPasswordRotateCheck,

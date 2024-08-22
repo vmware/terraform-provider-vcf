@@ -104,7 +104,7 @@ func dataSourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta
 
 	d.SetId(networkPool.ID)
 	_ = d.Set("name", networkPool.Name)
-	_ = d.Set("networks", flattenNetworks(networkPool.Networks))
+	_ = d.Set("network", flattenNetworks(networkPool.Networks))
 
 	return nil
 }

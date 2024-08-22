@@ -19,7 +19,7 @@ func TestAccResourceVcfCsr_vCenter(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId), "VCENTER", os.Getenv(constants.VcfTestVcenterFqdn)),
@@ -37,7 +37,7 @@ func TestAccResourceVcfCsr_sddcManager(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId), "SDDC_MANAGER", os.Getenv(constants.VcfTestSddcManagerFqdn)),
@@ -55,7 +55,7 @@ func TestAccResourceVcfCsr_nsxManager(t *testing.T) {
 		PreCheck: func() {
 			testAccPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfCsrConfig(os.Getenv(constants.VcfTestDomainDataSourceId), "NSXT_MANAGER", os.Getenv(constants.VcfTestNsxManagerFqdn)),

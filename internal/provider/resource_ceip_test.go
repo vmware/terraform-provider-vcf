@@ -17,9 +17,9 @@ import (
 
 func TestAccResourceVcfCeip(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		CheckDestroy:      testCheckVcfCeipDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: muxedFactories(),
+		CheckDestroy:             testCheckVcfCeipDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfCeip(),

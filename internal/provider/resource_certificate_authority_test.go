@@ -26,7 +26,7 @@ func TestAccResourceVcfCertificateAuthority(t *testing.T) {
 			testAccPreCheck(t)
 			testAccVcfCertificateAuthorityPreCheck(t)
 		},
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:      testVerifyVcfCertificateAuthorityDestroy,
 		Steps: []resource.TestStep{
 			{
