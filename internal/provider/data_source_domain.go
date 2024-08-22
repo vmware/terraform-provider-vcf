@@ -84,8 +84,7 @@ func DataSourceDomain() *schema.Resource {
 }
 
 func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 	domainId := data.Get("domain_id").(string)
 
 	_, err := domain.ImportDomain(ctx, data, apiClient, domainId, true)

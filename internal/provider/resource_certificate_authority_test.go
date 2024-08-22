@@ -88,8 +88,7 @@ func testAccVcfCertificateAuthorityOpenSsl() string {
 }
 
 func testVerifyVcfCertificateAuthority(caType string) error {
-	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
 	getCertificateAuthorityParams := &certificates.GetCertificateAuthorityByIDParams{
 		ID:      caType,

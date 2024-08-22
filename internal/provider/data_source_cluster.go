@@ -77,8 +77,7 @@ func DataSourceCluster() *schema.Resource {
 }
 
 func dataSourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 	clusterId := data.Get("cluster_id").(string)
 	_, err := cluster.ImportCluster(ctx, data, apiClient, clusterId)
 	if err != nil {

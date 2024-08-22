@@ -140,8 +140,7 @@ func testAccVcfHostConfigNetworkPoolName(hostFqdn, hostSshPassword string) strin
 }
 
 func testCheckVcfHostDestroy(_ *terraform.State) error {
-	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
 	hosts, err := apiClient.Hosts.GetHosts(nil)
 	if err != nil {

@@ -110,8 +110,7 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 }
 
 func resourceResourceCertificateRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	vcfClient := meta.(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	csrID := data.Get("csr_id").(string)
 	csrIdComponents := strings.Split(csrID, ":")

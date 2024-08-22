@@ -59,8 +59,7 @@ func testAccVcfUserConfig() string {
 }
 
 func testCheckVcfUserDestroy(_ *terraform.State) error {
-	vcfClient := testAccProvider.Meta().(*api_client.SddcManagerClient)
-	apiClient := vcfClient.ApiClient
+	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
 	ok, err := apiClient.Users.GetUsers(nil)
 	if err != nil {
