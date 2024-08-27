@@ -143,7 +143,11 @@ func (frameworkProvider *FrameworkProvider) Resources(ctx context.Context) []fun
 }
 
 func (frameworkProvider *FrameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		func() datasource.DataSource {
+			return &DataSourceHost{}
+		},
+	}
 }
 
 func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
@@ -168,6 +172,7 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 
 		frameworkProvider.SddcManagerClient = client
 		res.ResourceData = client
+		res.DataSourceData = client
 	} else {
 		// Connect to Cloud Builder
 		client := api_client.NewCloudBuilderClient(
@@ -179,6 +184,7 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 
 		frameworkProvider.CloudBuilderClient = client
 		res.ResourceData = client
+		res.DataSourceData = client
 	}
 }
 
