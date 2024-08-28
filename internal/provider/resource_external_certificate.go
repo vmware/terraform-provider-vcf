@@ -151,12 +151,12 @@ func resourceResourceExternalCertificateRead(ctx context.Context, data *schema.R
 	domainID := csrIdComponents[1]
 	resourceType := csrIdComponents[2]
 
-	cert, err := certificates.GetCertificateForResourceInDomain(ctx, apiClient, domainID, resourceType)
+	cert, err := certificates.ReadCertificate(ctx, apiClient, domainID, resourceType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	flattenedCert := certificates.FlattenCertificate(cert)
+	flattenedCert := certificates.FlattenCertificateWithSubject(cert)
 	_ = data.Set("certificate", []interface{}{flattenedCert})
 
 	return nil
