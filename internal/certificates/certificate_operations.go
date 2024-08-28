@@ -73,28 +73,6 @@ func ValidateResourceCertificates(ctx context.Context, client *vcfclient.VcfClie
 	return nil
 }
 
-/*
-func GetCertificateForResourceInDomain(ctx context.Context, client *vcfclient.VcfClient,
-
-		domainId, resourceFqdn string) (*models.Certificate, error) {
-		viewCertificatesParams := certificates.NewGetCertificatesByDomainParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout)
-		viewCertificatesParams.ID = domainId
-
-		certificatesResponse, _, err := client.Certificates.GetCertificatesByDomain(viewCertificatesParams)
-		if err != nil {
-			return nil, err
-		}
-
-		allCertsForDomain := certificatesResponse.Payload.Elements
-		for _, cert := range allCertsForDomain {
-			if cert.IssuedTo != nil && *cert.IssuedTo == resourceFqdn {
-				return cert, nil
-			}
-		}
-		return nil, nil
-	}
-*/
 func GenerateCertificateForResource(ctx context.Context, client *api_client.SddcManagerClient,
 	domainId, resourceType, resourceFqdn, caType *string) error {
 
