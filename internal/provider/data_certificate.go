@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/certificates" // Ensure this package exists and contains necessary methods
 )
@@ -23,14 +23,16 @@ func DataSourceCertificate() *schema.Resource {
 		Description: "Datasource used to extract certificate details for various resources based on fields like domain, issued_by, issued_to, key_size, and others.",
 		Schema: map[string]*schema.Schema{
 			"domain_id": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The ID of the domain to fetch certificates for.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "The ID of the domain to fetch certificates for.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"resource_fqdn": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "the fqdn of resource certificate.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "the fqdn of resource certificate.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"certificate": {
 				Type:        schema.TypeList,
@@ -179,20 +181,12 @@ func DataSourceCertificate() *schema.Resource {
 func dataCertificateRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 	log.Print("[DEBUG] Function dataCertificateRead start")
-	// Extract the domain_id from ResourceData
-	domainId, ok := data.Get("domain_id").(string)
-	if !ok {
-		log.Print("[DEBUG] Function dataCertificateRead, domainId not found or not a string")
-	} else {
-		log.Printf("[DEBUG] Function dataCertificateRead, domainId: %s", domainId)
-	}
+	// Extract the domain_id and resource_fqdn from ResourceData
+	domainId := data.Get("domain_id").(string)
+	log.Printf("[DEBUG] Function dataCertificateRead, domainId: %s", domainId)
 
-	// Extract the resource_fqdn from ResourceData
-	resourceFqdn, ok := data.Get("resource_fqdn").(string)
-	if !ok {
-		log.Print("[DEBUG] Function dataCertificateRead, resourceFqdn not found or not a string")
-		return diag.Errorf("resource_fqdn is not set or is not a string")
-	}
+	resourceFqdn := data.Get("resource_fqdn").(string)
+	log.Printf("[DEBUG] Function dataCertificateRead, resourceFqdn: %s", resourceFqdn)
 
 	// Call ReadCertificate with the domainId and resourceFqdn
 	cert, err := certificates.ReadCertificate(ctx, apiClient, domainId, resourceFqdn)
@@ -219,7 +213,7 @@ func dataCertificateRead(ctx context.Context, data *schema.ResourceData, meta in
 	id, err := createCertificateID(data)
 	log.Printf("[DEBUG] Function dataCertificateRead, cert-id: %+v", id)
 	if err != nil {
-		return diag.Errorf("error during id generation %s", err)
+		return diag.Errorf("error during certificate id generation %s", err)
 	}
 
 	data.SetId(id)
@@ -287,6 +281,7 @@ func getIntAsString(certMap map[string]interface{}, key string) string {
 	return ""
 }
 
+// Helper function to get Boolean as string.
 func getBoolAsString(certMap map[string]interface{}, key string) string {
 	if val, ok := certMap[key].(bool); ok {
 		if val {

@@ -114,7 +114,7 @@ func ReadCertificate(ctx context.Context, client *vcfclient.VcfClient,
 
 	certificatesResponse, _, err := client.Certificates.GetCertificatesByDomain(viewCertificatesParams)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get certificates by domain: %w", err)
+		return nil, fmt.Errorf("failed to get certificate by domain: %w", err)
 	}
 
 	// Check if any certificates are found
@@ -128,18 +128,18 @@ func ReadCertificate(ctx context.Context, client *vcfclient.VcfClient,
 			return cert, nil
 		}
 	}
-	return nil, nil
+	return nil, fmt.Errorf("no certificate found for resource FQDN %s in domain ID %s", resourceFqdn, domainId)
 }
 
 func FlattenCertificateWithSubject(cert *models.Certificate) map[string]interface{} {
 	result := make(map[string]interface{})
 	if cert.Domain == nil {
-		result["domain"] = "nil"
+		result["domain"] = nil
 	} else {
 		result["domain"] = *cert.Domain
 	}
 	if cert.GetCertificateError == nil {
-		result["certificate_error"] = "nil"
+		result["certificate_error"] = nil
 	} else {
 		result["certificate_error"] = *cert.GetCertificateError
 	}

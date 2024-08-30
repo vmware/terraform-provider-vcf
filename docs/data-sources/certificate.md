@@ -3,12 +3,12 @@
 page_title: "vcf_certificate Data Source - terraform-provider-vcf"
 subcategory: ""
 description: |-
-  Datasource used to extract certificate details for various resources based on fields like domain, issued_by, issued_to, key_size, and others.
+  Datasource used to extract certificate details based on fields domain_id and resource_fqdn.
 ---
 
 # vcf_certificate (Data Source)
 
-Datasource used to extract certificate details for various resources based on fields like domain, issued_by, issued_to, key_size, and others.
+Datasource used to extract certificate details based on fields domain_id and resource_fqdn.
 
 
 
