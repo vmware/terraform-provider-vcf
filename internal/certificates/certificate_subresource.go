@@ -6,7 +6,6 @@ package certificates
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/models"
 )
 
 func CertificateSchema() *schema.Resource {
@@ -88,6 +87,36 @@ func CertificateSchema() *schema.Resource {
 				Description: "Complete distinguished name to which the certificate is issued",
 				Computed:    true,
 			},
+			"subject_cn": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The subject_cn(common name) of the certificate.",
+			},
+			"subject_ou": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The subject_ou(org unit) of the certificate.",
+			},
+			"subject_org": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The subject_org of the certificate.",
+			},
+			"subject_locality": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The subject_locality of the certificate.",
+			},
+			"subject_st": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The subject_st(state) of the certificate.",
+			},
+			"subject_country": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The subject_country of the certificate.",
+			},
 			"subject_alternative_name": {
 				Type:        schema.TypeList,
 				Description: "The alternative names to which the certificate is issued",
@@ -111,37 +140,4 @@ func CertificateSchema() *schema.Resource {
 			},
 		},
 	}
-}
-
-func FlattenCertificate(cert *models.Certificate) map[string]interface{} {
-	result := make(map[string]interface{})
-	if cert.Domain == nil {
-		result["domain"] = "nil"
-	} else {
-		result["domain"] = *cert.Domain
-	}
-	if cert.GetCertificateError == nil {
-		result["certificate_error"] = "nil"
-	} else {
-		result["certificate_error"] = *cert.GetCertificateError
-	}
-
-	result["expiration_status"] = *cert.ExpirationStatus
-	result["issued_by"] = *cert.IssuedBy
-	result["issued_to"] = *cert.IssuedTo
-	result["key_size"] = *cert.KeySize
-	result["not_after"] = *cert.NotAfter
-	result["not_before"] = *cert.NotBefore
-	result["number_of_days_to_expire"] = *cert.NumberOfDaysToExpire
-	result["pem_encoded"] = *cert.PemEncoded
-	result["public_key"] = *cert.PublicKey
-	result["public_key_algorithm"] = *cert.PublicKeyAlgorithm
-	result["serial_number"] = *cert.SerialNumber
-	result["signature_algorithm"] = *cert.SignatureAlgorithm
-	result["subject"] = *cert.Subject
-	result["subject_alternative_name"] = cert.SubjectAlternativeName
-	result["thumbprint"] = *cert.Thumbprint
-	result["thumbprint_algorithm"] = *cert.ThumbprintAlgorithm
-	result["version"] = *cert.Version
-	return result
 }
