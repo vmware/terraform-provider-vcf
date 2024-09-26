@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## [v0.11.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.11.0)
+
+> Not Released
+
+BUG FIXES:
+
+- `resource/vcf_credentials`: Fixed the missing `resourceType` definition for `VROPS`.
+- `data/vcf_credentials`: Fixed the `resourceType` definition for NSX Edges from `NSX_EDGE` to `NSXT_EDGE` per the API.
+- `data/vcf_credentials`: Fixed a segmentation violation.
+- `provider`: Updated the provider configuration not to assume the configuration is for Cloud Builder if the SDDC Manager username is not provided and added a check to ensure that at least one of the configurations is provided. If neither is provided, returns an appropriate error message. [\#239](https://github.com/vmware/terraform-provider-vcf/pull/239)
+
+FEATURES:
+
+- `data/vcf_network_pool`: Added network pool data source. [\#225](https://github.com/vmware/terraform-provider-vcf/pull/225)
+- `data/vcf_domain`: Updated to support `name` alongside the existing `domain_id`. [\#228](https://github.com/vmware/terraform-provider-vcf/pull/228)
+- `provider`: Added a task tracker to log the messages for each subtask. When integrated into a resource logging can be enabled with `TF_LOG_PROVIDER_VCF` with valid a log level. [\#227](https://github.com/vmware/terraform-provider-vcf/pull/227)
+
+REFACTOR:
+
+- Refactored instances of `apiClient` to be more concise, where applicable. This is preferred in Go for its brevity and clarity. [\#231](https://github.com/vmware/terraform-provider-vcf/pull/231)
+
+CHORES:
+
+- Added CodeQL Analysis. [\#221](https://github.com/vmware/terraform-provider-vcf/pull/221)
+- Updated Go to v1.22.6 [\#221](https://github.com/vmware/terraform-provider-vcf/pull/221)
+- Updated `vmware/vcf-sdk-go` to 0.3.3. [\#203](https://github.com/vmware/terraform-provider-vcf/pull/203)
+- Updated `hashicorp/terraform-plugin-framework` to 1.13.0. [\#221](https://github.com/vmware/terraform-provider-vcf/pull/221), [\#240](https://github.com/vmware/terraform-provider-vcf/pull/240)
+- Updated `hashicorp/terraform-plugin-framework-validators` to 0.13.0 [\#220](https://github.com/vmware/terraform-provider-vcf/pull/220)
+- Updated `hashicorp/terraform-plugin-go` to 0.24.0. [\#241](https://github.com/vmware/terraform-provider-vcf/pull/241)
+- Updated `golangci/golangci-lint-action` to 6.1.0. [\#205](https://github.com/vmware/terraform-provider-vcf/pull/205)
+- Addressed linting errors identified by `golangci` to 6.1.0. [\#222](https://github.com/vmware/terraform-provider-vcf/pull/222)
+- Updated to uses Go's idiomatic conventions group imports. [\#223](https://github.com/vmware/terraform-provider-vcf/pull/223)
+- Updated and/or added the copyright and SPDX-License-Identifier, as needed. [\#229](https://github.com/vmware/terraform-provider-vcf/pull/229)
+- Updated the provider parameter descriptions; otherwise `make documentation` failed. [\#233](https://github.com/vmware/terraform-provider-vcf/pull/233)
+
 ## [v0.10.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.10.0)
 
 > Release Date: July 9 2024
