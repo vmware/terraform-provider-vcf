@@ -20,12 +20,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/network_pools"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 type IpPoolModel struct {
@@ -51,7 +48,7 @@ type ResourceNetworkPoolModel struct {
 }
 
 type ResourceNetworkPool struct {
-	client *client.VcfClient
+	client *vcf.ClientWithResponses
 }
 
 func (r *ResourceNetworkPool) Metadata(ctx context.Context, req resource.MetadataRequest, res *resource.MetadataResponse) {
@@ -160,9 +157,7 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	createParams := network_pools.NewCreateNetworkPoolParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	networkPool := models.NetworkPool{
+	networkPool := vcf.NetworkPool{
 		Name: data.Name.ValueString(),
 	}
 
@@ -170,11 +165,11 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 	res.Diagnostics.Append(types.List.ElementsAs(data.Networks, ctx, &networks, false)...)
 
 	if len(networks) > 0 {
-		networkPool.Networks = make([]*models.Network, len(networks))
+		networkPool.Networks = make([]vcf.Network, len(networks))
 
 		for i, network := range networks {
-			networkPool.Networks[i] = &models.Network{
-				VlanID:  int32(network.VlanId.ValueInt64()),
+			networkPool.Networks[i] = vcf.Network{
+				VlanId:  int32(network.VlanId.ValueInt64()),
 				Gateway: network.Gateway.ValueString(),
 				Mask:    network.Mask.ValueString(),
 				Subnet:  network.Subnet.ValueString(),
@@ -182,29 +177,35 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 				Type:    network.Type.ValueString(),
 			}
 
-			var ipPools []IpPoolModel
-			res.Diagnostics.Append(types.List.ElementsAs(network.IpPools, ctx, &ipPools, false)...)
-			networkPool.Networks[i].IPPools = make([]*models.IPPool, len(ipPools))
-			for j, ipPool := range ipPools {
-				networkPool.Networks[i].IPPools[j] = &models.IPPool{
-					Start: ipPool.Start.ValueString(),
-					End:   ipPool.End.ValueString(),
+			var ipPoolModels []IpPoolModel
+			res.Diagnostics.Append(types.List.ElementsAs(network.IpPools, ctx, &ipPoolModels, false)...)
+			ipPoolsSlice := make([]vcf.IpPool, len(ipPoolModels))
+			networkPool.Networks[i].IpPools = &ipPoolsSlice
+			for j, ipPoolModel := range ipPoolModels {
+				ipPools := networkPool.Networks[i].IpPools
+				if ipPools != nil {
+					(*ipPools)[j].Start = ipPoolModel.Start.ValueString()
+					(*ipPools)[j].End = ipPoolModel.End.ValueString()
 				}
 			}
 		}
 	}
 
-	createParams.NetworkPool = &networkPool
-
-	_, created, err := r.client.NetworkPools.CreateNetworkPool(createParams)
+	created, err := r.client.CreateNetworkPoolWithResponse(ctx, networkPool)
 	if err != nil {
 		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to create network pool", err.Error()))
 		return
 	}
+	if created.StatusCode() != 201 {
+		vcfError := api_client.GetError(created.Body)
+		api_client.LogError(vcfError)
+		res.Diagnostics.Append(diag.NewErrorDiagnostic(*vcfError.Message, *vcfError.Message))
+		return
+	}
 
-	log.Println("created = ", created)
-	createdNetworkPool := created.Payload
-	data.Id = types.StringValue(createdNetworkPool.ID)
+	log.Println("created = ", created.JSON201.Name)
+	createdNetworkPool := created.JSON201
+	data.Id = types.StringValue(*createdNetworkPool.Id)
 
 	res.Diagnostics.Append(res.State.Set(ctx, &data)...)
 }
@@ -213,17 +214,15 @@ func (r *ResourceNetworkPool) Read(ctx context.Context, req resource.ReadRequest
 	var data ResourceNetworkPoolModel
 	res.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	params := network_pools.NewGetNetworkPoolByIDParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-
-	networkPoolPayload, err := r.client.NetworkPools.GetNetworkPoolByID(params)
-	if err != nil {
-		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to retrieve network pool", err.Error()))
-		return
+	networkPoolPayload, _ := r.client.GetNetworkPoolByIDWithResponse(ctx, data.Id.ValueString())
+	if networkPoolPayload.StatusCode() != 200 {
+		vcfError := api_client.GetError(networkPoolPayload.Body)
+		api_client.LogError(vcfError)
+		res.Diagnostics.Append(diag.NewErrorDiagnostic(*vcfError.Message, ""))
 	}
 
-	networkPool := networkPoolPayload.Payload
-	data.Id = types.StringValue(networkPool.ID)
+	networkPool := networkPoolPayload.JSON200
+	data.Id = types.StringValue(*networkPool.Id)
 	data.Name = types.StringValue(networkPool.Name)
 }
 
@@ -235,15 +234,13 @@ func (r *ResourceNetworkPool) Delete(ctx context.Context, req resource.DeleteReq
 	var data ResourceNetworkPoolModel
 	res.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	params := network_pools.NewDeleteNetworkPoolParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	params.ID = data.Id.ValueString()
-
-	log.Println(params)
-	_, err := r.client.NetworkPools.DeleteNetworkPool(params)
-	if err != nil {
-		log.Println("error = ", err)
-		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to delete network pool", err.Error()))
+	networkPoolPayload, _ := r.client.DeleteNetworkPoolWithResponse(ctx, data.Id.ValueString(), nil)
+	if networkPoolPayload.StatusCode() != 204 {
+		vcfError := api_client.GetError(networkPoolPayload.Body)
+		api_client.LogError(vcfError)
+		if vcfError != nil {
+			res.Diagnostics.Append(diag.NewErrorDiagnostic(*vcfError.Message, "Failed to delete network pool"))
+		}
 		return
 	}
 

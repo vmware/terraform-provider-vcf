@@ -6,7 +6,7 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -35,20 +35,20 @@ func GetPscSchema() *schema.Schema {
 	}
 }
 
-func GetPscSpecsFromSchema(rawData []interface{}) []*models.PscSpec {
-	var pscSpecsBindingsList []*models.PscSpec
+func GetPscSpecsFromSchema(rawData []interface{}) *[]vcf.PscSpec {
+	var pscSpecsBindingsList []vcf.PscSpec
 	for _, pscSpec := range rawData {
 		data := pscSpec.(map[string]interface{})
 		adminUserSsoPassword := data["admin_user_sso_password"].(string)
 		pscSsoDomain := data["psc_sso_domain"].(string)
 
-		pscSpecsBinding := &models.PscSpec{
-			AdminUserSSOPassword: utils.ToStringPointer(adminUserSsoPassword),
-			PscSSOSpec: &models.PscSSOSpec{
-				SSODomain: pscSsoDomain,
+		pscSpecsBinding := vcf.PscSpec{
+			AdminUserSsoPassword: utils.ToStringPointer(adminUserSsoPassword),
+			PscSsoSpec: vcf.PscSsoSpec{
+				SsoDomain: &pscSsoDomain,
 			},
 		}
 		pscSpecsBindingsList = append(pscSpecsBindingsList, pscSpecsBinding)
 	}
-	return pscSpecsBindingsList
+	return &pscSpecsBindingsList
 }

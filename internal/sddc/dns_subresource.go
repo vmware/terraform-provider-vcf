@@ -7,7 +7,7 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
@@ -41,7 +41,7 @@ func GetDnsSchema() *schema.Schema {
 	}
 }
 
-func GetDnsSpecFromSchema(rawData []interface{}) *models.DNSSpec {
+func GetDnsSpecFromSchema(rawData []interface{}) *vcf.DnsSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -50,11 +50,11 @@ func GetDnsSpecFromSchema(rawData []interface{}) *models.DNSSpec {
 	nameServer := data["name_server"].(string)
 	secondaryNameserver := data["secondary_name_server"].(string)
 
-	dnsSpecBinding := &models.DNSSpec{
-		Nameserver:          nameServer,
-		SecondaryNameserver: secondaryNameserver,
+	dnsSpecBinding := &vcf.DnsSpec{
+		Nameserver:          &nameServer,
+		SecondaryNameserver: &secondaryNameserver,
 		Domain:              domain,
-		Subdomain:           domain,
+		Subdomain:           *domain,
 	}
 	return dnsSpecBinding
 }

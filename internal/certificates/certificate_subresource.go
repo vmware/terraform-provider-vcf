@@ -6,6 +6,7 @@ package certificates
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 func CertificateSchema() *schema.Resource {
@@ -140,4 +141,37 @@ func CertificateSchema() *schema.Resource {
 			},
 		},
 	}
+}
+
+func FlattenCertificate(cert vcf.Certificate) map[string]interface{} {
+	result := make(map[string]interface{})
+	if cert.Domain == nil {
+		result["domain"] = "nil"
+	} else {
+		result["domain"] = *cert.Domain
+	}
+	if cert.GetCertificateError == nil {
+		result["certificate_error"] = "nil"
+	} else {
+		result["certificate_error"] = *cert.GetCertificateError
+	}
+
+	result["expiration_status"] = *cert.ExpirationStatus
+	result["issued_by"] = *cert.IssuedBy
+	result["issued_to"] = *cert.IssuedTo
+	result["key_size"] = *cert.KeySize
+	result["not_after"] = *cert.NotAfter
+	result["not_before"] = *cert.NotBefore
+	result["number_of_days_to_expire"] = *cert.NumberOfDaysToExpire
+	result["pem_encoded"] = *cert.PemEncoded
+	result["public_key"] = *cert.PublicKey
+	result["public_key_algorithm"] = *cert.PublicKeyAlgorithm
+	result["serial_number"] = *cert.SerialNumber
+	result["signature_algorithm"] = *cert.SignatureAlgorithm
+	result["subject"] = *cert.Subject
+	result["subject_alternative_name"] = cert.SubjectAlternativeName
+	result["thumbprint"] = *cert.Thumbprint
+	result["thumbprint_algorithm"] = *cert.ThumbprintAlgorithm
+	result["version"] = *cert.Version
+	return result
 }

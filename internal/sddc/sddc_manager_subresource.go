@@ -7,9 +7,8 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
@@ -50,7 +49,7 @@ func GetSddcManagerSchema() *schema.Schema {
 	return sddcManagerSchema
 }
 
-func GetSddcManagerSpecFromSchema(rawData []interface{}) *models.SDDCManagerSpec {
+func GetSddcManagerSpecFromSchema(rawData []interface{}) *vcf.SddcManagerSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -59,11 +58,15 @@ func GetSddcManagerSpecFromSchema(rawData []interface{}) *models.SDDCManagerSpec
 	ipAddress := data["ip_address"].(string)
 	localUserPassword := data["local_user_password"].(string)
 
-	sddcManagerSpec := &models.SDDCManagerSpec{
-		Hostname:          utils.ToStringPointer(hostname),
-		IPAddress:         utils.ToStringPointer(ipAddress),
-		LocalUserPassword: localUserPassword,
+	sddcManagerSpec := &vcf.SddcManagerSpec{
+		Hostname:  hostname,
+		IpAddress: &ipAddress,
 	}
+
+	if localUserPassword != "" {
+		sddcManagerSpec.LocalUserPassword = &localUserPassword
+	}
+
 	if rootUserCredentialsData := getCredentialsFromSchema(data["root_user_credentials"].([]interface{})); rootUserCredentialsData != nil {
 		sddcManagerSpec.RootUserCredentials = rootUserCredentialsData
 	}

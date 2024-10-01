@@ -63,7 +63,7 @@ func testAccVcfDomainDataSourceConfigByName(name string) string {
 func TestAccDataSourceVcfDomainById(t *testing.T) {
 	config := testAccVcfDomainDataSourceConfigById(os.Getenv(constants.VcfTestDomainDataSourceId))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps:                    testAccVcfDomainDataSourceSteps(config),
@@ -73,7 +73,7 @@ func TestAccDataSourceVcfDomainById(t *testing.T) {
 func TestAccDataSourceVcfDomainByName(t *testing.T) {
 	config := testAccVcfDomainDataSourceConfigByName(os.Getenv(constants.VcfTestDomainDataSourceName))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps:                    testAccVcfDomainDataSourceSteps(config),

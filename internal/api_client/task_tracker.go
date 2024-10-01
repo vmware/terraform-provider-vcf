@@ -1,4 +1,5 @@
-// Copyright 2024 Broadcom. All Rights Reserved.
+// © Broadcom. All Rights Reserved.
+// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package api_client
@@ -10,11 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/tasks"
-	"github.com/vmware/vcf-sdk-go/models"
-
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 const (
@@ -32,13 +29,13 @@ const (
 
 type TaskTracker struct {
 	ctx             context.Context
-	client          *client.VcfClient
+	client          *vcf.ClientWithResponses
 	taskId          string
 	pollingInterval time.Duration
 	completedTasks  map[string]bool
 }
 
-func NewTaskTracker(ctx context.Context, client *client.VcfClient, taskId string) *TaskTracker {
+func NewTaskTracker(ctx context.Context, client *vcf.ClientWithResponses, taskId string) *TaskTracker {
 	return &TaskTracker{
 		ctx:             ctx,
 		client:          client,
@@ -48,7 +45,7 @@ func NewTaskTracker(ctx context.Context, client *client.VcfClient, taskId string
 	}
 }
 
-func NewTaskTrackerWithCustomPollingInterval(ctx context.Context, client *client.VcfClient, taskId string, pollingInterval time.Duration) *TaskTracker {
+func NewTaskTrackerWithCustomPollingInterval(ctx context.Context, client *vcf.ClientWithResponses, taskId string, pollingInterval time.Duration) *TaskTracker {
 	tracker := NewTaskTracker(ctx, client, taskId)
 	tracker.pollingInterval = pollingInterval
 	return tracker
@@ -64,60 +61,60 @@ func (t *TaskTracker) WaitForTask() error {
 		case <-ticker.C:
 			task, err := t.getTask()
 			if err != nil {
-				return err
+				return errors.New(*err.Message)
 			}
 
 			t.logTask(task)
 
-			switch task.Status {
+			switch *task.Status {
 			case statusInProgress, statusInProgressUppercase, statusPending:
 				continue
 			case statusFailed, statusCancelled:
 				errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s",
-					task.ID, task.Name, task.Type, task.Status)
+					*task.Id, *task.Name, *task.Type, *task.Status)
 				tflog.Error(t.ctx, errorMsg)
 
 				return errors.New(errorMsg)
 			default:
 				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s is in state %s, completed at %s",
-					task.ID, task.Status, task.CompletionTimestamp))
+					*task.Id, *task.Status, *task.CompletionTimestamp))
 				return nil
 			}
 		}
 	}
 }
 
-func (t *TaskTracker) getTask() (*models.Task, error) {
-	getTaskParams := tasks.NewGetTaskParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithContext(t.ctx)
-	getTaskParams.ID = t.taskId
+func (t *TaskTracker) getTask() (*vcf.Task, *vcf.Error) {
+	res, _ := t.client.GetTaskWithResponse(t.ctx, t.taskId)
 
-	getTaskResult, err := t.client.Tasks.GetTask(getTaskParams)
-
-	if err != nil {
-		return nil, err
+	if res.StatusCode() == 200 {
+		return res.JSON200, nil
 	}
 
-	return getTaskResult.Payload, nil
+	return nil, GetError(res.Body)
 }
 
-func (t *TaskTracker) logTask(task *models.Task) {
+func (t *TaskTracker) logTask(task *vcf.Task) {
+	if task == nil {
+		return
+	}
+
 	if task.SubTasks == nil {
 		messagePack := task.LocalizableDescriptionPack
-		if messagePack != nil && messagePack.Message != "" && t.shouldLog(messagePack.Message) {
-			t.log(messagePack.Message, task.Status)
+		if messagePack != nil && messagePack.Message != nil && t.shouldLog(*messagePack.Message) {
+			t.log(*messagePack.Message, *task.Status)
 		}
-	} else {
-		for _, subtask := range task.SubTasks {
-			t.logSubTask(subtask)
+	} else if task.SubTasks != nil {
+		for _, subtask := range *task.SubTasks {
+			t.logSubTask(&subtask)
 		}
 	}
 }
 
-func (t *TaskTracker) logSubTask(task *models.SubTask) {
-	if task.Status != statusInProgressUppercase && task.Status != statusPending && task.Status != statusNotApplicable {
-		if t.shouldLog(task.Description) {
-			t.log(task.Description, task.Status)
+func (t *TaskTracker) logSubTask(task *vcf.SubTask) {
+	if *task.Status != statusInProgressUppercase && *task.Status != statusPending && *task.Status != statusNotApplicable {
+		if t.shouldLog(*task.Description) {
+			t.log(*task.Description, *task.Status)
 		}
 	}
 }

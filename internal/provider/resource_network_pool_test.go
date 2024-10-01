@@ -5,6 +5,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestAccResourceVcfNetworkPool(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfNetworkPoolDestroy,
@@ -65,15 +66,15 @@ func testAccVcfNetworkPoolConfig(networkPoolName string) string {
 func testCheckVcfNetworkPoolDestroy(_ *terraform.State) error {
 	apiClient := (interface{}(testAccFrameworkProvider)).(*FrameworkProvider).SddcManagerClient.ApiClient
 
-	hosts, err := apiClient.NetworkPools.GetNetworkPool(nil)
+	hosts, err := apiClient.GetNetworkPoolWithResponse(context.TODO())
 	if err != nil {
 		log.Println("error = ", err)
 		return err
 	}
 
-	for _, networkPool := range hosts.Payload.Elements {
+	for _, networkPool := range *hosts.JSON200.Elements {
 		if networkPool.Name == constants.VcfTestNetworkPoolName {
-			return fmt.Errorf("found networkPool %q", networkPool.ID)
+			return fmt.Errorf("found networkPool %q", *networkPool.Id)
 		}
 	}
 

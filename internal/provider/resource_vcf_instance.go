@@ -13,11 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	sddc_api "github.com/vmware/vcf-sdk-go/client/sddc"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/terraform-provider-vcf/internal/sddc"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -38,7 +36,6 @@ func ResourceVcfInstance() *schema.Resource {
 	}
 }
 
-// TODO add support for "subscriptionLicensing" property in future releases.
 func resourceVcfInstanceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"instance_id": {
@@ -132,42 +129,44 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 	}
 }
 
-func buildSddcSpec(data *schema.ResourceData) *models.SDDCSpec {
-	sddcSpec := &models.SDDCSpec{}
+func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
+	sddcSpec := &vcf.SddcSpec{}
 	if rawCeipEnabled, ok := data.GetOk("ceip_enabled"); ok {
-		ceipEnabled := rawCeipEnabled.(bool)
-		sddcSpec.CEIPEnabled = ceipEnabled
+		sddcSpec.CeipEnabled = utils.ToBoolPointer(rawCeipEnabled)
 	}
 	if clusterSpec, ok := data.GetOk("cluster"); ok {
 		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
 	}
 	if dnsSpec, ok := data.GetOk("dns"); ok {
-		sddcSpec.DNSSpec = sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
+		spec := sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
+		if spec == nil {
+			// TODO throw error and make dns mandatory
+		}
+		sddcSpec.DnsSpec = *spec
 	}
 	if dvsSpecs, ok := data.GetOk("dvs"); ok {
 		sddcSpec.DvsSpecs = sddc.GetDvsSpecsFromSchema(dvsSpecs.([]interface{}))
 	}
 	if dvSwitchVersion, ok := data.GetOk("dv_switch_version"); ok {
-		sddcSpec.DvSwitchVersion = dvSwitchVersion.(string)
+		sddcSpec.DvSwitchVersion = utils.ToStringPointer(dvSwitchVersion)
 	}
 	if esxLicense, ok := data.GetOk("esx_license"); ok {
-		sddcSpec.EsxLicense = esxLicense.(string)
+		sddcSpec.EsxLicense = utils.ToStringPointer(esxLicense)
 	}
-	if rawFipsEnabled, ok := data.GetOk("fips_enabled"); ok {
-		fipsEnabled := rawFipsEnabled.(bool)
-		sddcSpec.FIPSEnabled = fipsEnabled
+	if fipsEnabled, ok := data.GetOk("fips_enabled"); ok {
+		sddcSpec.FipsEnabled = utils.ToBoolPointer(fipsEnabled)
 	}
 	if hostSpecs, ok := data.GetOk("host"); ok {
 		sddcSpec.HostSpecs = sddc.GetSddcHostSpecsFromSchema(hostSpecs.([]interface{}))
 	}
 	if managementPoolName, ok := data.GetOk("management_pool_name"); ok {
-		sddcSpec.ManagementPoolName = managementPoolName.(string)
+		sddcSpec.ManagementPoolName = utils.ToStringPointer(managementPoolName)
 	}
 	if networkSpecs, ok := data.GetOk("network"); ok {
 		sddcSpec.NetworkSpecs = sddc.GetNetworkSpecsBindingFromSchema(networkSpecs.([]interface{}))
 	}
 	if nsxSpec, ok := data.GetOk("nsx"); ok {
-		sddcSpec.NSXTSpec = sddc.GetNsxSpecFromSchema(nsxSpec.([]interface{}))
+		sddcSpec.NsxtSpec = sddc.GetNsxSpecFromSchema(nsxSpec.([]interface{}))
 	}
 	if ntpServers, ok := data.GetOk("ntp_servers"); ok {
 		sddcSpec.NtpServers = utils.ToStringSlice(ntpServers.([]interface{}))
@@ -176,25 +175,27 @@ func buildSddcSpec(data *schema.ResourceData) *models.SDDCSpec {
 		sddcSpec.PscSpecs = sddc.GetPscSpecsFromSchema(pscSpecs.([]interface{}))
 	}
 	if sddcID, ok := data.GetOk("instance_id"); ok {
-		sddcSpec.SDDCID = utils.ToStringPointer(sddcID)
+		sddcSpec.SddcId = sddcID.(string)
 	}
 	if sddcManagerSpec, ok := data.GetOk("sddc_manager"); ok {
-		sddcSpec.SDDCManagerSpec = sddc.GetSddcManagerSpecFromSchema(sddcManagerSpec.([]interface{}))
+		sddcSpec.SddcManagerSpec = sddc.GetSddcManagerSpecFromSchema(sddcManagerSpec.([]interface{}))
 	}
 	if securitySpec, ok := data.GetOk("security"); ok {
 		sddcSpec.SecuritySpec = sddc.GetSecuritySpecSchema(securitySpec.([]interface{}))
 	}
 	if skipEsxThumbPrintValidation, ok := data.GetOk("skip_esx_thumbprint_validation"); ok {
-		sddcSpec.SkipEsxThumbprintValidation = skipEsxThumbPrintValidation.(bool)
+		sddcSpec.SkipEsxThumbprintValidation = utils.ToBoolPointer(skipEsxThumbPrintValidation)
 	}
 	if taskName, ok := data.GetOk("task_name"); ok {
 		sddcSpec.TaskName = utils.ToStringPointer(taskName)
 	}
 	if vcenterSpec, ok := data.GetOk("vcenter"); ok {
-		sddcSpec.VcenterSpec = sddc.GetVcenterSpecFromSchema(vcenterSpec.([]interface{}))
+		if spec := sddc.GetVcenterSpecFromSchema(vcenterSpec.([]interface{})); spec != nil {
+			sddcSpec.VcenterSpec = *spec
+		}
 	}
 	if vsanSpec, ok := data.GetOk("vsan"); ok {
-		sddcSpec.VSANSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+		sddcSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
 	}
 	if vxManagerSpec, ok := data.GetOk("vx_manager"); ok {
 		sddcSpec.VxManagerSpec = sddc.GetVxManagerSpecFromSchema(vxManagerSpec.([]interface{}))
@@ -234,20 +235,20 @@ func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, met
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	bringupId := bringUpInfo.ID
+	bringupId := bringUpInfo.Id
 
-	data.SetId(bringupId)
+	data.SetId(*bringupId)
 	_ = data.Set("status", bringUpInfo.Status)
 	_ = data.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
 
-	sddcManagerInfo, err := getSddcManagerInfo(ctx, bringupId, client)
+	sddcManagerInfo, err := getSddcManagerInfo(ctx, *bringupId, client)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
 	_ = data.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
-	_ = data.Set("sddc_manager_id", sddcManagerInfo.ID)
+	_ = data.Set("sddc_manager_id", sddcManagerInfo.Id)
 	_ = data.Set("sddc_manager_version", sddcManagerInfo.Version)
 
 	return nil
@@ -261,23 +262,18 @@ func resourceVcfInstanceDelete(_ context.Context, _ *schema.ResourceData, _ inte
 	return nil
 }
 
-func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *models.SDDCSpec, lastBringup *models.SDDCTask) (string, diag.Diagnostics) {
-	var bringUpID string
-	if lastBringup != nil && lastBringup.Status != "COMPLETED_WITH_SUCCESS" {
-		bringUpID = lastBringup.ID
+func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec, lastBringup *vcf.SddcTask) (string, diag.Diagnostics) {
+	var bringUpId string
+	if lastBringup != nil && *lastBringup.Status != "COMPLETED_WITH_SUCCESS" {
+		bringUpId = *lastBringup.Id
 		diags := validateBringupSpec(ctx, client, sddcSpec)
 		if diags != nil {
-			return bringUpID, diags
+			return bringUpId, diags
 		}
 
-		retryBringupParams := sddc_api.NewRetrySDDCParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(bringUpID).WithSDDCSpec(sddcSpec)
-		okResponse, acceptedResponse, err := client.ApiClient.SDDC.RetrySDDC(retryBringupParams)
-		if okResponse != nil {
-			bringUpID = okResponse.Payload.ID
-		}
-		if acceptedResponse != nil {
-			bringUpID = acceptedResponse.Payload.ID
+		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, *sddcSpec)
+		if res != nil && res.JSON202 != nil {
+			bringUpId = *res.JSON202.Id
 		}
 		if err != nil {
 			return "", diag.FromErr(err)
@@ -285,26 +281,20 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 	} else {
 		diags := validateBringupSpec(ctx, client, sddcSpec)
 		if diags != nil {
-			return bringUpID, diags
+			return bringUpId, diags
 		}
 
-		bringupParams := sddc_api.NewStartBringupParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout).WithSDDCSpec(sddcSpec)
-
-		okResponse, acceptedResponse, err := client.ApiClient.SDDC.StartBringup(bringupParams)
-		if okResponse != nil {
-			bringUpID = okResponse.Payload.ID
-		}
-		if acceptedResponse != nil {
-			bringUpID = acceptedResponse.Payload.ID
+		res, err := client.ApiClient.StartBringupWithResponse(ctx, *sddcSpec)
+		if res != nil && res.JSON202 != nil {
+			bringUpId = *res.JSON202.Id
 		}
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
 
-		tflog.Info(ctx, fmt.Sprintf("Bring-Up workflow with ID %s has started", bringUpID))
+		tflog.Info(ctx, fmt.Sprintf("Bring-Up workflow with ID %s has started", bringUpId))
 	}
-	return bringUpID, nil
+	return bringUpId, nil
 }
 
 func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.CloudBuilderClient) diag.Diagnostics {
@@ -314,13 +304,13 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 			return diag.FromErr(err)
 		}
 
-		if task.Status == "IN_PROGRESS" {
+		if *task.Status == "IN_PROGRESS" {
 			time.Sleep(20 * time.Second)
 			continue
 		}
 
-		if task.Status == "COMPLETED_WITH_FAILURE" {
-			err := fmt.Errorf("Task with ID = %s , Name: %q is in state %s", bringUpID, task.Name, task.Status)
+		if *task.Status == "COMPLETED_WITH_FAILURE" {
+			err := fmt.Errorf("Task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
 			return diag.FromErr(err)
 		}
 
@@ -328,47 +318,56 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 	}
 }
 
-func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) (*models.SDDCTask, error) {
-	retrieveAllSddcsResp, err := client.ApiClient.SDDC.GetBringupTasks(
-		sddc_api.NewGetBringupTasksParamsWithTimeout(constants.DefaultVcfApiCallTimeout).WithContext(ctx))
+func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) (*vcf.SddcTask, error) {
+	retrieveAllSddcsResp, err := client.ApiClient.GetBringupTasksWithResponse(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(retrieveAllSddcsResp.Payload.Elements) > 0 {
-		return retrieveAllSddcsResp.Payload.Elements[0], nil
+	if retrieveAllSddcsResp.JSON200 != nil && len(*retrieveAllSddcsResp.JSON200.Elements) > 0 {
+		elements := *retrieveAllSddcsResp.JSON200.Elements
+		return &(elements)[0], nil
 	}
 	return nil, nil
 }
 
-func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *models.SDDCSpec) diag.Diagnostics {
-	validateSddcSpec := sddc_api.NewValidateBringupSpecParams().WithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithSDDCSpec(sddcSpec).WithRedo(utils.ToBoolPointer(true))
+func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec) diag.Diagnostics {
+	var validationResponse *vcf.Validation
+	bringupParams := &vcf.ValidateBringupSpecParams{
+		Redo: utils.ToBoolPointer(true),
+	}
+	validateSpecRes, err := client.ApiClient.ValidateBringupSpecWithResponse(ctx, bringupParams, *sddcSpec)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if validateSpecRes.StatusCode() != 200 && validateSpecRes.StatusCode() != 202 {
+		vcfError := api_client.GetError(validateSpecRes.Body)
+		api_client.LogError(vcfError)
+		if vcfError != nil {
+			return diag.FromErr(fmt.Errorf(*vcfError.Message))
+		}
 
-	var validationResponse *models.Validation
-	okResponse, acceptedResponse, err := client.ApiClient.SDDC.ValidateBringupSpec(validateSddcSpec)
-	if okResponse != nil {
-		validationResponse = okResponse.Payload
+		return diag.Errorf("failed to validate bringup spec")
 	}
-	if acceptedResponse != nil {
-		validationResponse = acceptedResponse.Payload
+	if validateSpecRes.JSON200 != nil {
+		validationResponse = validateSpecRes.JSON200
+	} else if validateSpecRes.JSON202 != nil {
+		validationResponse = validateSpecRes.JSON202
 	}
+
 	if err != nil {
 		return validation_utils.ConvertVcfErrorToDiag(err)
 	}
 	if validation_utils.HasValidationFailed(validationResponse) {
 		return validation_utils.ConvertValidationResultToDiag(validationResponse)
 	}
-	validationId := validationResponse.ID
+	validationId := validationResponse.Id
 	for {
-		getSddcValidationParams := sddc_api.NewGetBringupValidationParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout)
-		getSddcValidationParams.SetID(validationId)
-		getValidationResponse, err := client.ApiClient.SDDC.GetBringupValidation(getSddcValidationParams)
+		getValidationResponse, err := client.ApiClient.GetBringupValidationWithResponse(ctx, *validationId)
 		if err != nil {
 			return validation_utils.ConvertVcfErrorToDiag(err)
 		}
-		validationResponse = getValidationResponse.Payload
-		if validation_utils.HaveValidationChecksFinished(validationResponse.ValidationChecks) {
+		validationResponse = getValidationResponse.JSON200
+		if validationResponse != nil && validation_utils.HaveValidationChecksFinished(*validationResponse.ValidationChecks) {
 			break
 		}
 		time.Sleep(10 * time.Second)
@@ -383,20 +382,18 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	return nil
 }
 
-func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*models.SDDCTask, error) {
-	retrieveSddcResponse, err := client.ApiClient.SDDC.GetBringupTaskByID(
-		sddc_api.NewGetBringupTaskByIDParamsWithContext(ctx).WithID(bringupId).WithTimeout(constants.DefaultVcfApiCallTimeout))
+func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcTask, error) {
+	retrieveSddcResponse, err := client.ApiClient.GetBringupTaskByIDWithResponse(ctx, bringupId)
 	if err != nil {
 		return nil, err
 	}
-	return retrieveSddcResponse.Payload, nil
+	return retrieveSddcResponse.JSON200, nil
 }
 
-func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*models.SDDCManagerInfo, error) {
-	getSddcManagerInfoResponse, err := client.ApiClient.SDDC.GetSDDCManagerInfo(
-		sddc_api.NewGetSDDCManagerInfoParamsWithContext(ctx).WithID(bringupId).WithTimeout(constants.DefaultVcfApiCallTimeout))
+func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcManagerInfo, error) {
+	getSddcManagerInfoResponse, err := client.ApiClient.GetSddcManagerInfoWithResponse(ctx, bringupId)
 	if err != nil {
 		return nil, err
 	}
-	return getSddcManagerInfoResponse.Payload, nil
+	return getSddcManagerInfoResponse.JSON200, nil
 }

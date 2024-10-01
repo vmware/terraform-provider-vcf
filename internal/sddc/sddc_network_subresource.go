@@ -7,7 +7,7 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
@@ -26,10 +26,10 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					Required:    true,
 				},
 				"vlan_id": {
-					Type:         schema.TypeString,
+					Type:         schema.TypeInt,
 					Description:  "VLAN Id",
 					Required:     true,
-					ValidateFunc: validation.StringLenBetween(1, 4),
+					ValidateFunc: validation.IntBetween(0, 4096),
 				},
 				"active_up_links": {
 					Type:        schema.TypeList,
@@ -79,10 +79,10 @@ func GetNetworkSpecsSchema() *schema.Schema {
 				},
 				"include_ip_address_ranges": getIncludeIPAddressRangesSchema(),
 				"mtu": {
-					Type:         schema.TypeString,
+					Type:         schema.TypeInt,
 					Description:  "MTU size",
 					Required:     true,
-					ValidateFunc: validation.StringLenBetween(4, 4),
+					ValidateFunc: validation.IntBetween(1500, 9000),
 				},
 
 				"port_group_key": {
@@ -135,62 +135,67 @@ func getIncludeIPAddressRangesSchema() *schema.Schema {
 	}
 }
 
-func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []*models.SDDCNetworkSpec {
-	var networkSpecsBindingsList []*models.SDDCNetworkSpec
+func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []vcf.SddcNetworkSpec {
+	var networkSpecsBindingsList []vcf.SddcNetworkSpec
 	for _, networkSpec := range rawData {
 		data := networkSpec.(map[string]interface{})
-		subnet := data["subnet"].(string)
-		vlanID := data["vlan_id"].(string)
-		mtu := data["mtu"].(string)
-		portGroupKey := data["port_group_key"].(string)
+		subnet := utils.ToStringPointer(data["subnet"])
+		vlanID := data["vlan_id"].(int)
+		mtu := utils.ToIntPointer(data["mtu"])
+		portGroupKey := utils.ToStringPointer(data["port_group_key"])
 		networkType := data["network_type"].(string)
-		gateway := data["gateway"].(string)
-		subnetMask := data["subnet_mask"].(string)
-		teamingPolicy := data["teaming_policy"].(string)
+		gateway := utils.ToStringPointer(data["gateway"])
+		subnetMask := utils.ToStringPointer(data["subnet_mask"])
+		teamingPolicy := utils.ToStringPointer(data["teaming_policy"])
 
-		networkSpecsBinding := &models.SDDCNetworkSpec{
+		networkSpecsBinding := vcf.SddcNetworkSpec{
 			Gateway:       gateway,
 			Mtu:           mtu,
-			NetworkType:   utils.ToStringPointer(networkType),
+			NetworkType:   networkType,
 			PortGroupKey:  portGroupKey,
 			Subnet:        subnet,
 			SubnetMask:    subnetMask,
 			TeamingPolicy: teamingPolicy,
-			VlanID:        utils.ToStringPointer(vlanID),
+			VlanId:        vlanID,
 		}
 		if activeUpLinksData, ok := data["active_up_links"].([]interface{}); ok {
-			networkSpecsBinding.ActiveUplinks = utils.ToStringSlice(activeUpLinksData)
+			uplinks := utils.ToStringSlice(activeUpLinksData)
+			networkSpecsBinding.ActiveUplinks = &uplinks
 		}
 		if excludeIPAddressRangesData, ok := data["exclude_ip_address_ranges"].([]interface{}); ok {
-			networkSpecsBinding.ExcludeIPAddressRanges = utils.ToStringSlice(excludeIPAddressRangesData)
+			rangesData := utils.ToStringSlice(excludeIPAddressRangesData)
+			networkSpecsBinding.ExcludeIpAddressRanges = &rangesData
 		}
 		if excludeIPAddressesData, ok := data["exclude_ip_addresses"].([]interface{}); ok {
-			networkSpecsBinding.ExcludeIpaddresses = utils.ToStringSlice(excludeIPAddressesData)
+			addressesData := utils.ToStringSlice(excludeIPAddressesData)
+			networkSpecsBinding.ExcludeIpaddresses = &addressesData
 		}
 		if includeIPAddressData, ok := data["include_ip_address"].([]interface{}); ok {
-			networkSpecsBinding.IncludeIPAddress = utils.ToStringSlice(includeIPAddressData)
+			addressesData := utils.ToStringSlice(includeIPAddressData)
+			networkSpecsBinding.IncludeIpAddress = &addressesData
 		}
 		if includeIPAddressRangesData := getIncludeIPAddressRangesBindingFromSchema(data["include_ip_address_ranges"].([]interface{})); len(includeIPAddressRangesData) > 0 {
-			networkSpecsBinding.IncludeIPAddressRanges = includeIPAddressRangesData
+			networkSpecsBinding.IncludeIpAddressRanges = &includeIPAddressRangesData
 		}
 		if standbyUplinksData, ok := data["standby_uplinks"].([]interface{}); ok {
-			networkSpecsBinding.StandbyUplinks = utils.ToStringSlice(standbyUplinksData)
+			uplinks := utils.ToStringSlice(standbyUplinksData)
+			networkSpecsBinding.StandbyUplinks = &uplinks
 		}
 		networkSpecsBindingsList = append(networkSpecsBindingsList, networkSpecsBinding)
 	}
 	return networkSpecsBindingsList
 }
 
-func getIncludeIPAddressRangesBindingFromSchema(rawData []interface{}) []*models.IPRange {
-	var ipAddressRangesBindindsList []*models.IPRange
+func getIncludeIPAddressRangesBindingFromSchema(rawData []interface{}) []vcf.IpRange {
+	var ipAddressRangesBindindsList []vcf.IpRange
 	for _, ipAddressRange := range rawData {
 		data := ipAddressRange.(map[string]interface{})
 		startIPAddress := data["start_ip_address"].(string)
 		endIPAddress := data["end_ip_address"].(string)
 
-		ipAddressRangesBinding := &models.IPRange{
-			StartIPAddress: utils.ToStringPointer(startIPAddress),
-			EndIPAddress:   utils.ToStringPointer(endIPAddress),
+		ipAddressRangesBinding := vcf.IpRange{
+			StartIpAddress: startIPAddress,
+			EndIpAddress:   endIPAddress,
 		}
 		ipAddressRangesBindindsList = append(ipAddressRangesBindindsList, ipAddressRangesBinding)
 	}

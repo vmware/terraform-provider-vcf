@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/vcf-sdk-go/client/certificates"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -21,7 +20,7 @@ import (
 )
 
 func TestAccResourceVcfCertificateAuthority(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 			testAccVcfCertificateAuthorityPreCheck(t)
@@ -90,15 +89,16 @@ func testAccVcfCertificateAuthorityOpenSsl() string {
 func testVerifyVcfCertificateAuthority(caType string) error {
 	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
-	getCertificateAuthorityParams := &certificates.GetCertificateAuthorityByIDParams{
-		ID:      caType,
-		Context: context.Background(),
-	}
-	getCertificateAuthorityResponse, err := apiClient.Certificates.GetCertificateAuthorityByID(getCertificateAuthorityParams)
+	getCertificateAuthorityResponse, err := apiClient.GetCertificateAuthorityByIdWithResponse(context.TODO(), caType)
 	if err != nil {
 		return err
 	}
-	if *getCertificateAuthorityResponse.Payload.ID == caType {
+	if getCertificateAuthorityResponse.StatusCode() != 200 {
+		vcfError := api_client.GetError(getCertificateAuthorityResponse.Body)
+		api_client.LogError(vcfError)
+		return fmt.Errorf(*vcfError.Message)
+	}
+	if *getCertificateAuthorityResponse.JSON200.Id == caType {
 		return nil
 	} else {
 		return fmt.Errorf("CA not the expected type: %q", caType)
@@ -116,7 +116,7 @@ func testVerifyVcfCertificateAuthorityUpdate(_ *terraform.State) error {
 
 func testVerifyVcfCertificateAuthorityDestroy(_ *terraform.State) error {
 	err := testVerifyVcfCertificateAuthority("OpenSSL")
-	if !strings.Contains(err.Error(), "404") {
+	if !strings.Contains(err.Error(), "Failed to get CA configuration") {
 		return fmt.Errorf("expected CA to not be found after delete")
 	}
 	return nil

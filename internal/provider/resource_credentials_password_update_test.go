@@ -11,12 +11,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 func TestAccCredentialsResourcePasswordUpdate(t *testing.T) {
 	newPassword := fmt.Sprintf("%s$1A", acctest.RandString(7))
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{
@@ -49,5 +50,5 @@ func testAccResourceCredentialsPasswordUpdateConfig(newPassword string) string {
 			]
 		}
 
-`, os.Getenv("VCF_TEST_HOST1_FQDN"), newPassword)
+`, os.Getenv(constants.VcfTestHost1Fqdn), newPassword)
 }

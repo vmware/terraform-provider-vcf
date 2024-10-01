@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -48,8 +48,8 @@ func PortgroupSchema() *schema.Resource {
 	}
 }
 
-func tryConvertToPortgroupSpec(object map[string]interface{}) (*models.PortgroupSpec, error) {
-	result := &models.PortgroupSpec{}
+func tryConvertToPortgroupSpec(object map[string]interface{}) (*vcf.PortgroupSpec, error) {
+	result := &vcf.PortgroupSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to PortgroupSpec, object is nil")
 	}
@@ -57,26 +57,22 @@ func tryConvertToPortgroupSpec(object map[string]interface{}) (*models.Portgroup
 	if len(name) == 0 {
 		return nil, fmt.Errorf("cannot convert to PortgroupSpec, name is required")
 	}
-	result.Name = &name
+	result.Name = name
 	if transportType, ok := object["transport_type"]; ok && !validationutils.IsEmpty(transportType) {
 		transportTypeString := transportType.(string)
-		result.TransportType = &transportTypeString
+		result.TransportType = transportTypeString
 	}
 	if activeUplinks, ok := object["active_uplinks"].([]string); ok && !validationutils.IsEmpty(activeUplinks) {
-		result.ActiveUplinks = []string{}
-		result.ActiveUplinks = append(result.ActiveUplinks, activeUplinks...)
+		result.ActiveUplinks = &activeUplinks
 	}
 
 	return result, nil
 }
 
-func flattenPortgroupSpec(spec *models.PortgroupSpec) map[string]interface{} {
+func flattenPortgroupSpec(spec vcf.PortgroupSpec) map[string]interface{} {
 	result := make(map[string]interface{})
-	if spec == nil {
-		return result
-	}
-	result["name"] = *spec.Name
-	result["transport_type"] = *spec.TransportType
+	result["name"] = spec.Name
+	result["transport_type"] = spec.TransportType
 	result["active_uplinks"] = spec.ActiveUplinks
 
 	return result

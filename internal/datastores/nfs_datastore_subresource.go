@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -52,7 +53,7 @@ func NfsDatastoreSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToNfsDatastoreSpec(object map[string]interface{}) (*models.NfsDatastoreSpec, error) {
+func TryConvertToNfsDatastoreSpec(object map[string]interface{}) (*vcf.NfsDatastoreSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, object is nil")
 	}
@@ -64,12 +65,12 @@ func TryConvertToNfsDatastoreSpec(object map[string]interface{}) (*models.NfsDat
 	if len(path) == 0 {
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, path is required")
 	}
-	result := &models.NfsDatastoreSpec{}
-	result.DatastoreName = &datastoreName
-	result.NasVolume = &models.NasVolumeSpec{}
-	result.NasVolume.Path = &path
+	result := &vcf.NfsDatastoreSpec{}
+	result.DatastoreName = datastoreName
+	result.NasVolume = vcf.NasVolumeSpec{}
+	result.NasVolume.Path = path
 	if readOnly, ok := object["read_only"]; ok && !validationutils.IsEmpty(readOnly) {
-		result.NasVolume.ReadOnly = toBoolPointer(readOnly)
+		result.NasVolume.ReadOnly = readOnly.(bool)
 	} else {
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, read_only is required")
 	}
@@ -80,15 +81,7 @@ func TryConvertToNfsDatastoreSpec(object map[string]interface{}) (*models.NfsDat
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, server_name is required")
 	}
 	if userTag, ok := object["user_tag"]; ok && !validationutils.IsEmpty(userTag) {
-		result.NasVolume.UserTag = userTag.(string)
+		result.NasVolume.UserTag = utils.ToStringPointer(userTag)
 	}
 	return result, nil
-}
-
-func toBoolPointer(object interface{}) *bool {
-	if object == nil {
-		return nil
-	}
-	objectAsBool := object.(bool)
-	return &objectAsBool
 }
