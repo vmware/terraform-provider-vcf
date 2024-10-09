@@ -80,8 +80,21 @@ func HostSpecSchema() *schema.Resource {
 			"vmnic": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "vmnic configuration for the ESXi host",
-				Elem:        network.VMNicSchema(),
+				Description: "Physical NIC configuration for the ESXi host",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Name of the physical NIC",
+						},
+						"mac_address": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "MAC address of the physical NIC",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -109,6 +122,16 @@ func FlattenHost(host *models.Host) *map[string]interface{} {
 	result["host_name"] = host.Fqdn
 	if len(host.IPAddresses) > 0 && host.IPAddresses[0] != nil {
 		result["ip_address"] = host.IPAddresses[0].IPAddress
+	}
+	if len(host.PhysicalNics) > 0 {
+		var physicalNics []map[string]interface{}
+		for _, nic := range host.PhysicalNics {
+			nicMap := make(map[string]interface{})
+			nicMap["name"] = nic.DeviceName
+			nicMap["mac_address"] = nic.MacAddress
+			physicalNics = append(physicalNics, nicMap)
+		}
+		result["vmnic"] = physicalNics
 	}
 
 	return &result
