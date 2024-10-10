@@ -103,16 +103,18 @@ func FlattenVdsSpec(vdsSpec *models.VdsSpec) map[string]interface{} {
 	}
 	result["name"] = *vdsSpec.Name
 	result["is_used_by_nsx"] = vdsSpec.IsUsedByNSXT
-	flattenedNiocBandwidthAllocationSpecs := *new([]map[string]interface{})
+	flattenedNiocBandwidthAllocationSpecs := make([]map[string]interface{}, 0, len(vdsSpec.NiocBandwidthAllocationSpecs))
 	for _, niocBandwidthAllocationSpec := range vdsSpec.NiocBandwidthAllocationSpecs {
 		if niocBandwidthAllocationSpec != nil {
-			flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
-				flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
+			flattenedSpec := flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec)
+			if flattenedSpec != nil {
+				flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs, flattenedSpec)
+			}
 		}
 	}
 	result["nioc_bandwidth_allocations"] = flattenedNiocBandwidthAllocationSpecs
 
-	flattenedPortgroupSpecs := *new([]map[string]interface{})
+	flattenedPortgroupSpecs := make([]map[string]interface{}, 0, len(vdsSpec.PortGroupSpecs))
 	for _, portgroupSpec := range vdsSpec.PortGroupSpecs {
 		if portgroupSpec != nil {
 			flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,

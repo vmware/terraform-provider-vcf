@@ -7,6 +7,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"log"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -372,7 +373,7 @@ func FlattenCluster(ctx context.Context, clusterObj *models.Cluster, apiClient *
 	result["is_default"] = clusterObj.IsDefault
 	result["is_stretched"] = clusterObj.IsStretched
 
-	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
+	flattenedVdsSpecs, err := getFlattenedVdsSpecsForRefs(ctx, clusterObj.ID, apiClient)
 	result["vds"] = flattenedVdsSpecs
 
 	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
@@ -401,7 +402,9 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
 	_ = data.Set("is_default", clusterObj.IsDefault)
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
-	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
+
+	flattenedVdsSpecs, err := getFlattenedVdsSpecsForRefs(ctx, clusterId, apiClient)
+
 	_ = data.Set("vds", flattenedVdsSpecs)
 
 	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
@@ -454,15 +457,57 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []*models.HostRe
 	return flattenedHostSpecs, nil
 }
 
-func getFlattenedVdsSpecsForRefs(vdsSpecs []*models.VdsSpec) []map[string]interface{} {
-	flattenedVdsSpecs := *new([]map[string]interface{})
-	// Since backend API returns objects in random order sort VDSSpec list to ensure
-	// import is reproducible
-	sort.SliceStable(vdsSpecs, func(i, j int) bool {
-		return *vdsSpecs[i].Name < *vdsSpecs[j].Name
-	})
-	for _, vdsSpec := range vdsSpecs {
-		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))
+func getFlattenedVdsSpecsForRefs(ctx context.Context, clusterId string, apiClient *client.VcfClient) ([]map[string]interface{}, error) {
+	// Fetch VDS information
+	vdsParams := &clusters.GetVdsesParams{
+		ClusterID: clusterId,
+		Context:   ctx,
 	}
-	return flattenedVdsSpecs
+	vdsResponse, err := apiClient.Clusters.GetVdses(vdsParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if vdsResponse.Payload == nil {
+		log.Fatal("vdsResponse.Payload is nil")
+	}
+
+	flattenedVdsSpecs := make([]map[string]interface{}, len(vdsResponse.Payload))
+	for i, vds := range vdsResponse.Payload {
+		portGroupSpecs := make([]*models.PortgroupSpec, len(vds.PortGroups))
+		for j, pg := range vds.PortGroups {
+			portGroupSpecs[j] = &models.PortgroupSpec{
+				Name:          pg.Name,
+				TransportType: pg.TransportType,
+				ActiveUplinks: pg.ActiveUplinks,
+			}
+		}
+
+		niocSpecs := make([]*models.NiocBandwidthAllocationSpec, len(vds.NiocBandwidthAllocations))
+		for k, nioc := range vds.NiocBandwidthAllocations {
+			if nioc != nil {
+				niocSpecs[k] = &models.NiocBandwidthAllocationSpec{
+					Type: &nioc.Type,
+					NiocTrafficResourceAllocation: &models.NiocTrafficResourceAllocation{
+						SharesInfo: &models.SharesInfo{
+							Shares: nioc.NiocTrafficResourceAllocation.SharesInfo.Shares,
+							Level:  nioc.NiocTrafficResourceAllocation.SharesInfo.Level,
+						},
+					},
+				}
+			}
+		}
+
+		fmt.Println("Here is niocSpecs: ", niocSpecs)
+		vdsSpec := &models.VdsSpec{
+			Name:                         vds.Name,
+			IsUsedByNSXT:                 vds.IsUsedByNSXT,
+			PortGroupSpecs:               portGroupSpecs,
+			NiocBandwidthAllocationSpecs: niocSpecs,
+		}
+
+		flattenedVdsSpecs[i] = network.FlattenVdsSpec(vdsSpec)
+	}
+
+	return flattenedVdsSpecs, nil
 }
