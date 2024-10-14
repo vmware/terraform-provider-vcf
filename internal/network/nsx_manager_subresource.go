@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -53,8 +54,8 @@ func NsxManagerNodeSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToNsxManagerNodeSpec(object map[string]interface{}) (models.NsxManagerSpec, error) {
-	result := models.NsxManagerSpec{}
+func TryConvertToNsxManagerNodeSpec(object map[string]interface{}) (vcf.NsxManagerSpec, error) {
+	result := vcf.NsxManagerSpec{}
 	if object == nil {
 		return result, fmt.Errorf("cannot convert to NsxManagerSpec, object is nil")
 	}
@@ -67,17 +68,17 @@ func TryConvertToNsxManagerNodeSpec(object map[string]interface{}) (models.NsxMa
 		return result, fmt.Errorf("cannot convert to NsxManagerSpec, ip_address is required")
 	}
 	result.Name = &name
-	result.NetworkDetailsSpec = &models.NetworkDetailsSpec{
-		IPAddress: &ipAddress,
+	result.NetworkDetailsSpec = vcf.NetworkDetailsSpec{
+		IpAddress: &ipAddress,
 	}
 	if fqdn, ok := object["fqdn"]; ok && !validationutils.IsEmpty(fqdn) {
-		result.NetworkDetailsSpec.DNSName = fqdn.(string)
+		result.NetworkDetailsSpec.DnsName = fqdn.(string)
 	}
 	if subnetMask, ok := object["subnet_mask"]; ok && !validationutils.IsEmpty(subnetMask) {
-		result.NetworkDetailsSpec.SubnetMask = subnetMask.(string)
+		result.NetworkDetailsSpec.SubnetMask = resource_utils.ToStringPointer(subnetMask)
 	}
 	if gateway, ok := object["gateway"]; ok && !validationutils.IsEmpty(gateway) {
-		result.NetworkDetailsSpec.Gateway = gateway.(string)
+		result.NetworkDetailsSpec.Gateway = resource_utils.ToStringPointer(gateway)
 	}
 	return result, nil
 }

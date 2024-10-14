@@ -6,17 +6,17 @@ package network
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/nsxt_clusters"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
+	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
@@ -88,7 +88,7 @@ func NsxSchema() *schema.Resource {
 
 // TryConvertToNsxSpec is a convenience method that converts a map[string]interface{}
 // // received from the Terraform SDK to an API struct, used in VCF API calls.
-func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error) {
+func TryConvertToNsxSpec(object map[string]interface{}) (*vcf.NsxTSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, object is nil")
 	}
@@ -112,72 +112,73 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*models.NsxTSpec, error
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, license_key is required")
 	}
 
-	result := &models.NsxTSpec{}
+	result := &vcf.NsxTSpec{}
 	result.Vip = &vip
-	result.VipFqdn = &vipFqdn
-	result.NsxManagerAdminPassword = nsxManagerAdminPassword
-	result.LicenseKey = licenseKey
+	result.VipFqdn = vipFqdn
+	result.NsxManagerAdminPassword = &nsxManagerAdminPassword
+	result.LicenseKey = &licenseKey
 
 	if formFactor, ok := object["form_factor"]; ok && !validationutils.IsEmpty(formFactor) {
-		result.FormFactor = formFactor.(string)
+		result.FormFactor = resource_utils.ToStringPointer(formFactor)
 	}
 
 	if nsxManagerAuditPassword, ok := object["nsx_manager_audit_password"]; ok && !validationutils.IsEmpty(nsxManagerAuditPassword) {
-		result.NsxManagerAuditPassword = nsxManagerAuditPassword.(string)
+		result.NsxManagerAuditPassword = resource_utils.ToStringPointer(nsxManagerAuditPassword)
 	}
 	nsxManagerList := object["nsx_manager_node"].([]interface{})
 	if len(nsxManagerList) == 0 {
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, at least one entry for nsx_manager_node is required")
 	}
 
-	var nsxManagerSpecs []*models.NsxManagerSpec
+	var nsxManagerSpecs []vcf.NsxManagerSpec
 	for _, nsxManagerListEntry := range nsxManagerList {
 		nsxManager := nsxManagerListEntry.(map[string]interface{})
 		nsxManagerSpec, err := TryConvertToNsxManagerNodeSpec(nsxManager)
 		if err != nil {
 			return nil, err
 		}
-		nsxManagerSpecs = append(nsxManagerSpecs, &nsxManagerSpec)
+		nsxManagerSpecs = append(nsxManagerSpecs, nsxManagerSpec)
 	}
 	result.NsxManagerSpecs = nsxManagerSpecs
 
 	return result, nil
 }
 
-func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef *models.NsxTClusterReference,
-	apiClient *client.VcfClient) (*[]interface{}, error) {
+func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef vcf.NsxTClusterReference,
+	apiClient *vcf.ClientWithResponses) (*[]interface{}, error) {
 	flattenedNsxCluster := make(map[string]interface{})
-	if nsxtClusterRef == nil {
-		return new([]interface{}), nil
-	}
-	flattenedNsxCluster["id"] = nsxtClusterRef.ID
+	flattenedNsxCluster["id"] = nsxtClusterRef.Id
 	flattenedNsxCluster["vip"] = nsxtClusterRef.Vip
 	flattenedNsxCluster["vip_fqdn"] = nsxtClusterRef.VipFqdn
 
-	getNsxTClusterParams := nsxt_clusters.NewGetNsxClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(nsxtClusterRef.ID)
-
-	nsxtClusterResponse, err := apiClient.NSXTClusters.GetNsxCluster(getNsxTClusterParams)
+	res, err := apiClient.GetNsxClusterWithResponse(ctx, *nsxtClusterRef.Id)
 	if err != nil {
 		return nil, err
 	}
-	nsxtCluster := nsxtClusterResponse.Payload
-	nsxtManagerNodes := nsxtCluster.Nodes
-	// Since backend API returns objects in random order sort nsxtManagerNodes list to ensure
-	// import is reproducible
-	sort.SliceStable(nsxtManagerNodes, func(i, j int) bool {
-		return nsxtManagerNodes[i].ID < nsxtManagerNodes[j].ID
-	})
-	nsxtManagersNodesRaw := *new([]map[string]interface{})
-	for _, nsxtManagerNode := range nsxtManagerNodes {
-		nsxtManagersNodeRaw := make(map[string]interface{})
-		nsxtManagersNodeRaw["name"] = nsxtManagerNode.Name
-		nsxtManagersNodeRaw["ip_address"] = nsxtManagerNode.IPAddress
-		nsxtManagersNodeRaw["fqdn"] = nsxtManagerNode.Fqdn
-		nsxtManagersNodesRaw = append(nsxtManagersNodesRaw, nsxtManagersNodeRaw)
+	if res.StatusCode() != 200 {
+		vcfError := api_client.GetError(res.Body)
+		api_client.LogError(vcfError)
+		return nil, errors.New(*vcfError.Message)
+	}
+	nsxtCluster := res.JSON200
+	if nsxtCluster.Nodes != nil {
+		nsxtManagerNodes := *nsxtCluster.Nodes
+		// Since backend API returns objects in random order sort nsxtManagerNodes list to ensure
+		// import is reproducible
+		sort.SliceStable(nsxtManagerNodes, func(i, j int) bool {
+			return *(nsxtManagerNodes[i].Id) < *(nsxtManagerNodes[j].Id)
+		})
+		nsxtManagersNodesRaw := *new([]map[string]interface{})
+		for _, nsxtManagerNode := range nsxtManagerNodes {
+			nsxtManagersNodeRaw := make(map[string]interface{})
+			nsxtManagersNodeRaw["name"] = nsxtManagerNode.Name
+			nsxtManagersNodeRaw["ip_address"] = nsxtManagerNode.IpAddress
+			nsxtManagersNodeRaw["fqdn"] = nsxtManagerNode.Fqdn
+			nsxtManagersNodesRaw = append(nsxtManagersNodesRaw, nsxtManagersNodeRaw)
+		}
+		flattenedNsxCluster["nsx_manager_node"] = nsxtManagersNodesRaw
 	}
 
-	flattenedNsxCluster["nsx_manager_node"] = nsxtManagersNodesRaw
 	result := *new([]interface{})
 	result = append(result, flattenedNsxCluster)
 

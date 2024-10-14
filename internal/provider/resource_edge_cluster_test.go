@@ -23,7 +23,7 @@ const (
 
 // same as the "full" test but will most optional inputs omitted.
 func TestAccResourceEdgeCluster_basic(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
@@ -55,7 +55,7 @@ func TestAccResourceEdgeCluster_basic(t *testing.T) {
 }
 
 func TestAccResourceEdgeCluster_full(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{

@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -13,13 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/certificates"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
 func ResourceExternalCertificate() *schema.Resource {
@@ -93,43 +92,40 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	certificateChain := data.Get("certificate_chain").(string)
 	resourceCertificate := data.Get("resource_certificate").(string)
 
-	var resourceCertificateSpec *models.ResourceCertificateSpec
+	var resourceCertificateSpec vcf.ResourceCertificateSpec
 
-	if !validation_utils.IsEmpty(resourceCertificate) && !validation_utils.IsEmpty(caCertificate) {
-		resourceCertificateSpec = &models.ResourceCertificateSpec{
-			ResourceFqdn:        resourceFqdn,
-			CaCertificate:       caCertificate,
-			ResourceCertificate: resourceCertificate,
+	if !validationutils.IsEmpty(resourceCertificate) && !validationutils.IsEmpty(caCertificate) {
+		resourceCertificateSpec = vcf.ResourceCertificateSpec{
+			ResourceFqdn:        &resourceFqdn,
+			CaCertificate:       &caCertificate,
+			ResourceCertificate: &resourceCertificate,
 		}
-	} else if !validation_utils.IsEmpty(certificateChain) {
-		resourceCertificateSpec = &models.ResourceCertificateSpec{
-			ResourceFqdn:     resourceFqdn,
-			CertificateChain: certificateChain,
+	} else if !validationutils.IsEmpty(certificateChain) {
+		resourceCertificateSpec = vcf.ResourceCertificateSpec{
+			ResourceFqdn:     &resourceFqdn,
+			CertificateChain: &certificateChain,
 		}
 	} else {
 		return diag.FromErr(fmt.Errorf("no certificate_chain or (ca_certificate, resource_certificate) defined"))
 	}
 
-	resourceCertificateSpecs := []*models.ResourceCertificateSpec{resourceCertificateSpec}
+	resourceCertificateSpecs := []vcf.ResourceCertificateSpec{resourceCertificateSpec}
 
 	diags := certificates.ValidateResourceCertificates(ctx, apiClient, domainID, resourceCertificateSpecs)
 	if diags != nil {
 		return diags
 	}
 
-	replaceResourceCertificatesParams := certificatesSdk.NewReplaceResourceCertificatesParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithID(domainID)
-	replaceResourceCertificatesParams.SetResourceCertificateSpecs(resourceCertificateSpecs)
-
-	var taskId string
-	_, responseAcc, err := apiClient.Certificates.ReplaceResourceCertificates(replaceResourceCertificatesParams)
+	responseAcc, err := apiClient.ReplaceResourceCertificatesWithResponse(ctx, domainID, resourceCertificateSpecs)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if responseAcc != nil {
-		taskId = responseAcc.Payload.ID
+	if responseAcc.StatusCode() != 202 {
+		vcfError := api_client.GetError(responseAcc.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
 	}
+	taskId := *responseAcc.JSON202.Id
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
@@ -156,7 +152,7 @@ func resourceResourceExternalCertificateRead(ctx context.Context, data *schema.R
 		return diag.FromErr(err)
 	}
 
-	flattenedCert := certificates.FlattenCertificateWithSubject(cert)
+	flattenedCert := certificates.FlattenCertificate(*cert)
 	_ = data.Set("certificate", []interface{}{flattenedCert})
 
 	return nil

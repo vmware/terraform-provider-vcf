@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -52,7 +53,7 @@ func VsanDatastoreSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSANDatastoreSpec, error) {
+func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*vcf.VsanDatastoreSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, object is nil")
 	}
@@ -60,21 +61,20 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*models.VSAND
 	if len(datastoreName) == 0 {
 		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, datastore_name is required")
 	}
-	result := &models.VSANDatastoreSpec{}
-	result.DatastoreName = &datastoreName
-	licenseKey := object["license_key"].(string)
-	result.LicenseKey = licenseKey
+	result := &vcf.VsanDatastoreSpec{}
+	result.DatastoreName = datastoreName
+	result.LicenseKey = utils.ToStringPointer(object["license_key"])
 	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validationutils.IsEmpty(dedupAndCompressionEnabled) {
-		result.DedupAndCompressionEnabled = dedupAndCompressionEnabled.(bool)
+		result.DedupAndCompressionEnabled = utils.ToBoolPointer(dedupAndCompressionEnabled)
 	}
 	if esaEnabled, ok := object["esa_enabled"]; ok && !validationutils.IsEmpty(esaEnabled) {
 		value := esaEnabled.(bool)
-		esaConfig := models.EsaConfig{Enabled: &value}
+		esaConfig := vcf.EsaConfig{Enabled: value}
 		result.EsaConfig = &esaConfig
 	}
 	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validationutils.IsEmpty(failuresToTolerate) {
 		failuresToTolerateInt := int32(failuresToTolerate.(int))
-		result.FailuresToTolerate = failuresToTolerateInt
+		result.FailuresToTolerate = &failuresToTolerateInt
 	}
 
 	return result, nil

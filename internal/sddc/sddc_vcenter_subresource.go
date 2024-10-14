@@ -7,9 +7,8 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
@@ -73,7 +72,7 @@ func GetVcenterSchema() *schema.Schema {
 	}
 }
 
-func GetVcenterSpecFromSchema(rawData []interface{}) *models.SDDCVcenterSpec {
+func GetVcenterSpecFromSchema(rawData []interface{}) *vcf.SddcVcenterSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -87,15 +86,15 @@ func GetVcenterSpecFromSchema(rawData []interface{}) *models.SDDCVcenterSpec {
 	vcenterIP := data["vcenter_ip"].(string)
 	vmSize := data["vm_size"].(string)
 
-	vcenterSpecBinding := &models.SDDCVcenterSpec{
-		LicenseFile:         licence,
-		RootVcenterPassword: utils.ToStringPointer(rootVcenterPassword),
-		SSHThumbprint:       sshThumbprint,
-		SSLThumbprint:       sslThumbprint,
-		StorageSize:         storageSize,
-		VcenterHostname:     utils.ToStringPointer(vcenterHostname),
-		VcenterIP:           vcenterIP,
-		VMSize:              vmSize,
+	vcenterSpecBinding := &vcf.SddcVcenterSpec{
+		LicenseFile:         &licence,
+		RootVcenterPassword: rootVcenterPassword,
+		SshThumbprint:       &sshThumbprint,
+		SslThumbprint:       &sslThumbprint,
+		StorageSize:         &storageSize,
+		VcenterHostname:     vcenterHostname,
+		VcenterIp:           &vcenterIP,
+		VmSize:              &vmSize,
 	}
 	return vcenterSpecBinding
 }

@@ -18,7 +18,7 @@ import (
 func TestAccResourceAutorotatePolicy_resourceId(t *testing.T) {
 	rotateDays := acctest.RandIntRange(credentials.AutoRotateDaysMin, credentials.AutorotateDaysMax)
 	timeAfter := time.Now().AddDate(0, 0, rotateDays)
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{
@@ -49,6 +49,7 @@ func testAccAutorotatePolicyResourceIdConfig(rotateDays int) string {
 		resource "vcf_credentials_auto_rotate_policy" "vc_0_autorotate" {
 			resource_id = data.vcf_credentials.sddc_creds.credentials[0].resource[0].id
 			resource_type = data.vcf_credentials.sddc_creds.credentials[0].resource[0].type
+			resource_name = data.vcf_credentials.sddc_creds.credentials[0].resource[0].name
 			user_name = data.vcf_credentials.sddc_creds.credentials[0].user_name
 			enable_auto_rotation = true
 			auto_rotate_days = %v

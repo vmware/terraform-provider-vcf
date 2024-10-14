@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/credentials"
@@ -135,10 +135,10 @@ func createAutorotateID(data *schema.ResourceData) (string, error) {
 	return credentials.HashFields(params)
 }
 
-func filterCredentials(userName, resourceId string, creds []*models.Credential) []*models.Credential {
-	result := make([]*models.Credential, 0)
+func filterCredentials(userName, resourceId string, creds []vcf.Credential) []vcf.Credential {
+	result := make([]vcf.Credential, 0)
 	for _, cred := range creds {
-		if *cred.Username == userName && cred.Resource != nil && *cred.Resource.ResourceID == resourceId {
+		if *cred.Username == userName && cred.Resource != nil && cred.Resource.ResourceId == resourceId {
 			result = append(result, cred)
 		}
 	}

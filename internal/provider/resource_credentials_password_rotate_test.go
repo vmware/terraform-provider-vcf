@@ -13,7 +13,7 @@ import (
 )
 
 func TestAccCredentialsResourcePasswordRotate(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{

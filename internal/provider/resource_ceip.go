@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -13,11 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client/ceip"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 const (
@@ -62,13 +61,13 @@ func resourceCeipCreate(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
-	ceipResult, err := apiClient.CEIP.GetCEIPStatus(ceip.NewGetCEIPStatusParamsWithTimeout(constants.DefaultVcfApiCallTimeout))
+	ceipResult, err := apiClient.GetCeipStatusWithResponse(ctx)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
-	d.SetId(ceipResult.Payload.InstanceID)
+	d.SetId(*ceipResult.JSON200.InstanceId)
 	return nil
 }
 
@@ -76,29 +75,29 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := ceip.NewSetCEIPStatusParamsWithTimeout(2 * time.Minute)
-	updateSpec := models.CEIPUpdateSpec{}
-
+	var enableApiParam string
 	if status, ok := d.GetOk("status"); ok {
 		statusVal := status.(string)
 		// the VCF PATCH API requires the params "ENABLE/DISABLE" while the resource states are "ENABLED/DISABLED"
-		var enableApiParam string
 		if statusVal == EnabledState {
 			enableApiParam = EnableApiParam
 		} else if statusVal == DisabledState {
 			enableApiParam = DisableApiParam
 		}
-		updateSpec.Status = &enableApiParam
 	}
 
-	params.CEIPUpdateSpec = &updateSpec
-	_, ceipAccepted, err := apiClient.CEIP.SetCEIPStatus(params)
+	res, err := apiClient.SetCeipStatusWithResponse(ctx, vcf.CeipUpdateSpec{Status: enableApiParam})
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
+	if res.StatusCode() != 202 {
+		vcfError := api_client.GetError(res.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
 
-	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, *res.JSON202.Id) != nil {
 		return diag.FromErr(err)
 	}
 
@@ -112,19 +111,17 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := ceip.NewSetCEIPStatusParams()
-	updateSpec := models.CEIPUpdateSpec{}
+	updateSpec := vcf.CeipUpdateSpec{}
 	statusVal := DisableApiParam
-	updateSpec.Status = &statusVal
-	params.CEIPUpdateSpec = &updateSpec
+	updateSpec.Status = statusVal
 
-	_, ceipAccepted, err := apiClient.CEIP.SetCEIPStatus(params)
+	ceipAccepted, err := apiClient.SetCeipStatusWithResponse(ctx, updateSpec)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
 
-	if vcfClient.WaitForTask(ctx, ceipAccepted.Payload.ID) != nil {
+	if vcfClient.WaitForTask(ctx, *ceipAccepted.JSON202.Id) != nil {
 		return diag.FromErr(err)
 	}
 

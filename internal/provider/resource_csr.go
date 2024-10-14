@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -13,13 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/certificates"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
 
 func ResourceCsr() *schema.Resource {
@@ -121,55 +120,54 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	organizationUnit := data.Get("organization_unit").(string)
 	state := data.Get("state").(string)
 
-	csrGenerationSpec := &models.CSRGenerationSpec{
-		Country:          &country,
-		Email:            email,
-		KeyAlgorithm:     resource_utils.ToStringPointer("RSA"),
-		KeySize:          &keySize,
-		Locality:         &locality,
-		Organization:     &organization,
-		OrganizationUnit: &organizationUnit,
-		State:            &state,
+	csrGenerationSpec := vcf.CsrGenerationSpec{
+		Country:          country,
+		Email:            &email,
+		KeyAlgorithm:     "RSA",
+		KeySize:          keySize,
+		Locality:         locality,
+		Organization:     organization,
+		OrganizationUnit: organizationUnit,
+		State:            state,
 	}
 
-	csrsGenerationSpec := &models.CSRSGenerationSpec{
-		CSRGenerationSpec: csrGenerationSpec,
-		Resources: []*models.Resource{
+	csrsGenerationSpec := vcf.CsrsGenerationSpec{
+		CsrGenerationSpec: csrGenerationSpec,
+		Resources: &[]vcf.Resource{
 			{
-				Fqdn: resourceFqdn,
-				Type: &resourceType,
+				Fqdn: &resourceFqdn,
+				Type: resourceType,
 			},
 		},
 	}
 
-	generateCsrParams := certificatesSdk.NewGeneratesCSRsParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithID(domainId).
-		WithCSRSGenerationSpec(csrsGenerationSpec)
-
-	var taskId string
-	_, task, err := apiClient.Certificates.GeneratesCSRs(generateCsrParams)
+	task, err := apiClient.GeneratesCSRsWithResponse(ctx, domainId, csrsGenerationSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if task != nil {
-		taskId = task.Payload.ID
+	if task.StatusCode() != 202 {
+		vcfError := api_client.GetError(task.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
 	}
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	taskId := task.JSON202.Id
+	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	data.SetId(fmt.Sprintf("csr:%s:%s:%s:%s", domainId, resourceType, resourceFqdn, taskId))
+	data.SetId(fmt.Sprintf("csr:%s:%s:%s:%s", domainId, resourceType, resourceFqdn, *taskId))
 
-	getCsrsParams := certificatesSdk.NewGetCSRsParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithID(domainId)
-	getCsrResponse, err := apiClient.Certificates.GetCSRs(getCsrsParams)
+	getCsrResponse, err := apiClient.GetCSRsWithResponse(ctx, domainId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if getCsrResponse.StatusCode() != 200 {
+		vcfError := api_client.GetError(getCsrResponse.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
 
-	csr := getCsrByResourceFqdn(resourceFqdn, getCsrResponse.Payload.Elements)
+	csr := getCsrByResourceFqdn(resourceFqdn, getCsrResponse.JSON200.Elements)
 	flattenedCsr := certificates.FlattenCsr(csr)
 	_ = data.Set("csr", []interface{}{flattenedCsr})
 
@@ -189,13 +187,13 @@ func resourceCsrDelete(_ context.Context, _ *schema.ResourceData, _ interface{})
 }
 
 // getCsrByResourceFqdn SDDC Manager API doesn't return CSR resource type, just FQDN.
-func getCsrByResourceFqdn(resourceFqdn string, csrs []*models.CSR) *models.CSR {
-	if len(resourceFqdn) < 1 || len(csrs) < 1 {
+func getCsrByResourceFqdn(resourceFqdn string, csrs *[]vcf.Csr) *vcf.Csr {
+	if len(resourceFqdn) < 1 || csrs != nil && len(*csrs) < 1 {
 		return nil
 	}
-	for _, csr := range csrs {
-		if len(csr.Resource.Fqdn) > 0 && resourceFqdn == csr.Resource.Fqdn {
-			return csr
+	for _, csr := range *csrs {
+		if csr.Resource != nil && csr.Resource.Fqdn != nil && resourceFqdn == *csr.Resource.Fqdn {
+			return &csr
 		}
 	}
 	return nil

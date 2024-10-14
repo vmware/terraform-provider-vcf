@@ -11,7 +11,7 @@ import (
 )
 
 func TestAccDataSourceCredentialsAll(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{
@@ -22,7 +22,7 @@ func TestAccDataSourceCredentialsAll(t *testing.T) {
 }
 
 func TestAccDataSourceCredentials_VC(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccSDDCManagerOrCloudBuilderPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{{

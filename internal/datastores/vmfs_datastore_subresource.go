@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 // VmfsDatastoreSchema this helper function extracts the VMFS Datastore schema, so that
@@ -26,7 +26,7 @@ func VmfsDatastoreSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToVmfsDatastoreSpec(object map[string]interface{}) (*models.VmfsDatastoreSpec, error) {
+func TryConvertToVmfsDatastoreSpec(object map[string]interface{}) (*vcf.VmfsDatastoreSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to VmfsDatastoreSpec, object is nil")
 	}
@@ -34,11 +34,11 @@ func TryConvertToVmfsDatastoreSpec(object map[string]interface{}) (*models.VmfsD
 	if len(datastoreNames) == 0 {
 		return nil, fmt.Errorf("cannot convert to VmfsDatastoreSpec, datastore_names is required")
 	}
-	result := &models.VmfsDatastoreSpec{}
-	result.FcSpec = []*models.FcSpec{}
+	result := &vcf.VmfsDatastoreSpec{}
+	specs := []vcf.FcSpec{}
 	for _, datastoreName := range datastoreNames {
-		datastoreNameRef := &datastoreName
-		result.FcSpec = append(result.FcSpec, &models.FcSpec{DatastoreName: datastoreNameRef})
+		specs = append(specs, vcf.FcSpec{DatastoreName: datastoreName})
 	}
+	result.FcSpec = &specs
 	return result, nil
 }

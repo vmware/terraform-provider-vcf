@@ -7,7 +7,7 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -159,7 +159,7 @@ func getResourcePoolSchema() *schema.Schema {
 	}
 }
 
-func GetSddcClusterSpecFromSchema(rawData []interface{}) *models.SDDCClusterSpec {
+func GetSddcClusterSpecFromSchema(rawData []interface{}) *vcf.SddcClusterSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -173,58 +173,58 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *models.SDDCClusterSpec
 		vmFolder = data["vm_folder"].(map[string]string)
 	}
 
-	clusterSpecBinding := &models.SDDCClusterSpec{
-		ClusterEvcMode:         clusterEvcMode,
+	clusterSpecBinding := &vcf.SddcClusterSpec{
+		ClusterEvcMode:         &clusterEvcMode,
 		ClusterName:            clusterName,
 		HostFailuresToTolerate: hostFailuresToTolerate,
-		VMFolders:              vmFolder,
-		ClusterImageEnabled:    clusterImageEnabled,
+		VmFolders:              &vmFolder,
+		ClusterImageEnabled:    &clusterImageEnabled,
 	}
 
 	if resourcePoolSpecs := getResourcePoolSpecsFromSchema(
 		data["resource_pool"].([]interface{})); len(resourcePoolSpecs) > 0 {
-		clusterSpecBinding.ResourcePoolSpecs = resourcePoolSpecs
+		clusterSpecBinding.ResourcePoolSpecs = &resourcePoolSpecs
 	}
 
 	return clusterSpecBinding
 }
 
-func getResourcePoolSpecsFromSchema(rawData []interface{}) []*models.ResourcePoolSpec {
-	var resourcePoolSpecs []*models.ResourcePoolSpec
+func getResourcePoolSpecsFromSchema(rawData []interface{}) []vcf.ResourcePoolSpec {
+	var resourcePoolSpecs []vcf.ResourcePoolSpec
 	for _, resourcePool := range rawData {
 		data := resourcePool.(map[string]interface{})
 		cpuLimit := int64(data["cpu_limit"].(float64))
 		cpuReservationExpandable := data["cpu_reservation_expandable"].(bool)
 		cpuReservationMhz := int64(data["cpu_reservation_mhz"].(float64))
 		cpuReservationPercentage := utils.ToInt32Pointer(data["cpu_reservation_percentage"])
-		cpuSharesLevel := data["cpu_shares_level"].(string)
+		cpuSharesLevel := vcf.ResourcePoolSpecCpuSharesLevel(data["cpu_shares_level"].(string))
 		cpuSharesValue := int32(data["cpu_shares_value"].(int))
 		memoryLimit := int64(data["memory_limit"].(float64))
 		memoryReservationPercentage := utils.ToInt32Pointer(data["memory_reservation_percentage"])
 		memoryReservationExpandable := utils.ToBoolPointer(data["memory_reservation_expandable"])
 		memoryReservationMB := int64(data["memory_reservation_mb"].(float64))
-		memorySharesLevel := data["memory_shares_level"].(string)
+		memorySharesLevel := vcf.ResourcePoolSpecMemorySharesLevel(data["memory_shares_level"].(string))
 		memorySharesValue := int32(data["memory_shares_value"].(int))
 		name := utils.ToStringPointer(data["name"])
-		resourcePoolType := data["type"].(string)
+		resourcePoolType := vcf.ResourcePoolSpecType(data["type"].(string))
 
-		resourcePoolSpec := &models.ResourcePoolSpec{
-			CPULimit:                    cpuLimit,
-			CPUReservationExpandable:    cpuReservationExpandable,
-			CPUReservationMhz:           cpuReservationMhz,
-			CPUReservationPercentage:    cpuReservationPercentage,
-			CPUSharesValue:              cpuSharesValue,
-			CPUSharesLevel:              cpuSharesLevel,
-			MemoryLimit:                 memoryLimit,
-			MemorySharesLevel:           memorySharesLevel,
+		resourcePoolSpec := &vcf.ResourcePoolSpec{
+			CpuLimit:                    &cpuLimit,
+			CpuReservationExpandable:    &cpuReservationExpandable,
+			CpuReservationMhz:           &cpuReservationMhz,
+			CpuReservationPercentage:    cpuReservationPercentage,
+			CpuSharesValue:              &cpuSharesValue,
+			CpuSharesLevel:              &cpuSharesLevel,
+			MemoryLimit:                 &memoryLimit,
+			MemorySharesLevel:           &memorySharesLevel,
 			MemoryReservationPercentage: memoryReservationPercentage,
 			MemoryReservationExpandable: memoryReservationExpandable,
-			MemoryReservationMb:         memoryReservationMB,
+			MemoryReservationMb:         &memoryReservationMB,
 			MemorySharesValue:           &memorySharesValue,
 			Name:                        name,
-			Type:                        resourcePoolType,
+			Type:                        &resourcePoolType,
 		}
-		resourcePoolSpecs = append(resourcePoolSpecs, resourcePoolSpec)
+		resourcePoolSpecs = append(resourcePoolSpecs, *resourcePoolSpec)
 	}
 	return resourcePoolSpecs
 }

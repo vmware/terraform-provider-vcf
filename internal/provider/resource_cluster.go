@@ -15,17 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/clusters"
-	"github.com/vmware/vcf-sdk-go/client/domains"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/cluster"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/vsan"
 )
@@ -250,7 +245,7 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	clusterId, diagnostics := createCluster(ctx, domainId, clusterSpec, vcfClient)
+	clusterId, diagnostics := createCluster(ctx, domainId, *clusterSpec, vcfClient)
 	if diagnostics != nil {
 		return diagnostics
 	}
@@ -263,15 +258,11 @@ func resourceClusterCreate(ctx context.Context, data *schema.ResourceData, meta 
 func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
-	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	getClusterParams.ID = data.Id()
-
-	clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
+	clusterResult, err := apiClient.GetClusterWithResponse(ctx, data.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	clusterObj := clusterResult.Payload
+	clusterObj := clusterResult.JSON200
 
 	_ = data.Set("primary_datastore_name", clusterObj.PrimaryDatastoreName)
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
@@ -289,7 +280,7 @@ func resourceClusterUpdate(ctx context.Context, data *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	diagnostics := updateCluster(ctx, data.Id(), clusterUpdateSpec, vcfClient)
+	diagnostics := updateCluster(ctx, data.Id(), *clusterUpdateSpec, vcfClient)
 	if diagnostics != nil {
 		return diagnostics
 	}
@@ -308,49 +299,51 @@ func resourceClusterDelete(ctx context.Context, data *schema.ResourceData, meta 
 	return nil
 }
 
-func createCluster(ctx context.Context, domainId string, clusterSpec *models.ClusterSpec,
+func createCluster(ctx context.Context, domainId string, clusterSpec vcf.ClusterSpec,
 	vcfClient *api_client.SddcManagerClient) (string, diag.Diagnostics) {
 	apiClient := vcfClient.ApiClient
-	clusterCreationSpec := models.ClusterCreationSpec{
-		ComputeSpec: &models.ComputeSpec{
-			ClusterSpecs: []*models.ClusterSpec{clusterSpec},
+	clusterCreationSpec := vcf.ClusterCreationSpec{
+		ComputeSpec: vcf.ComputeSpec{
+			ClusterSpecs: []vcf.ClusterSpec{clusterSpec},
 		},
-		DomainID: resource_utils.ToStringPointer(domainId),
+		DomainId: domainId,
 	}
 
-	validateClusterSpec := clusters.NewValidateClusterCreationSpecParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	validateClusterSpec.ClusterCreationSpec = &clusterCreationSpec
-
-	validateResponse, err := apiClient.Clusters.ValidateClusterCreationSpec(validateClusterSpec)
+	validateResponse, err := apiClient.ValidateClusterCreationSpecWithResponse(ctx, nil, clusterCreationSpec)
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validationUtils.HasValidationFailed(validateResponse.Payload) {
-		return "", validationUtils.ConvertValidationResultToDiag(validateResponse.Payload)
+	if validateResponse.StatusCode() != 200 {
+		vcfError := api_client.GetError(validateResponse.Body)
+		api_client.LogError(vcfError)
+		return "", diag.FromErr(errors.New(*vcfError.Message))
+	}
+	if validationUtils.HasValidationFailed(validateResponse.JSON200) {
+		return "", validationUtils.ConvertValidationResultToDiag(validateResponse.JSON200)
 	}
 
-	clusterCreateParams := clusters.NewCreateClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterCreateParams.ClusterCreationSpec = &clusterCreationSpec
-
-	_, accepted, err := apiClient.Clusters.CreateCluster(clusterCreateParams)
+	accepted, err := apiClient.CreateClusterWithResponse(ctx, clusterCreationSpec)
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	taskId := accepted.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	if accepted.StatusCode() != 202 {
+		vcfError := api_client.GetError(validateResponse.Body)
+		api_client.LogError(vcfError)
+		return "", diag.FromErr(errors.New(*vcfError.Message))
+	}
+	taskId := accepted.JSON202.Id
+	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
 	if err != nil {
 		return "", diag.FromErr(err)
 	}
-	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Cluster")
+	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *taskId, "Cluster")
 	if err != nil {
 		return "", diag.FromErr(err)
 	}
 	return clusterId, nil
 }
 
-func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec *models.ClusterUpdateSpec,
+func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec vcf.ClusterUpdateSpec,
 	vcfClient *api_client.SddcManagerClient) diag.Diagnostics {
 	apiClient := vcfClient.ApiClient
 	validationDiagnostics := cluster.ValidateClusterUpdateOperation(ctx, clusterId, clusterUpdateSpec, apiClient)
@@ -358,21 +351,18 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec *mod
 		return validationDiagnostics
 	}
 
-	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterUpdateParams.ID = clusterId
-	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
-
-	acceptedUpdateTask, acceptedUpdateTask2, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	acceptedUpdateTask, err := apiClient.UpdateClusterWithResponse(ctx, clusterId, clusterUpdateSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if acceptedUpdateTask.StatusCode() != 202 {
+		vcfError := api_client.GetError(acceptedUpdateTask.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
 	var taskId string
 	if acceptedUpdateTask != nil {
-		taskId = acceptedUpdateTask.Payload.ID
-	}
-	if acceptedUpdateTask2 != nil {
-		taskId = acceptedUpdateTask2.Payload.ID
+		taskId = *acceptedUpdateTask.JSON202.Id
 	}
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
 	if err != nil {
@@ -382,42 +372,33 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec *mod
 }
 
 func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.SddcManagerClient) diag.Diagnostics {
-	clusterUpdateParams := clusters.NewUpdateClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterUpdateParams.ID = clusterId
-	clusterUpdateSpec, _ := cluster.CreateClusterUpdateSpec(nil, true)
-	clusterUpdateParams.SetClusterUpdateSpec(clusterUpdateSpec)
+	clusterUpdateSpec, err := cluster.CreateClusterUpdateSpec(nil, true)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	apiClient := vcfClient.ApiClient
 	log.Printf("Marking Cluster %s for deletion", clusterId)
-	acceptedUpdateTask, acceptedUpdateTask2, err := apiClient.Clusters.UpdateCluster(clusterUpdateParams)
+	acceptedUpdateRes, err := apiClient.UpdateClusterWithResponse(ctx, clusterId, *clusterUpdateSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	var taskId string
-	if acceptedUpdateTask != nil {
-		taskId = acceptedUpdateTask.Payload.ID
+	if acceptedUpdateRes.StatusCode() != 200 {
+		return diag.FromErr(fmt.Errorf("failed to mark cluster for deletion"))
 	}
-	if acceptedUpdateTask2 != nil {
-		taskId = acceptedUpdateTask2.Payload.ID
-	}
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	clusterDeleteParams := clusters.NewDeleteClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	clusterDeleteParams.ID = clusterId
 
 	log.Printf("Deleting Cluster %s", clusterId)
-	_, acceptedDeleteTask, err := apiClient.Clusters.DeleteCluster(clusterDeleteParams)
+	acceptedDeleteTask, err := apiClient.DeleteClusterWithResponse(ctx, clusterId, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if acceptedDeleteTask != nil {
-		taskId = acceptedDeleteTask.Payload.ID
+	if acceptedDeleteTask.StatusCode() != 202 {
+		vcfError := api_client.GetError(acceptedDeleteTask.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
 	}
+
+	taskId := *acceptedDeleteTask.JSON202.Id
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
@@ -425,7 +406,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 	return nil
 }
 
-func getDomainId(data *schema.ResourceData, client *client.VcfClient) (string, error) {
+func getDomainId(data *schema.ResourceData, client *vcf.ClientWithResponses) (string, error) {
 	domainId := data.Get("domain_id").(string)
 	domainName := data.Get("domain_name").(string)
 
@@ -440,27 +421,25 @@ func getDomainId(data *schema.ResourceData, client *client.VcfClient) (string, e
 			return "", err
 		}
 
-		domainId = domain.ID
+		domainId = *domain.Id
 	}
 
 	return domainId, nil
 }
 
-func getDomain(name string, client *client.VcfClient) (*models.Domain, error) {
-	params := domains.NewGetDomainsParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
-
-	ok, err := client.Domains.GetDomains(params)
+func getDomain(name string, client *vcf.ClientWithResponses) (*vcf.Domain, error) {
+	ok, err := client.GetDomainsWithResponse(context.Background(), nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	domainsList := ok.Payload.Elements
+	domainsList := ok.JSON200.Elements
 
-	if len(domainsList) > 0 {
-		for _, domain := range domainsList {
-			if domain.Name == name {
-				return domain, nil
+	if domainsList != nil && len(*domainsList) > 0 {
+		for _, domain := range *domainsList {
+			if *domain.Name == name {
+				return &domain, nil
 			}
 		}
 	}

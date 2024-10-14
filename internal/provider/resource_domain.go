@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -14,16 +15,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client/domains"
-	"github.com/vmware/vcf-sdk-go/models"
+	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/cluster"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/domain"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
-	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
 )
 
@@ -121,32 +120,35 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	validateDomainSpec := domains.NewValidateDomainCreationSpecParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	validateDomainSpec.DomainCreationSpec = domainCreationSpec
 
-	validateResponse, err := apiClient.Domains.ValidateDomainCreationSpec(validateDomainSpec)
+	validateResponse, err := apiClient.ValidateDomainCreationSpecWithResponse(ctx, nil, *domainCreationSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validationUtils.HasValidationFailed(validateResponse.Payload) {
-		return validationUtils.ConvertValidationResultToDiag(validateResponse.Payload)
+	if validateResponse.StatusCode() != 200 {
+		vcfError := api_client.GetError(validateResponse.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
+	if validationUtils.HasValidationFailed(validateResponse.JSON200) {
+		return validationUtils.ConvertValidationResultToDiag(validateResponse.JSON200)
 	}
 
-	domainCreationParams := domains.NewCreateDomainParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	domainCreationParams.DomainCreationSpec = domainCreationSpec
-
-	_, accepted, err := apiClient.Domains.CreateDomain(domainCreationParams)
+	accepted, err := apiClient.CreateDomainWithResponse(ctx, *domainCreationSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	taskId := accepted.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	if accepted.StatusCode() != 202 {
+		vcfError := api_client.GetError(validateResponse.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
+	taskId := accepted.JSON202.Id
+	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Domain")
+	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *taskId, "Domain")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -165,13 +167,13 @@ func resourceDomainRead(ctx context.Context, data *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	err = domain.ReadAndSetClustersDataToDomainResource(domainObj.Clusters, ctx, data, apiClient)
+	err = domain.ReadAndSetClustersDataToDomainResource(*domainObj.Clusters, ctx, data, apiClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 	nsxtClusterConfigRaw := data.Get("nsx_configuration").([]interface{})
 	nsxtClusterConfig := nsxtClusterConfigRaw[0].(map[string]interface{})
-	nsxtClusterConfig["id"] = domainObj.NSXTCluster.ID
+	nsxtClusterConfig["id"] = domainObj.NsxtCluster.Id
 	_ = data.Set("nsx_configuration", nsxtClusterConfigRaw)
 
 	return nil
@@ -184,17 +186,25 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 	// Domain Update API supports only changes to domain name and Cluster Import
 	if data.HasChange("name") {
 		domainUpdateSpec := domain.CreateDomainUpdateSpec(data, false)
-		domainUpdateParams := domains.NewUpdateDomainParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout)
-		domainUpdateParams.DomainUpdateSpec = domainUpdateSpec
-		domainUpdateParams.ID = data.Id()
 
-		_, accepted, err := apiClient.Domains.UpdateDomain(domainUpdateParams)
+		accepted, err := apiClient.UpdateDomainWithResponse(ctx, data.Id(), domainUpdateSpec)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		taskId := accepted.Payload.ID
-		err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+		if accepted.StatusCode() != 200 && accepted.StatusCode() != 202 {
+			vcfError := api_client.GetError(accepted.Body)
+			api_client.LogError(vcfError)
+			return diag.FromErr(errors.New(*vcfError.Message))
+		}
+
+		var taskId *string
+		if accepted.JSON200 != nil {
+			taskId = accepted.JSON200.Id
+		} else if accepted.JSON202 != nil {
+			taskId = accepted.JSON200.Id
+		}
+
+		err = vcfClient.WaitForTaskComplete(ctx, *taskId, false)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -229,7 +239,7 @@ func handleClusterAddRemoveToDomain(ctx context.Context, domainId string, newClu
 			return diag.FromErr(err)
 		}
 		// subsequent domain read will set the cluster ID, so we can discard it here
-		_, diags := createCluster(ctx, domainId, clusterSpec, vcfClient)
+		_, diags := createCluster(ctx, domainId, *clusterSpec, vcfClient)
 		if diags != nil {
 			return diags
 		}
@@ -271,13 +281,13 @@ func handleClusterUpdateInDomain(ctx context.Context, newClustersStateList, oldC
 			continue
 		}
 
-		clusterUpdateSpec := new(models.ClusterUpdateSpec)
+		clusterUpdateSpec := &vcf.ClusterUpdateSpec{}
 		populatedClusterUpdateSpec, err := cluster.SetExpansionOrContractionSpec(clusterUpdateSpec, oldHostsList, newHostsList)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		diags := updateCluster(ctx, newClusterStateId, populatedClusterUpdateSpec, vcfClient)
+		diags := updateCluster(ctx, newClusterStateId, *populatedClusterUpdateSpec, vcfClient)
 		if diags != nil {
 			return diags
 		}
@@ -290,36 +300,28 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	apiClient := vcfClient.ApiClient
 
 	markForDeleteUpdateSpec := domain.CreateDomainUpdateSpec(data, true)
-	domainUpdateParams := domains.NewUpdateDomainParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	domainUpdateParams.DomainUpdateSpec = markForDeleteUpdateSpec
-	domainUpdateParams.ID = data.Id()
 
-	acceptedUpdateTask, _, err := apiClient.Domains.UpdateDomain(domainUpdateParams)
+	acceptedUpdateTask, err := apiClient.UpdateDomainWithResponse(ctx, data.Id(), markForDeleteUpdateSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	taskId := acceptedUpdateTask.Payload.ID
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+	if acceptedUpdateTask.StatusCode() != 200 && acceptedUpdateTask.StatusCode() != 202 {
+		vcfError := api_client.GetError(acceptedUpdateTask.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
+
+	acceptedDeleteTask, err := apiClient.DeleteDomainWithResponse(ctx, data.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	domainDeleteParams := domains.NewDeleteDomainParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	domainDeleteParams.ID = data.Id()
-
-	acceptedDeleteTask, acceptedDeleteTask2, err := apiClient.Domains.DeleteDomain(domainDeleteParams)
-	if err != nil {
-		return diag.FromErr(err)
+	if acceptedDeleteTask.StatusCode() != 202 {
+		vcfError := api_client.GetError(acceptedDeleteTask.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
 	}
-	if acceptedDeleteTask != nil {
-		taskId = acceptedDeleteTask.Payload.ID
-	}
-	if acceptedDeleteTask2 != nil {
-		taskId = acceptedDeleteTask2.Payload.ID
-	}
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	taskId := acceptedDeleteTask.JSON202.Id
+	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}

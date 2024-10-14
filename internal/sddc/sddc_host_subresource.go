@@ -7,7 +7,7 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
@@ -87,49 +87,49 @@ func getIPAllocationSchema() *schema.Schema {
 	}
 }
 
-func GetSddcHostSpecsFromSchema(rawData []interface{}) []*models.SDDCHostSpec {
-	var hostSpecs []*models.SDDCHostSpec
+func GetSddcHostSpecsFromSchema(rawData []interface{}) []vcf.SddcHostSpec {
+	var hostSpecs []vcf.SddcHostSpec
 	for _, rawListEntity := range rawData {
 		hostSpecRaw := rawListEntity.(map[string]interface{})
 		association := utils.ToStringPointer(hostSpecRaw["association"])
-		hostname := utils.ToStringPointer(hostSpecRaw["hostname"])
-		sshThumbprint := hostSpecRaw["ssh_thumbprint"].(string)
-		sslThumbprint := hostSpecRaw["ssl_thumbprint"].(string)
+		hostname := hostSpecRaw["hostname"].(string)
+		sshThumbprint := utils.ToStringPointer(hostSpecRaw["ssh_thumbprint"])
+		sslThumbprint := utils.ToStringPointer(hostSpecRaw["ssl_thumbprint"])
 		vswitch := utils.ToStringPointer(hostSpecRaw["vswitch"])
 
-		hostSpec := &models.SDDCHostSpec{
+		hostSpec := vcf.SddcHostSpec{
 			Association:   association,
 			Hostname:      hostname,
-			SSHThumbprint: sshThumbprint,
-			SSLThumbprint: sslThumbprint,
+			SshThumbprint: sshThumbprint,
+			SslThumbprint: sslThumbprint,
 			VSwitch:       vswitch,
 		}
 		if credentialsData := getCredentialsFromSchema(hostSpecRaw["credentials"].([]interface{})); credentialsData != nil {
 			hostSpec.Credentials = credentialsData
 		}
 		if ipAllocation := getIPAllocationBindingFromSchema(hostSpecRaw["ip_address_private"].([]interface{})); ipAllocation != nil {
-			hostSpec.IPAddressPrivate = ipAllocation
+			hostSpec.IpAddressPrivate = ipAllocation
 		}
 		hostSpecs = append(hostSpecs, hostSpec)
 	}
 	return hostSpecs
 }
 
-func getIPAllocationBindingFromSchema(rawData []interface{}) *models.IPAllocation {
+func getIPAllocationBindingFromSchema(rawData []interface{}) *vcf.IpAllocation {
 	if len(rawData) <= 0 {
 		return nil
 	}
 	data := rawData[0].(map[string]interface{})
 	cidr := data["cidr"].(string)
 	gateway := data["gateway"].(string)
-	ipAddress := utils.ToStringPointer(data["ip_address"])
+	ipAddress := data["ip_address"].(string)
 	subnet := data["subnet"].(string)
 
-	ipAllocationBinding := &models.IPAllocation{
-		Cidr:      cidr,
-		Gateway:   gateway,
-		IPAddress: ipAddress,
-		Subnet:    subnet,
+	ipAllocationBinding := &vcf.IpAllocation{
+		Cidr:      &cidr,
+		Gateway:   &gateway,
+		IpAddress: ipAddress,
+		Subnet:    &subnet,
 	}
 	return ipAllocationBinding
 }

@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -13,13 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	certificatesSdk "github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/certificates"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
 
 func ResourceCertificate() *schema.Resource {
@@ -77,29 +75,26 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	certificateOperationSpec := &models.CertificateOperationSpec{
-		OperationType: resource_utils.ToStringPointer("INSTALL"),
-		Resources: []*models.Resource{{
-			Fqdn: resourceFqdn,
-			Type: &resourceType,
+	certificateOperationSpec := vcf.CertificateOperationSpec{
+		OperationType: "INSTALL",
+		Resources: &[]vcf.Resource{{
+			Fqdn: &resourceFqdn,
+			Type: resourceType,
 		}},
 	}
-	replaceCertificatesParams := certificatesSdk.NewReplaceCertificatesParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithID(domainID)
-	replaceCertificatesParams.SetCertificateOperationSpec(certificateOperationSpec)
 
 	var taskId string
-	responseOk, responseAccepted, err := apiClient.Certificates.ReplaceCertificates(replaceCertificatesParams)
+	res, err := apiClient.ReplaceCertificatesWithResponse(ctx, domainID, certificateOperationSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if responseOk != nil {
-		taskId = responseOk.Payload.ID
+	if res.StatusCode() != 202 {
+		vcfError := api_client.GetError(res.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
 	}
-	if responseAccepted != nil {
-		taskId = responseAccepted.Payload.ID
-	}
+
+	taskId = *res.JSON202.Id
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
@@ -126,7 +121,7 @@ func resourceResourceCertificateRead(ctx context.Context, data *schema.ResourceD
 		return diag.FromErr(err)
 	}
 
-	flattenedCert := certificates.FlattenCertificateWithSubject(cert)
+	flattenedCert := certificates.FlattenCertificate(*cert)
 	_ = data.Set("certificate", []interface{}{flattenedCert})
 
 	return nil

@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -51,8 +52,8 @@ func VdsSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error) {
-	result := &models.VdsSpec{}
+func TryConvertToVdsSpec(object map[string]interface{}) (*vcf.VdsSpec, error) {
+	result := &vcf.VdsSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to VdsSpec, object is nil")
 	}
@@ -60,64 +61,58 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*models.VdsSpec, error)
 	if len(name) == 0 {
 		return nil, fmt.Errorf("cannot convert to VdsSpec, name is required")
 	}
-	result.Name = &name
+	result.Name = name
 	if isUsedByNsx, ok := object["is_used_by_nsx"]; ok && !validationutils.IsEmpty(isUsedByNsx) {
-		result.IsUsedByNSXT = isUsedByNsx.(bool)
+		result.IsUsedByNsxt = utils.ToBoolPointer(isUsedByNsx)
 	}
 	if portgroupsRaw, ok := object["portgroup"]; ok && !validationutils.IsEmpty(portgroupsRaw) {
 		portgroupsList := portgroupsRaw.([]interface{})
 		if len(portgroupsList) > 0 {
-			result.PortGroupSpecs = []*models.PortgroupSpec{}
+			portGroupSpecs := []vcf.PortgroupSpec{}
 			for _, portgroupListEntry := range portgroupsList {
 				portgroupSpec, err := tryConvertToPortgroupSpec(portgroupListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.PortGroupSpecs = append(result.PortGroupSpecs, portgroupSpec)
+				portGroupSpecs = append(portGroupSpecs, *portgroupSpec)
 			}
+			result.PortGroupSpecs = &portGroupSpecs
 		}
 	}
 	if niocBandwidthAllocationsRaw, ok := object["nioc_bandwidth_allocations"]; ok && !validationutils.IsEmpty(niocBandwidthAllocationsRaw) {
 		niocBandwidthAllocationsList := niocBandwidthAllocationsRaw.([]interface{})
 		if len(niocBandwidthAllocationsList) > 0 {
-			result.NiocBandwidthAllocationSpecs = []*models.NiocBandwidthAllocationSpec{}
+			specs := []vcf.NiocBandwidthAllocationSpec{}
 			for _, niocBandwidthAllocationListEntry := range niocBandwidthAllocationsList {
 				niocBandwidthAllocationSpec, err := tryConvertToNiocBandwidthAllocationSpec(
 					niocBandwidthAllocationListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.NiocBandwidthAllocationSpecs = append(result.NiocBandwidthAllocationSpecs,
-					niocBandwidthAllocationSpec)
+				specs = append(specs, *niocBandwidthAllocationSpec)
 			}
+			result.NiocBandwidthAllocationSpecs = &specs
 		}
 	}
 
 	return result, nil
 }
 
-func FlattenVdsSpec(vdsSpec *models.VdsSpec) map[string]interface{} {
+func FlattenVdsSpec(vdsSpec vcf.VdsSpec) map[string]interface{} {
 	result := make(map[string]interface{})
-	if vdsSpec == nil {
-		return result
-	}
-	result["name"] = *vdsSpec.Name
-	result["is_used_by_nsx"] = vdsSpec.IsUsedByNSXT
+	result["name"] = vdsSpec.Name
+	result["is_used_by_nsx"] = vdsSpec.IsUsedByNsxt
 	flattenedNiocBandwidthAllocationSpecs := *new([]map[string]interface{})
-	for _, niocBandwidthAllocationSpec := range vdsSpec.NiocBandwidthAllocationSpecs {
-		if niocBandwidthAllocationSpec != nil {
-			flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
-				flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
-		}
+	for _, niocBandwidthAllocationSpec := range *vdsSpec.NiocBandwidthAllocationSpecs {
+		flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
+			flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
 	}
 	result["nioc_bandwidth_allocations"] = flattenedNiocBandwidthAllocationSpecs
 
 	flattenedPortgroupSpecs := *new([]map[string]interface{})
-	for _, portgroupSpec := range vdsSpec.PortGroupSpecs {
-		if portgroupSpec != nil {
-			flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,
-				flattenPortgroupSpec(portgroupSpec))
-		}
+	for _, portgroupSpec := range *vdsSpec.PortGroupSpecs {
+		flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,
+			flattenPortgroupSpec(portgroupSpec))
 	}
 	result["portgroup"] = flattenedPortgroupSpecs
 

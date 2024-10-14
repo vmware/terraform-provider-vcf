@@ -8,56 +8,46 @@ import (
 	"context"
 	md52 "crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	vcfclient "github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
-func ValidateResourceCertificates(ctx context.Context, client *vcfclient.VcfClient,
-	domainId string, resourceCertificateSpecs []*models.ResourceCertificateSpec) diag.Diagnostics {
-	validateResourceCertificatesParams := certificates.NewValidateResourceCertificatesParams().
-		WithContext(ctx).WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithID(domainId)
-	validateResourceCertificatesParams.SetResourceCertificateSpecs(resourceCertificateSpecs)
-
-	var validationResponse *models.CertificateValidationTask
-	okResponse, acceptedResponse, err := client.Certificates.ValidateResourceCertificates(validateResourceCertificatesParams)
-	if okResponse != nil {
-		validationResponse = okResponse.Payload
-	}
-	if acceptedResponse != nil {
-		validationResponse = acceptedResponse.Payload
-	}
+func ValidateResourceCertificates(ctx context.Context, client *vcf.ClientWithResponses,
+	domainId string, resourceCertificateSpecs []vcf.ResourceCertificateSpec) diag.Diagnostics {
+	okResponse, err := client.ValidateResourceCertificatesWithResponse(ctx, domainId, resourceCertificateSpecs)
 	if err != nil {
-		return validationutils.ConvertVcfErrorToDiag(err)
+		return diag.FromErr(err)
 	}
-	if validationutils.HaveCertificateValidationsFailed(validationResponse) {
-		return validationutils.ConvertCertificateValidationsResultToDiag(validationResponse)
+	if okResponse.StatusCode() != 201 {
+		vcfError := api_client.GetError(okResponse.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
 	}
-	validationId := validationResponse.ValidationID
+	if validationutils.HaveCertificateValidationsFailed(okResponse.JSON201) {
+		return validationutils.ConvertCertificateValidationsResultToDiag(okResponse.JSON201)
+	}
 	// Wait for certificate validation to finish
-	if !validationutils.HasCertificateValidationFinished(validationResponse) {
+	if !validationutils.HasCertificateValidationFinished(okResponse.JSON201) {
 		for {
-			getResourceCertificatesValidationResultParams := certificates.NewGetResourceCertificatesValidationByIDParams().
-				WithContext(ctx).
-				WithTimeout(constants.DefaultVcfApiCallTimeout).
-				WithID(*validationId)
-			getValidationResponse, err := client.Certificates.GetResourceCertificatesValidationByID(getResourceCertificatesValidationResultParams)
+			getValidationResponse, err := client.GetResourceCertificatesValidationByIDWithResponse(ctx, domainId, okResponse.JSON201.ValidationId)
 			if err != nil {
 				return validationutils.ConvertVcfErrorToDiag(err)
 			}
-			validationResponse = getValidationResponse.Payload
-			if validationutils.HasCertificateValidationFinished(validationResponse) {
+			if getValidationResponse.StatusCode() != 201 {
+				vcfError := api_client.GetError(getValidationResponse.Body)
+				api_client.LogError(vcfError)
+				return diag.FromErr(errors.New(*vcfError.Message))
+			}
+			if validationutils.HasCertificateValidationFinished(okResponse.JSON201) {
 				break
 			}
 			time.Sleep(10 * time.Second)
@@ -66,38 +56,52 @@ func ValidateResourceCertificates(ctx context.Context, client *vcfclient.VcfClie
 	if err != nil {
 		return validationutils.ConvertVcfErrorToDiag(err)
 	}
-	if validationutils.HaveCertificateValidationsFailed(validationResponse) {
-		return validationutils.ConvertCertificateValidationsResultToDiag(validationResponse)
+	if validationutils.HaveCertificateValidationsFailed(okResponse.JSON201) {
+		return validationutils.ConvertCertificateValidationsResultToDiag(okResponse.JSON201)
 	}
 
 	return nil
 }
 
+func GetCertificateForResourceInDomain(ctx context.Context, client *vcf.ClientWithResponses,
+	domainId, resourceFqdn string) (*vcf.Certificate, error) {
+	certificatesResponse, err := client.GetCertificatesByDomainWithResponse(ctx, domainId)
+	if err != nil {
+		return nil, err
+	}
+	if certificatesResponse.StatusCode() != 200 {
+		vcfError := api_client.GetError(certificatesResponse.Body)
+		api_client.LogError(vcfError)
+		return nil, errors.New(*vcfError.Message)
+	}
+
+	allCertsForDomain := certificatesResponse.JSON200.Elements
+	for _, cert := range *allCertsForDomain {
+		if cert.IssuedTo != nil && *cert.IssuedTo == resourceFqdn {
+			return &cert, nil
+		}
+	}
+	return nil, nil
+}
+
 func GenerateCertificateForResource(ctx context.Context, client *api_client.SddcManagerClient,
 	domainId, resourceType, resourceFqdn, caType *string) error {
 
-	certificateGenerationSpec := &models.CertificatesGenerationSpec{
-		CaType: caType,
-		Resources: []*models.Resource{{
-			Fqdn: *resourceFqdn,
-			Type: resourceType,
+	certificateGenerationSpec := vcf.CertificatesGenerationSpec{
+		CaType: *caType,
+		Resources: &[]vcf.Resource{{
+			Fqdn: resourceFqdn,
+			Type: *resourceType,
 		}},
 	}
-	generateCertificatesParam := certificates.NewGenerateCertificatesParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithID(*domainId)
-	generateCertificatesParam.SetCertificateGenerationSpec(certificateGenerationSpec)
 
 	var taskId string
-	responseOk, responseAccepted, err := client.ApiClient.Certificates.GenerateCertificates(generateCertificatesParam)
+	res, err := client.ApiClient.GenerateCertificatesWithResponse(ctx, *domainId, certificateGenerationSpec)
 	if err != nil {
 		return err
 	}
-	if responseOk != nil {
-		taskId = responseOk.Payload.ID
-	}
-	if responseAccepted != nil {
-		taskId = responseAccepted.Payload.ID
+	if res != nil && res.JSON202 != nil {
+		taskId = *res.JSON202.Id
 	}
 	err = client.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
@@ -106,32 +110,29 @@ func GenerateCertificateForResource(ctx context.Context, client *api_client.Sddc
 	return nil
 }
 
-func ReadCertificate(ctx context.Context, client *vcfclient.VcfClient,
-	domainId, resourceFqdn string) (*models.Certificate, error) {
-	viewCertificatesParams := certificates.NewGetCertificatesByDomainParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	viewCertificatesParams.ID = domainId
+func ReadCertificate(ctx context.Context, client *vcf.ClientWithResponses,
+	domainId, resourceFqdn string) (*vcf.Certificate, error) {
 
-	certificatesResponse, _, err := client.Certificates.GetCertificatesByDomain(viewCertificatesParams)
+	certificatesResponse, err := client.GetCertificatesByDomainWithResponse(ctx, domainId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get certificate by domain: %w", err)
 	}
 
 	// Check if any certificates are found
-	if certificatesResponse.Payload == nil || len(certificatesResponse.Payload.Elements) == 0 {
+	if certificatesResponse.JSON200 == nil || len(*certificatesResponse.JSON200.Elements) == 0 {
 		return nil, fmt.Errorf("no certificates found for domain ID %s", domainId)
 	}
 
-	allCertsForDomain := certificatesResponse.Payload.Elements
-	for _, cert := range allCertsForDomain {
+	allCertsForDomain := certificatesResponse.JSON200.Elements
+	for _, cert := range *allCertsForDomain {
 		if cert.IssuedTo != nil && *cert.IssuedTo == resourceFqdn {
-			return cert, nil
+			return &cert, nil
 		}
 	}
 	return nil, fmt.Errorf("no certificate found for resource FQDN %s in domain ID %s", resourceFqdn, domainId)
 }
 
-func FlattenCertificateWithSubject(cert *models.Certificate) map[string]interface{} {
+func FlattenCertificateWithSubject(cert *vcf.Certificate) map[string]interface{} {
 	result := make(map[string]interface{})
 	if cert.Domain == nil {
 		result["domain"] = nil

@@ -7,10 +7,9 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
@@ -130,7 +129,7 @@ func getTransportZoneSchema() *schema.Schema {
 	}
 }
 
-func GetNsxSpecFromSchema(rawData []interface{}) *models.SDDCNSXTSpec {
+func GetNsxSpecFromSchema(rawData []interface{}) *vcf.SddcNsxtSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -144,18 +143,18 @@ func GetNsxSpecFromSchema(rawData []interface{}) *models.SDDCNSXTSpec {
 	vip := data["vip"].(string)
 	vipFqdn := data["vip_fqdn"].(string)
 
-	nsxtSpecBinding := &models.SDDCNSXTSpec{
-		NSXTAdminPassword:       nsxAdminPassword,
-		NSXTAuditPassword:       nsxAuditPassword,
-		NSXTLicense:             nsxLicense,
-		NSXTManagerSize:         utils.ToStringPointer(nsxManagerSize),
-		RootNSXTManagerPassword: utils.ToStringPointer(rootNsxManagerPassword),
-		TransportVlanID:         &transportVlanID,
-		Vip:                     utils.ToStringPointer(vip),
-		VipFqdn:                 utils.ToStringPointer(vipFqdn),
+	nsxtSpecBinding := &vcf.SddcNsxtSpec{
+		NsxtAdminPassword:       &nsxAdminPassword,
+		NsxtAuditPassword:       &nsxAuditPassword,
+		NsxtLicense:             &nsxLicense,
+		NsxtManagerSize:         &nsxManagerSize,
+		RootNsxtManagerPassword: &rootNsxManagerPassword,
+		TransportVlanId:         &transportVlanID,
+		Vip:                     &vip,
+		VipFqdn:                 vipFqdn,
 	}
 	if nsxtManagersData := getNsxManagerSpecFromSchema(data["nsx_manager"].([]interface{})); len(nsxtManagersData) > 0 {
-		nsxtSpecBinding.NSXTManagers = nsxtManagersData
+		nsxtSpecBinding.NsxtManagers = nsxtManagersData
 	}
 	if overLayTransportZoneData := getTransportZoneFromSchema(data["overlay_transport_zone"].([]interface{})); overLayTransportZoneData != nil {
 		nsxtSpecBinding.OverLayTransportZone = overLayTransportZoneData
@@ -165,29 +164,29 @@ func GetNsxSpecFromSchema(rawData []interface{}) *models.SDDCNSXTSpec {
 		ipAddressPoolList := ipAddressPoolRaw.([]interface{})
 		// Only one IP Address pool spec is allowed in the resource
 		if ipAddressPoolSpec, err := network.GetIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{})); err == nil {
-			nsxtSpecBinding.IPAddressPoolSpec = ipAddressPoolSpec
+			nsxtSpecBinding.IpAddressPoolSpec = ipAddressPoolSpec
 		}
 	}
 	return nsxtSpecBinding
 }
 
-func getNsxManagerSpecFromSchema(rawData []interface{}) []*models.NSXTManagerSpec {
-	var nsxtManagerSpecBindingsList []*models.NSXTManagerSpec
+func getNsxManagerSpecFromSchema(rawData []interface{}) []vcf.NsxtManagerSpec {
+	var nsxtManagerSpecBindingsList []vcf.NsxtManagerSpec
 	for _, nsxtManager := range rawData {
 		data := nsxtManager.(map[string]interface{})
 		hostname := data["hostname"].(string)
 		ip := data["ip"].(string)
 
-		nsxManagerSpec := &models.NSXTManagerSpec{
-			Hostname: hostname,
-			IP:       ip,
+		nsxManagerSpec := vcf.NsxtManagerSpec{
+			Hostname: &hostname,
+			Ip:       &ip,
 		}
 		nsxtManagerSpecBindingsList = append(nsxtManagerSpecBindingsList, nsxManagerSpec)
 	}
 	return nsxtManagerSpecBindingsList
 }
 
-func getTransportZoneFromSchema(rawData []interface{}) *models.NSXTTransportZone {
+func getTransportZoneFromSchema(rawData []interface{}) *vcf.NsxtTransportZone {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -195,9 +194,9 @@ func getTransportZoneFromSchema(rawData []interface{}) *models.NSXTTransportZone
 	networkName := data["network_name"].(string)
 	zoneName := data["zone_name"].(string)
 
-	transportZoneBinding := &models.NSXTTransportZone{
-		NetworkName: utils.ToStringPointer(networkName),
-		ZoneName:    utils.ToStringPointer(zoneName),
+	transportZoneBinding := &vcf.NsxtTransportZone{
+		NetworkName: networkName,
+		ZoneName:    zoneName,
 	}
 	return transportZoneBinding
 }

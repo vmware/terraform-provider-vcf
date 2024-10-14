@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -94,7 +94,7 @@ func VCSubresourceSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToVcenterSpec(object map[string]interface{}) (*models.VcenterSpec, error) {
+func TryConvertToVcenterSpec(object map[string]interface{}) (*vcf.VcenterSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to VcenterSpec, object is nil")
 	}
@@ -134,18 +134,19 @@ func TryConvertToVcenterSpec(object map[string]interface{}) (*models.VcenterSpec
 	if !ok {
 		vcenterVmSize = ""
 	}
-	networkDetailsSpec := new(models.NetworkDetailsSpec)
-	networkDetailsSpec.IPAddress = &ipAddress
-	networkDetailsSpec.SubnetMask = subnetMask
-	networkDetailsSpec.DNSName = fqdn
-	networkDetailsSpec.Gateway = gateway
+	networkDetailsSpec := vcf.NetworkDetailsSpec{
+		IpAddress:  &ipAddress,
+		SubnetMask: &subnetMask,
+		DnsName:    fqdn,
+		Gateway:    &gateway,
+	}
 
-	return &models.VcenterSpec{
+	return &vcf.VcenterSpec{
 		DatacenterName:     &datacenterName,
 		Name:               &name,
 		RootPassword:       &rootPassword,
-		StorageSize:        vcenterStorageSize,
-		VMSize:             vcenterVmSize,
+		StorageSize:        &vcenterStorageSize,
+		VmSize:             &vcenterVmSize,
 		NetworkDetailsSpec: networkDetailsSpec,
 	}, nil
 }

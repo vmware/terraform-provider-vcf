@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -82,41 +83,42 @@ func IpAddressPoolSchema() *schema.Resource {
 	}
 }
 
-func GetIpAddressPoolSpecFromSchema(object map[string]interface{}) (*models.IPAddressPoolSpec, error) {
-	result := &models.IPAddressPoolSpec{}
+func GetIpAddressPoolSpecFromSchema(object map[string]interface{}) (*vcf.IpAddressPoolSpec, error) {
+	result := &vcf.IpAddressPoolSpec{}
 	if object == nil {
-		return nil, fmt.Errorf("cannot convert to IPAddressPoolSpec, object is nil")
+		return nil, fmt.Errorf("cannot convert to IpAddressPoolSpec, object is nil")
 	}
 	name := object["name"].(string)
 	if len(name) == 0 {
-		return nil, fmt.Errorf("cannot convert to IPAddressPoolSpec, name is required")
+		return nil, fmt.Errorf("cannot convert to IpAddressPoolSpec, name is required")
 	}
-	result.Name = &name
+	result.Name = name
 	if description, ok := object["description"]; ok && !validationutils.IsEmpty(description) {
-		result.Description = description.(string)
+		result.Description = utils.ToStringPointer(description)
 	}
 	if ignoreUnavailableNsxCluster, ok := object["ignore_unavailable_nsx_cluster"]; ok && !validationutils.IsEmpty(ignoreUnavailableNsxCluster) {
-		result.IgnoreUnavailableNSXTCluster = ignoreUnavailableNsxCluster.(bool)
+		result.IgnoreUnavailableNsxtCluster = utils.ToBoolPointer(ignoreUnavailableNsxCluster)
 	}
 	if subnetsRaw, ok := object["subnet"]; ok {
 		subnetsList := subnetsRaw.([]interface{})
 		if len(subnetsList) > 0 {
-			result.Subnets = []*models.IPAddressPoolSubnetSpec{}
+			subnets := []vcf.IpAddressPoolSubnetSpec{}
 			for _, subnetsListEntry := range subnetsList {
-				iPAddressPoolSubnetSpec, err := getIpAddressPoolSubnetSpecFromSchema(subnetsListEntry.(map[string]interface{}))
+				ipAddressPoolSubnetSpec, err := getIpAddressPoolSubnetSpecFromSchema(subnetsListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.Subnets = append(result.Subnets, iPAddressPoolSubnetSpec)
+				subnets = append(subnets, *ipAddressPoolSubnetSpec)
 			}
+			result.Subnets = &subnets
 		}
 	}
 
 	return result, nil
 }
 
-func getIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*models.IPAddressPoolSubnetSpec, error) {
-	result := &models.IPAddressPoolSubnetSpec{}
+func getIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*vcf.IpAddressPoolSubnetSpec, error) {
+	result := &vcf.IpAddressPoolSubnetSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to IPAddressPoolSubnetSpec, object is nil")
 	}
@@ -128,20 +130,20 @@ func getIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*model
 	if len(gateway) == 0 {
 		return nil, fmt.Errorf("cannot convert to IPAddressPoolSubnetSpec, gateway is required")
 	}
-	result.Cidr = &cidr
-	result.Gateway = &gateway
+	result.Cidr = cidr
+	result.Gateway = gateway
 	if ipAddressPoolRangeRaw, ok := object["ip_address_pool_range"]; ok {
 		ipAddressPoolRangeList := ipAddressPoolRangeRaw.([]interface{})
 		if len(ipAddressPoolRangeList) > 0 {
-			result.IPAddressPoolRanges = []*models.IPAddressPoolRangeSpec{}
+			result.IpAddressPoolRanges = []vcf.IpAddressPoolRangeSpec{}
 			for _, ipAddressPoolRangeEntry := range ipAddressPoolRangeList {
-				ipAddressPoolSubnetSpec := models.IPAddressPoolRangeSpec{}
+				ipAddressPoolSubnetSpec := vcf.IpAddressPoolRangeSpec{}
 				ipAddressPoolRangeMap := ipAddressPoolRangeEntry.(map[string]interface{})
 				start := ipAddressPoolRangeMap["start"].(string)
 				end := ipAddressPoolRangeMap["end"].(string)
-				ipAddressPoolSubnetSpec.Start = &start
-				ipAddressPoolSubnetSpec.End = &end
-				result.IPAddressPoolRanges = append(result.IPAddressPoolRanges, &ipAddressPoolSubnetSpec)
+				ipAddressPoolSubnetSpec.Start = start
+				ipAddressPoolSubnetSpec.End = end
+				result.IpAddressPoolRanges = append(result.IpAddressPoolRanges, ipAddressPoolSubnetSpec)
 			}
 		}
 	}
