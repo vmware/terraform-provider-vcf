@@ -379,6 +379,7 @@ func FlattenCluster(ctx context.Context, clusterObj *models.Cluster, apiClient *
 	if err != nil {
 		return nil, err
 	}
+
 	result["host"] = flattenedHostSpecs
 
 	return &result, nil
@@ -393,6 +394,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 	if err != nil {
 		return nil, err
 	}
+
 	clusterObj := clusterResult.Payload
 
 	data.SetId(clusterObj.ID)
