@@ -6,9 +6,7 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/models"
-
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 func GetVxManagerSchema() *schema.Schema {
@@ -40,7 +38,7 @@ func GetVxManagerSchema() *schema.Schema {
 	}
 }
 
-func GetVxManagerSpecFromSchema(rawData []interface{}) *models.VxManagerSpec {
+func GetVxManagerSpecFromSchema(rawData []interface{}) *vcf.VxManagerSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -49,16 +47,16 @@ func GetVxManagerSpecFromSchema(rawData []interface{}) *models.VxManagerSpec {
 	sslThumbprint := data["ssl_thumbprint"].(string)
 	vxManagerHostName := data["vx_manager_hostname"].(string)
 
-	vxManagerSpecBinding := &models.VxManagerSpec{
-		SSHThumbprint:     sshThumbprint,
-		SSLThumbprint:     sslThumbprint,
-		VxManagerHostName: utils.ToStringPointer(vxManagerHostName),
+	vxManagerSpecBinding := &vcf.VxManagerSpec{
+		SshThumbprint:     &sshThumbprint,
+		SslThumbprint:     &sslThumbprint,
+		VxManagerHostName: vxManagerHostName,
 	}
 	if defaultAdminUserCredentials := getCredentialsFromSchema(data["default_admin_user_credentials"].([]interface{})); defaultAdminUserCredentials != nil {
-		vxManagerSpecBinding.DefaultAdminUserCredentials = defaultAdminUserCredentials
+		vxManagerSpecBinding.DefaultAdminUserCredentials = *defaultAdminUserCredentials
 	}
 	if defaultRootUserCredentials := getCredentialsFromSchema(data["default_root_user_credentials"].([]interface{})); defaultRootUserCredentials != nil {
-		vxManagerSpecBinding.DefaultRootUserCredentials = defaultRootUserCredentials
+		vxManagerSpecBinding.DefaultRootUserCredentials = *defaultRootUserCredentials
 	}
 
 	return vxManagerSpecBinding

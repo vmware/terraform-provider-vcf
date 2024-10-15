@@ -10,7 +10,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -72,8 +73,8 @@ func NiocBandwidthAllocationSchema() *schema.Resource {
 	}
 }
 
-func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*models.NiocBandwidthAllocationSpec, error) {
-	result := &models.NiocBandwidthAllocationSpec{}
+func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*vcf.NiocBandwidthAllocationSpec, error) {
+	result := &vcf.NiocBandwidthAllocationSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to NiocBandwidthAllocationSpec, object is nil")
 	}
@@ -81,8 +82,8 @@ func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*mo
 	if len(typeParam) == 0 {
 		return nil, fmt.Errorf("cannot convert to NiocBandwidthAllocationSpec, type is required")
 	}
-	result.Type = &typeParam
-	result.NiocTrafficResourceAllocation = &models.NiocTrafficResourceAllocation{}
+	result.Type = typeParam
+	result.NiocTrafficResourceAllocation = vcf.NiocTrafficResourceAllocation{}
 	if limit, ok := object["limit"]; ok && !validationutils.IsEmpty(limit) {
 		limitRef := limit.(int64)
 		result.NiocTrafficResourceAllocation.Limit = &limitRef
@@ -93,31 +94,26 @@ func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*mo
 	}
 	if shares, ok := object["shares"]; ok && !validationutils.IsEmpty(shares) {
 		if result.NiocTrafficResourceAllocation.SharesInfo == nil {
-			result.NiocTrafficResourceAllocation.SharesInfo = &models.SharesInfo{}
+			result.NiocTrafficResourceAllocation.SharesInfo = &vcf.SharesInfo{}
 		}
-		result.NiocTrafficResourceAllocation.SharesInfo.Shares = shares.(int32)
+		result.NiocTrafficResourceAllocation.SharesInfo.Shares = utils.ToInt32Pointer(shares)
 	}
 	if sharesLevel, ok := object["shares_level"]; ok && !validationutils.IsEmpty(sharesLevel) {
 		if result.NiocTrafficResourceAllocation.SharesInfo == nil {
-			result.NiocTrafficResourceAllocation.SharesInfo = &models.SharesInfo{}
+			result.NiocTrafficResourceAllocation.SharesInfo = &vcf.SharesInfo{}
 		}
-		result.NiocTrafficResourceAllocation.SharesInfo.Level = sharesLevel.(string)
+		result.NiocTrafficResourceAllocation.SharesInfo.Level = utils.ToStringPointer(sharesLevel)
 	}
 	return result, nil
 }
 
-func flattenNiocBandwidthAllocationSpec(spec *models.NiocBandwidthAllocationSpec) map[string]interface{} {
+func flattenNiocBandwidthAllocationSpec(spec vcf.NiocBandwidthAllocationSpec) map[string]interface{} {
 	result := make(map[string]interface{})
-	if spec == nil {
-		return result
-	}
-	result["type"] = *spec.Type
+	result["type"] = spec.Type
 	result["limit"] = *spec.NiocTrafficResourceAllocation.Limit
-	if spec.NiocTrafficResourceAllocation != nil {
-		result["reservation"] = *spec.NiocTrafficResourceAllocation.Reservation
-		result["shares"] = spec.NiocTrafficResourceAllocation.SharesInfo.Shares
-		result["shares_level"] = spec.NiocTrafficResourceAllocation.SharesInfo.Level
-	}
+	result["reservation"] = *spec.NiocTrafficResourceAllocation.Reservation
+	result["shares"] = spec.NiocTrafficResourceAllocation.SharesInfo.Shares
+	result["shares_level"] = spec.NiocTrafficResourceAllocation.SharesInfo.Level
 
 	return result
 }

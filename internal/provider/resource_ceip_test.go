@@ -5,6 +5,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestAccResourceVcfCeip(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfCeipDestroy,
@@ -39,12 +40,12 @@ func testAccVcfCeip() string {
 func testVerifyVcfCeip(enabledState string) error {
 	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
-	ceipResult, err := apiClient.CEIP.GetCEIPStatus(nil)
+	ceipResult, err := apiClient.GetCeipStatusWithResponse(context.TODO())
 	if err != nil {
 		log.Println("error = ", err)
 		return err
 	}
-	if *ceipResult.Payload.Status == enabledState {
+	if ceipResult.JSON200.Status == enabledState {
 		return nil
 	} else {
 		return fmt.Errorf("CEIP not in status %q", enabledState)

@@ -7,6 +7,7 @@ package api_client
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -14,16 +15,9 @@ import (
 	"strings"
 	"time"
 
-	openapiclient "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	vcfclient "github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/tasks"
-	"github.com/vmware/vcf-sdk-go/client/tokens"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 	"golang.org/x/exp/slices"
-
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 // SddcManagerClient model that represents properties to authenticate against VCF instance.
@@ -32,7 +26,7 @@ type SddcManagerClient struct {
 	password           string
 	sddcManagerUrl     string
 	accessToken        *string
-	ApiClient          *vcfclient.VcfClient
+	ApiClient          *vcf.ClientWithResponses
 	allowUnverifiedTls bool
 	lastRefreshTime    time.Time
 	isRefreshing       bool
@@ -52,81 +46,58 @@ func NewSddcManagerClient(username, password, url string, allowUnverifiedTls boo
 	}
 }
 
-var accessToken *string
-
 const maxGetTaskRetries int = 10
 const maxTaskRetries int = 6
 
-func (sddcManagerClient *SddcManagerClient) newTransport() *sddcManagerCustomHttpTransport {
-	return &sddcManagerCustomHttpTransport{
-		originalTransport: http.DefaultTransport,
-		sddcManagerClient: sddcManagerClient,
-	}
-}
-
-type sddcManagerCustomHttpTransport struct {
-	originalTransport http.RoundTripper
-	sddcManagerClient *SddcManagerClient
-}
-
-func (c *sddcManagerCustomHttpTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (sddcManagerClient *SddcManagerClient) authEditor(ctx context.Context, req *http.Request) error {
 	// Refresh the access token every 20 minutes so that SDK operations won't start to
 	// fail with 401, 403 because of token expiration, during long-running tasks
-	if time.Since(c.sddcManagerClient.lastRefreshTime) > 20*time.Minute &&
-		!c.sddcManagerClient.isRefreshing {
-		err := c.sddcManagerClient.Connect()
+	if time.Since(sddcManagerClient.lastRefreshTime) > 20*time.Minute &&
+		!sddcManagerClient.isRefreshing {
+		err := sddcManagerClient.Connect()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	if accessToken != nil {
-		r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *accessToken))
+	if sddcManagerClient.accessToken != nil {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *sddcManagerClient.accessToken))
 	}
 
-	r.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Type", "application/json")
 
-	resp, err := c.originalTransport.RoundTrip(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return nil
 }
 
 func (sddcManagerClient *SddcManagerClient) Connect() error {
 	sddcManagerClient.isRefreshing = true
-	// Disable cert checks
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: sddcManagerClient.allowUnverifiedTls}
 
-	cfg := vcfclient.DefaultTransportConfig()
-	openApiClient := openapiclient.New(sddcManagerClient.sddcManagerUrl, cfg.BasePath, cfg.Schemes)
-
-	openApiClient.Transport = sddcManagerClient.newTransport()
-
-	// create the API client, with the transport
-	vcfClient := vcfclient.New(openApiClient, strfmt.Default)
-	// save the client for later use
-	sddcManagerClient.ApiClient = vcfClient
-	// Get access token
-	tokenSpec := &models.TokenCreationSpec{
-		Username: sddcManagerClient.username,
-		Password: sddcManagerClient.password,
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: sddcManagerClient.allowUnverifiedTls},
 	}
-	params := tokens.NewCreateTokenParams().
-		WithTokenCreationSpec(tokenSpec).WithTimeout(constants.DefaultVcfApiCallTimeout)
-
-	ok, _, err := vcfClient.Tokens.CreateToken(params)
+	httpClient := &http.Client{Transport: tr}
+	client, err := vcf.NewClientWithResponses(fmt.Sprintf("https://%s", sddcManagerClient.sddcManagerUrl),
+		vcf.WithRequestEditorFn(sddcManagerClient.authEditor), vcf.WithHTTPClient(httpClient))
 	if err != nil {
 		return err
 	}
 
-	accessToken = &ok.Payload.AccessToken
-	// save the access token for later use
+	sddcManagerClient.ApiClient = client
+
+	tokenCreationSpec := vcf.TokenCreationSpec{
+		Username: &sddcManagerClient.username,
+		Password: &sddcManagerClient.password,
+	}
+
+	res, err := client.CreateTokenWithResponse(context.Background(), tokenCreationSpec)
+	if err != nil {
+		return err
+	}
+
+	sddcManagerClient.accessToken = res.JSON200.AccessToken
 	sddcManagerClient.lastRefreshTime = time.Now()
-	sddcManagerClient.accessToken = &ok.Payload.AccessToken
 	sddcManagerClient.isRefreshing = false
+
 	return nil
 }
 
@@ -142,19 +113,25 @@ func (sddcManagerClient *SddcManagerClient) WaitForTask(ctx context.Context, tas
 			return err
 		}
 		waitStatuses := []string{"in progress", "pending", "in_progress"}
-		if slices.Contains(waitStatuses, strings.ToLower(task.Status)) {
+		if slices.Contains(waitStatuses, strings.ToLower(*task.Status)) {
 			time.Sleep(20 * time.Second)
 			taskStatusRetry--
 			continue
 		}
 
-		if task.Status == "Failed" || task.Status == "Cancelled" {
-			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, task.Status)
+		failStatuses := []string{"failed", "cancelled"}
+		if slices.Contains(failStatuses, strings.ToLower(*task.Status)) {
+			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, *task.Status)
 			log.Println(errorMsg)
 			return errors.New(errorMsg)
 		}
 
-		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, task.Status, task.CompletionTimestamp)
+		var completionTimestamp string
+		if task.CompletionTimestamp != nil {
+			completionTimestamp = *task.CompletionTimestamp
+		}
+
+		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, *task.Status, completionTimestamp)
 		return nil
 	}
 
@@ -171,13 +148,15 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 			return err
 		}
 
-		if task.Status == "In Progress" || task.Status == "Pending" || task.Status == "IN_PROGRESS" {
+		waitStatuses := []string{"in progress", "pending", "in_progress"}
+		if slices.Contains(waitStatuses, strings.ToLower(*task.Status)) {
 			time.Sleep(20 * time.Second)
 			continue
 		}
 
-		if task.Status == "Failed" || task.Status == "Cancelled" {
-			errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s", taskId, task.Name, task.Type, task.Status)
+		failStatuses := []string{"failed", "cancelled"}
+		if slices.Contains(failStatuses, strings.ToLower(*task.Status)) {
+			errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s", taskId, *task.Name, *task.Type, *task.Status)
 			tflog.Error(ctx, errorMsg)
 
 			if retry && currentTaskRetries < maxTaskRetries {
@@ -185,7 +164,7 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 				err := sddcManagerClient.retryTask(ctx, taskId)
 				if err != nil {
 					tflog.Error(ctx, fmt.Sprintf("Task %q %q failed after %d retries",
-						taskId, task.Type, currentTaskRetries))
+						taskId, *task.Type, currentTaskRetries))
 					return err
 				}
 			} else {
@@ -195,7 +174,12 @@ func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Cont
 			continue
 		}
 
-		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, task.Status, task.CompletionTimestamp)
+		var completionTimestamp string
+		if task.CompletionTimestamp != nil {
+			completionTimestamp = *task.CompletionTimestamp
+		}
+
+		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, *task.Status, completionTimestamp)
 		return nil
 	}
 }
@@ -205,25 +189,21 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx 
 	if err != nil {
 		return "", err
 	}
-	if len(task.Resources) == 0 {
+	if len(*task.Resources) == 0 {
 		return "", fmt.Errorf("no resources associated with Task with ID %q", taskId)
 	}
-	for _, resource := range task.Resources {
-		if *resource.Type == resourceType {
-			return *resource.ResourceID, nil
+	for _, resource := range *task.Resources {
+		if resource.Type == resourceType {
+			return resource.ResourceId, nil
 		}
 	}
 	return "", fmt.Errorf("task %q did not contain resources of type %q", taskId, resourceType)
 }
 
-func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*models.Task, error) {
+func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*vcf.Task, error) {
 	apiClient := sddcManagerClient.ApiClient
-	getTaskParams := tasks.NewGetTaskParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithContext(ctx)
-	getTaskParams.ID = taskId
-
-	getTaskResult, err := apiClient.Tasks.GetTask(getTaskParams)
-	if err != nil {
+	res, err := apiClient.GetTaskWithResponse(ctx, taskId)
+	if err != nil || res.StatusCode() != 200 {
 		// retry the task up to maxGetTaskRetries
 		if sddcManagerClient.getTaskRetries < maxGetTaskRetries {
 			sddcManagerClient.getTaskRetries++
@@ -234,17 +214,44 @@ func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId 
 	}
 	// reset the counter
 	sddcManagerClient.getTaskRetries = 0
-	return getTaskResult.Payload, nil
+
+	return res.JSON200, nil
 }
 
 func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskId string) error {
 	apiClient := sddcManagerClient.ApiClient
-	retryTaskParams := tasks.NewRetryTaskParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithContext(ctx)
-	retryTaskParams.ID = taskId
-	_, err := apiClient.Tasks.RetryTask(retryTaskParams)
+	_, err := apiClient.RetryTaskWithResponse(ctx, taskId)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// GetError when the API responds with an error code the response is unmarshalled into the appropriate field for that code
+// all error code fields are of type *vcf.Error and only one can be != nil at any time
+// if the status code is an error code the body is always *vcf.Error
+//
+// use this method if you are not interested in the error code but only in the error itself.
+func GetError(body []byte) *vcf.Error {
+	var dest vcf.Error
+	if err := json.Unmarshal(body, &dest); err != nil {
+		return nil
+	}
+
+	return &dest
+}
+
+// LogError traverses a vcf.Error structure and logs its error message as well as
+// the messages of any nested errors.
+func LogError(err *vcf.Error) {
+	if err != nil {
+		if err.Message != nil {
+			tflog.Error(context.Background(), *err.Message)
+		}
+		if err.NestedErrors != nil {
+			for _, nestedErr := range *err.NestedErrors {
+				LogError(&nestedErr)
+			}
+		}
+	}
 }

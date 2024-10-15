@@ -6,14 +6,14 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client/certificates"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -148,11 +148,7 @@ func resourceCertificateAuthorityCreate(ctx context.Context, data *schema.Resour
 		return diag.FromErr(fmt.Errorf("certificateAuthorityCreationSpec is empty, there was an error converting schema attributes to SDK spec"))
 	}
 
-	createCertificateAuthorityParams := certificates.NewCreateCertificateAuthorityParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithCertificateAuthorityCreationSpec(certificateAuthorityCreationSpec)
-
-	_, err := apiClient.Certificates.CreateCertificateAuthority(createCertificateAuthorityParams)
+	_, err := apiClient.CreateCertificateAuthorityWithResponse(ctx, *certificateAuthorityCreationSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -165,17 +161,21 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
 	authorityId := data.Id()
-	getAuthorityParams := certificates.NewGetCertificateAuthorityByIDParamsWithContext(ctx).
-		WithID(authorityId).WithTimeout(constants.DefaultVcfApiCallTimeout)
 
-	authorityResponse, err := apiClient.Certificates.GetCertificateAuthorityByID(getAuthorityParams)
+	authorityResponse, err := apiClient.GetCertificateAuthorityByIdWithResponse(ctx, authorityId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	if authorityResponse.StatusCode() != 200 {
+		vcfError := api_client.GetError(authorityResponse.Body)
+		api_client.LogError(vcfError)
+		return diag.FromErr(errors.New(*vcfError.Message))
+	}
+
 	// The ID doubles as type as per API
 	_ = data.Set("type", authorityId)
-	certificateAuthority := authorityResponse.Payload
+	certificateAuthority := authorityResponse.JSON200
 	if authorityId == "Microsoft" {
 		microsoftConfigAttribute, microsoftConfigExists := data.GetOk("microsoft")
 		var microsoftConfigRaw []interface{}
@@ -186,7 +186,7 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 			microsoftConfigRaw = append(microsoftConfigRaw, make(map[string]interface{}))
 		}
 		microsoftConfig := microsoftConfigRaw[0].(map[string]interface{})
-		microsoftConfig["server_url"] = certificateAuthority.ServerURL
+		microsoftConfig["server_url"] = certificateAuthority.ServerUrl
 		microsoftConfig["template_name"] = certificateAuthority.TemplateName
 		microsoftConfig["username"] = certificateAuthority.Username
 		_ = data.Set("microsoft", microsoftConfigRaw)
@@ -220,10 +220,8 @@ func resourceCertificateAuthorityDelete(ctx context.Context, data *schema.Resour
 	if caType == nil {
 		return diag.FromErr(fmt.Errorf("error deleting Certificate Authority: could not determine CA type"))
 	}
-	deleteCaConfigurationParams := certificates.NewRemoveCertificateAuthorityParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithID(*caType)
 
-	_, _, err := apiClient.Certificates.RemoveCertificateAuthority(deleteCaConfigurationParams)
+	_, err := apiClient.RemoveCertificateAuthorityWithResponse(ctx, *caType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -232,8 +230,8 @@ func resourceCertificateAuthorityDelete(ctx context.Context, data *schema.Resour
 	return nil
 }
 
-func getCertificateAuthorityCreationSpec(data *schema.ResourceData) *models.CertificateAuthorityCreationSpec {
-	certificateAuthorityCreationSpec := &models.CertificateAuthorityCreationSpec{}
+func getCertificateAuthorityCreationSpec(data *schema.ResourceData) *vcf.CertificateAuthorityCreationSpec {
+	certificateAuthorityCreationSpec := &vcf.CertificateAuthorityCreationSpec{}
 	microsoftConfig := data.Get("microsoft").([]interface{})
 	openSslConfig := data.Get("open_ssl").([]interface{})
 
@@ -248,11 +246,11 @@ func getCertificateAuthorityCreationSpec(data *schema.ResourceData) *models.Cert
 		templateName := microsoftConfigMap["template_name"].(string)
 		username := microsoftConfigMap["username"].(string)
 		secret := microsoftConfigMap["secret"].(string)
-		certificateAuthorityCreationSpec.MicrosoftCertificateAuthoritySpec = &models.MicrosoftCertificateAuthoritySpec{
-			ServerURL:    &serverUrl,
-			TemplateName: &templateName,
-			Username:     &username,
-			Secret:       &secret,
+		certificateAuthorityCreationSpec.MicrosoftCertificateAuthoritySpec = &vcf.MicrosoftCertificateAuthoritySpec{
+			ServerUrl:    serverUrl,
+			TemplateName: templateName,
+			Username:     username,
+			Secret:       secret,
 		}
 	}
 	if *caType == "OpenSSL" {
@@ -263,13 +261,13 @@ func getCertificateAuthorityCreationSpec(data *schema.ResourceData) *models.Cert
 		organization := openSslConfigMap["organization"].(string)
 		organizationUnit := openSslConfigMap["organization_unit"].(string)
 		state := openSslConfigMap["state"].(string)
-		certificateAuthorityCreationSpec.OpenSSLCertificateAuthoritySpec = &models.OpenSSLCertificateAuthoritySpec{
-			CommonName:       &commonName,
-			Country:          &country,
-			Locality:         &locality,
-			Organization:     &organization,
-			OrganizationUnit: &organizationUnit,
-			State:            &state,
+		certificateAuthorityCreationSpec.OpenSSLCertificateAuthoritySpec = &vcf.OpenSSLCertificateAuthoritySpec{
+			CommonName:       commonName,
+			Country:          country,
+			Locality:         locality,
+			Organization:     organization,
+			OrganizationUnit: organizationUnit,
+			State:            state,
 		}
 	}
 	return certificateAuthorityCreationSpec

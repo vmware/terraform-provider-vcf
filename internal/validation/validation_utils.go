@@ -12,9 +12,7 @@ import (
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/vmware/vcf-sdk-go/client/clusters"
-	"github.com/vmware/vcf-sdk-go/client/domains"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 func ValidatePassword(v interface{}, k string) (warnings []string, errors []error) {
@@ -161,134 +159,127 @@ func ConvertVcfErrorToDiag(err interface{}) diag.Diagnostics {
 	if err == nil {
 		return nil
 	}
-	domainsBadRequest, ok := err.(*domains.ValidateDomainCreationSpecBadRequest)
-	if ok {
-		return convertVcfErrorsToDiagErrors(domainsBadRequest.Payload)
-	}
-	clustersBadRequest, ok := err.(*clusters.ValidateClusterCreationSpecBadRequest)
-	if ok {
-		return convertVcfErrorsToDiagErrors(clustersBadRequest.Payload)
-	}
-	createDomainBadRequest, ok := err.(*domains.CreateDomainBadRequest)
-	if ok {
-		return convertVcfErrorsToDiagErrors(createDomainBadRequest.Payload)
+
+	if vcfError, ok := err.(*vcf.Error); ok {
+		return convertVcfErrorsToDiagErrors(vcfError)
 	}
 
 	return diag.FromErr(err.(error))
 }
 
-func convertVcfErrorsToDiagErrors(err *models.Error) []diag.Diagnostic {
+func convertVcfErrorsToDiagErrors(err *vcf.Error) []diag.Diagnostic {
 	var result []diag.Diagnostic
 
 	var errorDetail string
-	if IsEmpty(err.ReferenceToken) {
-		errorDetail = err.RemediationMessage
+	if err.RemediationMessage != nil && IsEmpty(*err.ReferenceToken) {
+		errorDetail = *err.RemediationMessage
 	} else {
-		errorDetail = fmt.Sprintf("look for reference token %q in service logs", err.ReferenceToken)
+		errorDetail = fmt.Sprintf("look for reference token %q in service logs", *err.ReferenceToken)
 	}
 
 	result = append(result, diag.Diagnostic{
 		Severity: diag.Error,
-		Summary:  err.Message,
+		Summary:  *err.Message,
 		Detail:   errorDetail,
 	})
 
-	for _, nestedErr := range err.NestedErrors {
-		result = append(result, convertVcfErrorsToDiagErrors(nestedErr)...)
-	}
 	return result
 }
 
-func HasValidationFailed(validationResult *models.Validation) bool {
+func HasValidationFailed(validationResult *vcf.Validation) bool {
 	if validationResult == nil {
 		return false
 	}
-	return validationResult.ResultStatus == "FAILED"
+	return validationResult.ResultStatus != nil && *validationResult.ResultStatus == "FAILED"
 }
 
-func HaveCertificateValidationsFailed(validationTask *models.CertificateValidationTask) bool {
+func HaveCertificateValidationsFailed(validationTask *vcf.CertificateValidationTask) bool {
 	if validationTask == nil {
 		return true
 	}
 	validationResult := validationTask.Validations
 	for _, certValidation := range validationResult {
-		if validationResult == nil && certValidation.ValidationStatus != nil {
+		if validationResult == nil && certValidation.ValidationStatus != "" {
 			continue
 		}
-		if *certValidation.ValidationStatus == "FAILED" {
+		if certValidation.ValidationStatus == "FAILED" {
 			return true
 		}
 	}
 	return false
 }
 
-func ConvertValidationResultToDiag(validationResult *models.Validation) diag.Diagnostics {
+func ConvertValidationResultToDiag(validationResult *vcf.Validation) diag.Diagnostics {
 	return convertValidationChecksToDiagErrors(validationResult.ValidationChecks)
 }
 
-func convertValidationChecksToDiagErrors(validationChecks []*models.ValidationCheck) []diag.Diagnostic {
+func convertValidationChecksToDiagErrors(validationChecks *[]vcf.ValidationCheck) []diag.Diagnostic {
 	var result []diag.Diagnostic
-	for _, validationCheck := range validationChecks {
-		if validationCheck.Severity == "ERROR" || validationCheck.ResultStatus != "SUCCEEDED" {
-			var validationErrorDetail string
-			if len(validationCheck.ErrorResponse.NestedErrors) > 0 {
-				for _, nestedError := range validationCheck.ErrorResponse.NestedErrors {
-					validationErrorDetail += nestedError.Message + "\n"
+	if validationChecks != nil {
+		for _, validationCheck := range *validationChecks {
+			severity := validationCheck.Severity
+			if (severity != nil && *severity == "ERROR") || validationCheck.ResultStatus != "SUCCEEDED" {
+				var validationErrorDetail string
+				if validationCheck.ErrorResponse != nil &&
+					validationCheck.ErrorResponse.NestedErrors != nil &&
+					len(*validationCheck.ErrorResponse.NestedErrors) > 0 {
+					for _, nestedError := range *validationCheck.ErrorResponse.NestedErrors {
+						validationErrorDetail += *nestedError.Message + "\n"
+					}
+				} else {
+					validationErrorDetail = *validationCheck.ErrorResponse.Message
 				}
-			} else {
-				validationErrorDetail = validationCheck.ErrorResponse.Message
+				diagnostic := diag.Diagnostic{
+					Severity: diag.Error,
+					Detail:   validationErrorDetail,
+				}
+
+				if validationCheck.Description != nil {
+					diagnostic.Summary = *validationCheck.Description
+				}
+
+				result = append(result, diagnostic)
 			}
-			result = append(result, diag.Diagnostic{
-				Severity: diag.Error,
-				Summary:  validationCheck.Description,
-				Detail:   validationErrorDetail,
-			})
-		}
-		if len(validationCheck.NestedValidationChecks) > 0 {
-			result = append(result, convertValidationChecksToDiagErrors(validationCheck.NestedValidationChecks)...)
 		}
 	}
 	return result
 }
 
-func ConvertCertificateValidationsResultToDiag(validationTask *models.CertificateValidationTask) diag.Diagnostics {
+func ConvertCertificateValidationsResultToDiag(validationTask *vcf.CertificateValidationTask) diag.Diagnostics {
 	if validationTask == nil || validationTask.Validations == nil {
 		return diag.FromErr(fmt.Errorf("provided certificate validation task is nil"))
 	}
 	return convertCertificateValidationChecksToDiagErrors(validationTask.Validations)
 }
 
-func convertCertificateValidationChecksToDiagErrors(validationChecks []*models.CertificateValidation) []diag.Diagnostic {
+func convertCertificateValidationChecksToDiagErrors(validationChecks []vcf.CertificateValidation) []diag.Diagnostic {
 	var result []diag.Diagnostic
 	for _, validationCheck := range validationChecks {
-		if *validationCheck.ValidationStatus != "SUCCEEDED" {
+		if validationCheck.ValidationStatus != "SUCCEEDED" {
 			validationMessage := validationCheck.ValidationMessage
 			result = append(result, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  validationMessage,
+				Summary:  *validationMessage,
 			})
 		}
 	}
 	return result
 }
 
-func HaveValidationChecksFinished(validationChecks []*models.ValidationCheck) bool {
+func HaveValidationChecksFinished(validationChecks []vcf.ValidationCheck) bool {
 	for _, validationCheck := range validationChecks {
 		if validationCheck.ResultStatus == "IN_PROGRESS" || validationCheck.ResultStatus == "UNKNOWN" {
-			return false
-		}
-		if !HaveValidationChecksFinished(validationCheck.NestedValidationChecks) {
 			return false
 		}
 	}
 	return true
 }
 
-func HasCertificateValidationFinished(validationTask *models.CertificateValidationTask) bool {
+func HasCertificateValidationFinished(validationTask *vcf.CertificateValidationTask) bool {
 	if validationTask == nil {
 		return false
 	}
-	return *validationTask.Completed
+	return validationTask.Completed
 }
 
 func IsEmpty(object interface{}) bool {

@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -87,35 +88,20 @@ func HostSpecSchema() *schema.Resource {
 	}
 }
 
-func FlattenHostReference(host *models.HostReference) *map[string]interface{} {
+func FlattenHost(host vcf.Host) *map[string]interface{} {
 	result := make(map[string]interface{})
-	if host == nil {
-		return &result
-	}
-	result["id"] = host.ID
+	result["id"] = host.Id
 	result["host_name"] = host.Fqdn
-	result["ip_address"] = host.IPAddress
-	result["availability_zone_name"] = host.AzName
-
-	return &result
-}
-
-func FlattenHost(host *models.Host) *map[string]interface{} {
-	result := make(map[string]interface{})
-	if host == nil {
-		return &result
-	}
-	result["id"] = host.ID
-	result["host_name"] = host.Fqdn
-	if len(host.IPAddresses) > 0 && host.IPAddresses[0] != nil {
-		result["ip_address"] = host.IPAddresses[0].IPAddress
+	ipAddresses := *host.IpAddresses
+	if len(ipAddresses) > 0 {
+		result["ip_address"] = ipAddresses[0].IpAddress
 	}
 
 	return &result
 }
 
-func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, error) {
-	result := &models.HostSpec{}
+func TryConvertToHostSpec(object map[string]interface{}) (*vcf.HostSpec, error) {
+	result := &vcf.HostSpec{}
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to HostSpec, object is nil")
 	}
@@ -123,43 +109,44 @@ func TryConvertToHostSpec(object map[string]interface{}) (*models.HostSpec, erro
 	if len(id) == 0 {
 		return nil, fmt.Errorf("cannot convert to HostSpec, id is required")
 	}
-	result.ID = &id
+	result.Id = id
 	if hostName, ok := object["host_name"]; ok && !validationutils.IsEmpty(hostName) {
-		result.HostName = hostName.(string)
+		result.HostName = utils.ToStringPointer(hostName)
 	}
 	if availabilityZoneName, ok := object["availability_zone_name"]; ok && !validationutils.IsEmpty(availabilityZoneName) {
-		result.AzName = availabilityZoneName.(string)
+		result.AzName = utils.ToStringPointer(availabilityZoneName)
 	}
 	if ipAddress, ok := object["ip_address"]; ok && !validationutils.IsEmpty(ipAddress) {
-		result.IPAddress = ipAddress.(string)
+		result.IpAddress = utils.ToStringPointer(ipAddress)
 	}
 	if licenseKey, ok := object["license_key"]; ok && !validationutils.IsEmpty(licenseKey) {
-		result.LicenseKey = licenseKey.(string)
+		result.LicenseKey = utils.ToStringPointer(licenseKey)
 	}
 	if userName, ok := object["username"]; ok && !validationutils.IsEmpty(userName) {
-		result.Username = userName.(string)
+		result.Username = utils.ToStringPointer(userName)
 	}
 	if password, ok := object["password"]; ok && !validationutils.IsEmpty(password) {
-		result.Password = password.(string)
+		result.Password = utils.ToStringPointer(password)
 	}
 	if serialNumber, ok := object["serial_number"]; ok && !validationutils.IsEmpty(serialNumber) {
-		result.SerialNumber = serialNumber.(string)
+		result.SerialNumber = utils.ToStringPointer(serialNumber)
 	}
 	if sshThumbprint, ok := object["ssh_thumbprint"]; ok && !validationutils.IsEmpty(sshThumbprint) {
-		result.SSHThumbprint = sshThumbprint.(string)
+		result.SshThumbprint = utils.ToStringPointer(sshThumbprint)
 	}
 	if vmNicsRaw, ok := object["vmnic"]; ok && !validationutils.IsEmpty(vmNicsRaw) {
 		vmNicsList := vmNicsRaw.([]interface{})
 		if len(vmNicsList) > 0 {
-			result.HostNetworkSpec = &models.HostNetworkSpec{}
-			result.HostNetworkSpec.VMNics = []*models.VMNic{}
+			result.HostNetworkSpec = &vcf.HostNetworkSpec{}
+			vmNics := []vcf.VmNic{}
 			for _, vmNicListEntry := range vmNicsList {
 				vmNic, err := network.TryConvertToVmNic(vmNicListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.HostNetworkSpec.VMNics = append(result.HostNetworkSpec.VMNics, vmNic)
+				vmNics = append(vmNics, *vmNic)
 			}
+			result.HostNetworkSpec.VmNics = &vmNics
 		} else {
 			return nil, fmt.Errorf("cannot convert to HostSpec, vmnic list is empty")
 		}

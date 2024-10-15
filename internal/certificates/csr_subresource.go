@@ -6,7 +6,7 @@ package certificates
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 func CsrSchema() *schema.Resource {
@@ -59,24 +59,20 @@ func ResourceSchema() *schema.Resource {
 	}
 }
 
-func FlattenCsr(csr *models.CSR) map[string]interface{} {
+func FlattenCsr(csr *vcf.Csr) map[string]interface{} {
 	result := make(map[string]interface{})
-	result["csr_pem"] = *csr.CSREncodedContent
-	result["csr_string"] = *csr.CSRDecodedContent
+	result["csr_pem"] = *csr.CsrEncodedContent
+	result["csr_string"] = *csr.CsrDecodedContent
 	flattenedResource := FlattenResource(csr.Resource)
 	result["resource"] = []interface{}{flattenedResource}
 	return result
 }
 
-func FlattenResource(resource *models.Resource) map[string]interface{} {
+func FlattenResource(resource *vcf.Resource) map[string]interface{} {
 	result := make(map[string]interface{})
 
-	if resource.ResourceID != nil {
-		result["resource_id"] = *resource.ResourceID
-	}
-	if resource.Type != nil {
-		result["type"] = *resource.Type
-	}
+	result["resource_id"] = resource.ResourceId
+	result["type"] = resource.Type
 	result["fqdn"] = resource.Fqdn
 	result["name"] = resource.Name
 

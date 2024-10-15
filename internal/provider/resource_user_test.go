@@ -5,6 +5,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -21,7 +22,7 @@ const (
 )
 
 func TestAccResourceVcfUser(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfUserDestroy,
@@ -61,16 +62,16 @@ func testAccVcfUserConfig() string {
 func testCheckVcfUserDestroy(_ *terraform.State) error {
 	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
-	ok, err := apiClient.Users.GetUsers(nil)
+	ok, err := apiClient.GetUsersWithResponse(context.TODO())
 	if err != nil {
 		log.Println("error = ", err)
 		return err
 	}
 
 	// Check if the users with the known usernames exist
-	for _, user := range ok.Payload.Elements {
-		if *user.Name == testUserName1 || *user.Name == testUserName2 {
-			return fmt.Errorf("found user with username %q", *user.Name)
+	for _, user := range *ok.JSON200.Elements {
+		if user.Name == testUserName1 || user.Name == testUserName2 {
+			return fmt.Errorf("found user with username %q", user.Name)
 		}
 	}
 

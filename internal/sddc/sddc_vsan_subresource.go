@@ -6,9 +6,7 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/models"
-
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
 func GetVsanSchema() *schema.Schema {
@@ -48,7 +46,7 @@ func GetVsanSchema() *schema.Schema {
 	}
 }
 
-func GetVsanSpecFromSchema(rawData []interface{}) *models.VSANSpec {
+func GetVsanSpecFromSchema(rawData []interface{}) *vcf.VsanSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -59,12 +57,12 @@ func GetVsanSpecFromSchema(rawData []interface{}) *models.VSANSpec {
 	vsanDedup := data["vsan_dedup"].(bool)
 	esaEnabled := data["esa_enabled"].(bool)
 
-	vsanSpecBinding := &models.VSANSpec{
-		DatastoreName: utils.ToStringPointer(datastoreName),
-		HclFile:       hclFile,
-		LicenseFile:   license,
-		VSANDedup:     vsanDedup,
-		EsaConfig:     &models.VSANEsaConfig{Enabled: &esaEnabled},
+	vsanSpecBinding := &vcf.VsanSpec{
+		DatastoreName: &datastoreName,
+		HclFile:       &hclFile,
+		LicenseFile:   &license,
+		VsanDedup:     &vsanDedup,
+		EsaConfig:     &vcf.VsanEsaConfig{Enabled: &esaEnabled},
 	}
 
 	return vsanSpecBinding
