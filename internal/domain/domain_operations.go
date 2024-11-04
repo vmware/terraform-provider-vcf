@@ -65,7 +65,7 @@ func ReadAndSetClustersDataToDomainResource(domainClusterRefs []vcf.ClusterRefer
 	if err != nil {
 		return err
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](clustersResult.Body)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](clustersResult.Body, clustersResult.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
@@ -103,7 +103,7 @@ func SetBasicDomainAttributes(ctx context.Context, domainId string, data *schema
 	if err != nil {
 		return nil, err
 	}
-	domain, vcfErr := api_client.GetResponseAs[vcf.Domain](domainRes.Body)
+	domain, vcfErr := api_client.GetResponseAs[vcf.Domain](domainRes.Body, domainRes.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
@@ -202,7 +202,7 @@ func setClustersDataToDomainDataSource(domainClusterRefs []vcf.ClusterReference,
 		if err != nil {
 			return err
 		}
-		clusterRef, vcfErr := api_client.GetResponseAs[vcf.Cluster](res.Body)
+		clusterRef, vcfErr := api_client.GetResponseAs[vcf.Cluster](res.Body, res.StatusCode())
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return errors.New(*vcfErr.Message)

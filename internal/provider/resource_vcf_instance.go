@@ -272,7 +272,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 
 		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, *sddcSpec)
 
-		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res.Body)
+		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res.Body, res.StatusCode())
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
@@ -291,7 +291,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
-		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res.Body)
+		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res.Body, res.StatusCode())
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
@@ -332,7 +332,7 @@ func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) 
 	if err != nil {
 		return nil, err
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfSddcTask](retrieveAllSddcsResp.Body)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfSddcTask](retrieveAllSddcsResp.Body, retrieveAllSddcsResp.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
@@ -352,7 +352,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateSpecRes.Body)
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateSpecRes.Body, validateSpecRes.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -369,7 +369,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 		if err != nil {
 			return validationutils.ConvertVcfErrorToDiag(err)
 		}
-		validationResult, vcfErr = api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body)
+		validationResult, vcfErr = api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body, getValidationResponse.StatusCode())
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return diag.FromErr(errors.New(*vcfErr.Message))
@@ -394,7 +394,7 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudB
 	if err != nil {
 		return nil, err
 	}
-	sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](retrieveSddcResponse.Body)
+	sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](retrieveSddcResponse.Body, retrieveSddcResponse.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
@@ -407,7 +407,7 @@ func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_clien
 	if err != nil {
 		return nil, err
 	}
-	info, vcfErr := api_client.GetResponseAs[vcf.SddcManagerInfo](getSddcManagerInfoResponse.Body)
+	info, vcfErr := api_client.GetResponseAs[vcf.SddcManagerInfo](getSddcManagerInfoResponse.Body, getSddcManagerInfoResponse.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)

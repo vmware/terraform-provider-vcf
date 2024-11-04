@@ -262,7 +262,7 @@ func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterResult.Body)
+	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterResult.Body, clusterResult.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -317,7 +317,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body)
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body, validateResponse.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
@@ -330,7 +330,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body)
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
@@ -360,7 +360,7 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec vcf.
 		return diag.FromErr(err)
 	}
 
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask.Body)
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask.Body, acceptedUpdateTask.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -394,7 +394,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask.Body)
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask.Body, acceptedDeleteTask.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -434,7 +434,7 @@ func getDomain(name string, client *vcf.ClientWithResponses) (*vcf.Domain, error
 	if err != nil {
 		return nil, err
 	}
-	domainsList, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](ok.Body)
+	domainsList, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](ok.Body, ok.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)

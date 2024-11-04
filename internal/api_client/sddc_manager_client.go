@@ -94,7 +94,7 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 		return err
 	}
 
-	tokenPair, vcfErr := GetResponseAs[vcf.TokenPair](res.Body)
+	tokenPair, vcfErr := GetResponseAs[vcf.TokenPair](res.Body, res.StatusCode())
 	if vcfErr != nil {
 		LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
@@ -208,7 +208,7 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx 
 func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*vcf.Task, error) {
 	apiClient := sddcManagerClient.ApiClient
 	res, err := apiClient.GetTaskWithResponse(ctx, taskId)
-	task, vcfErr := GetResponseAs[vcf.Task](res.Body)
+	task, vcfErr := GetResponseAs[vcf.Task](res.Body, res.StatusCode())
 	if err != nil || vcfErr != nil {
 		// retry the task up to maxGetTaskRetries
 		if sddcManagerClient.getTaskRetries < maxGetTaskRetries {
@@ -234,11 +234,15 @@ func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskI
 }
 
 // GetResponseAs attempts to parse the response body into the provided type
-// If it fails it attempts to parse it as a vcf.Error
-func GetResponseAs[T interface{}](body []byte) (*T, *vcf.Error) {
+// If it fails it attempts to parse it as a vcf.Error.
+func GetResponseAs[T interface{}](body []byte, status int) (*T, *vcf.Error) {
+	if status < 200 || status >= 300 {
+		return nil, GetError(body)
+	}
+
 	var resp T
 	if json.Unmarshal(body, &resp) != nil {
-		return nil, GetError(body)
+		return nil, nil
 	}
 
 	return &resp, nil

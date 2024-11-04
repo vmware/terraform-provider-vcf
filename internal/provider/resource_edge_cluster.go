@@ -175,7 +175,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -192,7 +192,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters.Body)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters.Body, clusters.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -235,7 +235,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	resp, vcfErr := api_client.GetResponseAs[vcf.EdgeCluster](edgeClusterOk.Body)
+	resp, vcfErr := api_client.GetResponseAs[vcf.EdgeCluster](edgeClusterOk.Body, edgeClusterOk.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -277,7 +277,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		task, vcfErr := api_client.GetResponseAs[vcf.Task](taskRes.Body)
+		task, vcfErr := api_client.GetResponseAs[vcf.Task](taskRes.Body, taskRes.StatusCode())
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return diag.FromErr(errors.New(*vcfErr.Message))
@@ -298,7 +298,7 @@ func validateClusterCreationSpec(client *vcf.ClientWithResponses, ctx context.Co
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body)
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body, validateResponse.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -313,7 +313,7 @@ func validateClusterCreationSpec(client *vcf.ClientWithResponses, ctx context.Co
 		if err != nil {
 			return validationUtils.ConvertVcfErrorToDiag(err)
 		}
-		validationStatus, vcfErr := api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body)
+		validationStatus, vcfErr := api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body, getValidationResponse.StatusCode())
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return diag.FromErr(errors.New(*vcfErr.Message))

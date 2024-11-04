@@ -145,7 +145,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -160,7 +160,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCsr](getCsrResponse.Body)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCsr](getCsrResponse.Body, getCsrResponse.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))

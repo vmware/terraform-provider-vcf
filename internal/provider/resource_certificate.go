@@ -89,7 +89,7 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
