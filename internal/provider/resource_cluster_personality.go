@@ -83,18 +83,18 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 		},
 	}
 
-	task, err := client.UploadPersonalityWithResponse(ctx, spec)
+	uploadPersonalityTask, err := client.UploadPersonalityWithResponse(ctx, spec)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if task.StatusCode() != 202 {
-		vcfError := api_client.GetError(task.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](uploadPersonalityTask.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.JSON202.Id, false); err != nil {
+	if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -103,17 +103,19 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 	})
 	if err != nil {
 		return diag.FromErr(err)
-	} else if personalitiesResp.StatusCode() != 200 {
-		vcfError := api_client.GetError(personalitiesResp.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
 	}
 
-	if personalitiesResp.JSON200.Elements != nil && len(*personalitiesResp.JSON200.Elements) == 0 {
+	personalities, vcfErr := api_client.GetResponseAs[vcf.PageOfPersonality](personalitiesResp.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
+
+	if personalities.Elements == nil || len(*personalities.Elements) == 0 {
 		return diag.Errorf("Personality %s not found", name)
 	} else {
-		personalities := *personalitiesResp.JSON200.Elements
-		data.SetId(*personalities[0].PersonalityId)
+		elements := *personalities.Elements
+		data.SetId(*elements[0].PersonalityId)
 	}
 
 	return nil
@@ -151,7 +153,12 @@ func getVcenterId(data *schema.ResourceData, meta interface{}) (*string, error) 
 	if vcs, err := client.GetVcentersWithResponse(context.Background(), nil); err != nil {
 		return nil, err
 	} else {
-		for _, vc := range *vcs.JSON200.Elements {
+		page, vcfErr := api_client.GetResponseAs[vcf.PageOfVcenter](vcs.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return nil, errors.New(*vcfErr.Message)
+		}
+		for _, vc := range *page.Elements {
 			if vc.Domain.Id == domainId {
 				return vc.Id, nil
 			}

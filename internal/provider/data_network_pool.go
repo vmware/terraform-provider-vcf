@@ -113,17 +113,18 @@ func getNetworkPoolByName(ctx context.Context, apiClient *vcf.ClientWithResponse
 		return nil, err
 	}
 
-	if networkPoolsRes.StatusCode() != 200 {
-		vcfError := api_client.GetError(networkPoolsRes.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](networkPoolsRes.Body)
+
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
 
-	if networkPoolsRes.JSON200 == nil || networkPoolsRes.JSON200.Elements == nil {
+	if resp == nil || resp.Elements == nil {
 		return nil, errors.New("network pool not found")
 	}
 
-	for _, networkPool := range *networkPoolsRes.JSON200.Elements {
+	for _, networkPool := range *resp.Elements {
 		if networkPool.Name == name {
 			return &networkPool, nil
 		}

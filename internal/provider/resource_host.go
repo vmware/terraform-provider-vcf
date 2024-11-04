@@ -124,22 +124,21 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	if accepted.StatusCode() != 202 {
-		vcfError := api_client.GetError(accepted.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := accepted.JSON202.Id
 
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
-		commissionSpec.Fqdn, *taskId))
+		commissionSpec.Fqdn, *task.Id))
 
-	err = vcfClient.WaitForTaskComplete(ctx, *taskId, false)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	hostId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *taskId, "Esxi")
+	hostId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *task.Id, "Esxi")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -157,12 +156,11 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	if hostResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(hostResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	host, vcfErr := api_client.GetResponseAs[vcf.Host](hostResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	host := hostResponse.JSON200
 
 	_ = d.Set("network_pool_id", host.Networkpool.Id)
 	_ = d.Set("network_pool_name", host.Networkpool.Name)
@@ -176,12 +174,12 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	if getCredentialsResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(getCredentialsResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](getCredentialsResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	for _, credential := range *getCredentialsResponse.JSON200.Elements {
+	for _, credential := range *page.Elements {
 		// we're interested in the SSH credentials, not service account
 		if *credential.AccountType != "USER" || *credential.CredentialType != "SSH" {
 			continue
@@ -213,15 +211,15 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	if accepted.StatusCode() != 202 {
-		vcfError := api_client.GetError(accepted.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	log.Printf("%s %s: Decommission task initiated. Task id %s",
-		d.Get("fqdn").(string), d.Id(), *accepted.JSON202.Id)
-	err = vcfClient.WaitForTaskComplete(ctx, *accepted.JSON202.Id, false)
+		d.Get("fqdn").(string), d.Id(), *task.Id)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -236,16 +234,14 @@ func getNetworkPool(name string, client *vcf.ClientWithResponses, ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	if ok.StatusCode() != 200 {
-		vcfError := api_client.GetError(ok.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](ok.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
 
-	networkPools := ok.JSON200.Elements
-
-	if networkPools != nil {
-		for _, pool := range *networkPools {
+	if page != nil {
+		for _, pool := range *page.Elements {
 			if pool.Name == name {
 				return &pool, nil
 			}

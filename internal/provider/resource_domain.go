@@ -125,30 +125,30 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validateResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(validateResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	if validationUtils.HasValidationFailed(validateResponse.JSON200) {
-		return validationUtils.ConvertValidationResultToDiag(validateResponse.JSON200)
+	if validationUtils.HasValidationFailed(validationResult) {
+		return validationUtils.ConvertValidationResultToDiag(validationResult)
 	}
 
 	accepted, err := apiClient.CreateDomainWithResponse(ctx, *domainCreationSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if accepted.StatusCode() != 202 {
-		vcfError := api_client.GetError(validateResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := accepted.JSON202.Id
-	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
+	taskId := *task.Id
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *taskId, "Domain")
+	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Domain")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -191,20 +191,13 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if accepted.StatusCode() != 200 && accepted.StatusCode() != 202 {
-			vcfError := api_client.GetError(accepted.Body)
-			api_client.LogError(vcfError)
-			return diag.FromErr(errors.New(*vcfError.Message))
+		task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
-		var taskId *string
-		if accepted.JSON200 != nil {
-			taskId = accepted.JSON200.Id
-		} else if accepted.JSON202 != nil {
-			taskId = accepted.JSON200.Id
-		}
-
-		err = vcfClient.WaitForTaskComplete(ctx, *taskId, false)
+		err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -305,23 +298,22 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if acceptedUpdateTask.StatusCode() != 200 && acceptedUpdateTask.StatusCode() != 202 {
-		vcfError := api_client.GetError(acceptedUpdateTask.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	_, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	acceptedDeleteTask, err := apiClient.DeleteDomainWithResponse(ctx, data.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if acceptedDeleteTask.StatusCode() != 202 {
-		vcfError := api_client.GetError(acceptedDeleteTask.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := acceptedDeleteTask.JSON202.Id
-	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}

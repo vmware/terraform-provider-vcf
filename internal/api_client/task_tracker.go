@@ -87,11 +87,7 @@ func (t *TaskTracker) WaitForTask() error {
 func (t *TaskTracker) getTask() (*vcf.Task, *vcf.Error) {
 	res, _ := t.client.GetTaskWithResponse(t.ctx, t.taskId)
 
-	if res.StatusCode() == 200 {
-		return res.JSON200, nil
-	}
-
-	return nil, GetError(res.Body)
+	return GetResponseAs[vcf.Task](res.Body)
 }
 
 func (t *TaskTracker) logTask(task *vcf.Task) {

@@ -67,7 +67,14 @@ func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*ceipResult.JSON200.InstanceId)
+	resp, vcfErr := api_client.GetResponseAs[vcf.Ceip](ceipResult.Body)
+
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
+
+	d.SetId(*resp.InstanceId)
 	return nil
 }
 
@@ -91,13 +98,14 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	if res.StatusCode() != 202 {
-		vcfError := api_client.GetError(res.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if vcfClient.WaitForTask(ctx, *res.JSON202.Id) != nil {
+	if vcfClient.WaitForTask(ctx, *task.Id) != nil {
 		return diag.FromErr(err)
 	}
 
@@ -121,7 +129,13 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	if vcfClient.WaitForTask(ctx, *ceipAccepted.JSON202.Id) != nil {
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](ceipAccepted.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
+
+	if vcfClient.WaitForTask(ctx, *task.Id) != nil {
 		return diag.FromErr(err)
 	}
 

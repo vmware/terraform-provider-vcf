@@ -262,7 +262,11 @@ func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	clusterObj := clusterResult.JSON200
+	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterResult.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
 	_ = data.Set("primary_datastore_name", clusterObj.PrimaryDatastoreName)
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
@@ -313,30 +317,30 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validateResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(validateResponse.Body)
-		api_client.LogError(vcfError)
-		return "", diag.FromErr(errors.New(*vcfError.Message))
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	if validationUtils.HasValidationFailed(validateResponse.JSON200) {
-		return "", validationUtils.ConvertValidationResultToDiag(validateResponse.JSON200)
+	if validationUtils.HasValidationFailed(validationResult) {
+		return "", validationUtils.ConvertValidationResultToDiag(validationResult)
 	}
 
 	accepted, err := apiClient.CreateClusterWithResponse(ctx, clusterCreationSpec)
 	if err != nil {
 		return "", validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if accepted.StatusCode() != 202 {
-		vcfError := api_client.GetError(validateResponse.Body)
-		api_client.LogError(vcfError)
-		return "", diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := accepted.JSON202.Id
-	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
+	taskId := *task.Id
+	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return "", diag.FromErr(err)
 	}
-	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *taskId, "Cluster")
+	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Cluster")
 	if err != nil {
 		return "", diag.FromErr(err)
 	}
@@ -355,16 +359,14 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec vcf.
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if acceptedUpdateTask.StatusCode() != 202 {
-		vcfError := api_client.GetError(acceptedUpdateTask.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	var taskId string
-	if acceptedUpdateTask != nil {
-		taskId = *acceptedUpdateTask.JSON202.Id
-	}
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -392,14 +394,13 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if acceptedDeleteTask.StatusCode() != 202 {
-		vcfError := api_client.GetError(acceptedDeleteTask.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	taskId := *acceptedDeleteTask.JSON202.Id
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -433,11 +434,14 @@ func getDomain(name string, client *vcf.ClientWithResponses) (*vcf.Domain, error
 	if err != nil {
 		return nil, err
 	}
+	domainsList, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](ok.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
 
-	domainsList := ok.JSON200.Elements
-
-	if domainsList != nil && len(*domainsList) > 0 {
-		for _, domain := range *domainsList {
+	if domainsList != nil && len(*domainsList.Elements) > 0 {
+		for _, domain := range *domainsList.Elements {
 			if *domain.Name == name {
 				return &domain, nil
 			}

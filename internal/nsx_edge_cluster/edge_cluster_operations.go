@@ -280,16 +280,14 @@ func getComputeCluster(name string, client *vcf.ClientWithResponses) (*vcf.Clust
 	if err != nil {
 		return nil, err
 	}
-	if ok.StatusCode() != 200 {
-		vcfError := api_client.GetError(ok.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](ok.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
 
-	computeClusters := ok.JSON200.Elements
-
-	if computeClusters != nil && len(*computeClusters) > 0 {
-		for _, cluster := range *computeClusters {
+	if page.Elements != nil && len(*page.Elements) > 0 {
+		for _, cluster := range *page.Elements {
 			if *cluster.Name == name {
 				return &cluster, nil
 			}

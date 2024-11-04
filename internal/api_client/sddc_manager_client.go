@@ -94,7 +94,12 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 		return err
 	}
 
-	sddcManagerClient.accessToken = res.JSON200.AccessToken
+	tokenPair, vcfErr := GetResponseAs[vcf.TokenPair](res.Body)
+	if vcfErr != nil {
+		LogError(vcfErr)
+		return errors.New(*vcfErr.Message)
+	}
+	sddcManagerClient.accessToken = tokenPair.AccessToken
 	sddcManagerClient.lastRefreshTime = time.Now()
 	sddcManagerClient.isRefreshing = false
 
@@ -203,7 +208,8 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx 
 func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId string) (*vcf.Task, error) {
 	apiClient := sddcManagerClient.ApiClient
 	res, err := apiClient.GetTaskWithResponse(ctx, taskId)
-	if err != nil || res.StatusCode() != 200 {
+	task, vcfErr := GetResponseAs[vcf.Task](res.Body)
+	if err != nil || vcfErr != nil {
 		// retry the task up to maxGetTaskRetries
 		if sddcManagerClient.getTaskRetries < maxGetTaskRetries {
 			sddcManagerClient.getTaskRetries++
@@ -215,7 +221,7 @@ func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId 
 	// reset the counter
 	sddcManagerClient.getTaskRetries = 0
 
-	return res.JSON200, nil
+	return task, nil
 }
 
 func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskId string) error {
@@ -227,6 +233,17 @@ func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskI
 	return nil
 }
 
+// GetResponseAs attempts to parse the response body into the provided type
+// If it fails it attempts to parse it as a vcf.Error
+func GetResponseAs[T interface{}](body []byte) (*T, *vcf.Error) {
+	var resp T
+	if json.Unmarshal(body, &resp) != nil {
+		return nil, GetError(body)
+	}
+
+	return &resp, nil
+}
+
 // GetError when the API responds with an error code the response is unmarshalled into the appropriate field for that code
 // all error code fields are of type *vcf.Error and only one can be != nil at any time
 // if the status code is an error code the body is always *vcf.Error
@@ -234,7 +251,7 @@ func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskI
 // use this method if you are not interested in the error code but only in the error itself.
 func GetError(body []byte) *vcf.Error {
 	var dest vcf.Error
-	if err := json.Unmarshal(body, &dest); err != nil {
+	if json.Unmarshal(body, &dest) != nil {
 		return nil
 	}
 

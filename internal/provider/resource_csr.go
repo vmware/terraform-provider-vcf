@@ -141,33 +141,32 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 		},
 	}
 
-	task, err := apiClient.GeneratesCSRsWithResponse(ctx, domainId, csrsGenerationSpec)
+	res, err := apiClient.GeneratesCSRsWithResponse(ctx, domainId, csrsGenerationSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if task.StatusCode() != 202 {
-		vcfError := api_client.GetError(task.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := task.JSON202.Id
-	err = vcfClient.WaitForTaskComplete(ctx, *taskId, true)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	data.SetId(fmt.Sprintf("csr:%s:%s:%s:%s", domainId, resourceType, resourceFqdn, *taskId))
+	data.SetId(fmt.Sprintf("csr:%s:%s:%s:%s", domainId, resourceType, resourceFqdn, *task.Id))
 
 	getCsrResponse, err := apiClient.GetCSRsWithResponse(ctx, domainId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if getCsrResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(getCsrResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCsr](getCsrResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	csr := getCsrByResourceFqdn(resourceFqdn, getCsrResponse.JSON200.Elements)
+	csr := getCsrByResourceFqdn(resourceFqdn, page.Elements)
 	flattenedCsr := certificates.FlattenCsr(csr)
 	_ = data.Set("csr", []interface{}{flattenedCsr})
 

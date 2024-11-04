@@ -170,19 +170,19 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 		return validationErr
 	}
 
-	task, err := client.CreateEdgeClusterWithResponse(ctx, *spec)
+	res, err := client.CreateEdgeClusterWithResponse(ctx, *spec)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if task.StatusCode() != 202 {
-		vcfError := api_client.GetError(task.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	tflog.Info(ctx, "Edge cluster creation has started.")
-	err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.JSON202.Id, false)
+	err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -192,13 +192,13 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if task.StatusCode() != 200 {
-		vcfError := api_client.GetError(task.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	for _, cluster := range *clusters.JSON200.Elements {
+	for _, cluster := range *page.Elements {
 		if cluster.Name == data.Get("name") {
 			data.SetId(*cluster.Id)
 			tflog.Info(ctx, "Edge cluster created successfully.")
@@ -234,10 +234,11 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if edgeClusterOk.StatusCode() != 200 {
-		vcfError := api_client.GetError(edgeClusterOk.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+
+	resp, vcfErr := api_client.GetResponseAs[vcf.EdgeCluster](edgeClusterOk.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	if data.HasChange("edge_node") {
@@ -255,7 +256,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 			operation := shrinkage
 			updateSpec.Operation = operation
 			updateSpec.EdgeClusterShrinkageSpec =
-				nsx_edge_cluster.GetNsxEdgeClusterShrinkageSpec(*edgeClusterOk.JSON200.EdgeNodes, newNodes)
+				nsx_edge_cluster.GetNsxEdgeClusterShrinkageSpec(*resp.EdgeNodes, newNodes)
 			tflog.Info(ctx, "Shrinking edge cluster")
 		}
 
@@ -263,7 +264,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 		if len(oldNodes) < len(newNodes) {
 			operation := expansion
 			updateSpec.Operation = operation
-			spec, err := nsx_edge_cluster.GetNsxEdgeClusterExpansionSpec(*edgeClusterOk.JSON200.EdgeNodes, newNodes, client)
+			spec, err := nsx_edge_cluster.GetNsxEdgeClusterExpansionSpec(*resp.EdgeNodes, newNodes, client)
 
 			if err != nil {
 				return diag.FromErr(err)
@@ -272,17 +273,17 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 			tflog.Info(ctx, "Expanding edge cluster")
 		}
 
-		task, err := client.UpdateEdgeClusterWithResponse(ctx, data.Id(), updateSpec)
+		taskRes, err := client.UpdateEdgeClusterWithResponse(ctx, data.Id(), updateSpec)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if edgeClusterOk.StatusCode() != 202 {
-			vcfError := api_client.GetError(edgeClusterOk.Body)
-			api_client.LogError(vcfError)
-			return diag.FromErr(errors.New(*vcfError.Message))
+		task, vcfErr := api_client.GetResponseAs[vcf.Task](taskRes.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
-		err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.JSON202.Id, false)
+		err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -297,30 +298,28 @@ func validateClusterCreationSpec(client *vcf.ClientWithResponses, ctx context.Co
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validateResponse.StatusCode() != 202 {
-		vcfError := api_client.GetError(validateResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	validationResult := validateResponse.JSON202
 	if validationUtils.HasValidationFailed(validationResult) {
 		return validationUtils.ConvertValidationResultToDiag(validationResult)
 	}
 
 	for {
-		getValidationResponse, err := client.GetEdgeClusterValidationByIDWithResponse(ctx, *validateResponse.JSON202.Id)
+		getValidationResponse, err := client.GetEdgeClusterValidationByIDWithResponse(ctx, *validationResult.Id)
 		if err != nil {
 			return validationUtils.ConvertVcfErrorToDiag(err)
 		}
-		if getValidationResponse.StatusCode() != 200 {
-			vcfError := api_client.GetError(getValidationResponse.Body)
-			api_client.LogError(vcfError)
-			return diag.FromErr(errors.New(*vcfError.Message))
+		validationStatus, vcfErr := api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
-		validationResult = getValidationResponse.JSON200
-		if validationUtils.HaveValidationChecksFinished(*validationResult.ValidationChecks) {
+		if validationUtils.HaveValidationChecksFinished(*validationStatus.ValidationChecks) {
 			break
 		}
 		// TODO: reimplement this block without timeouts

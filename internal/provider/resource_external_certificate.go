@@ -120,17 +120,16 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if responseAcc.StatusCode() != 202 {
-		vcfError := api_client.GetError(responseAcc.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](responseAcc.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := *responseAcc.JSON202.Id
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	data.SetId("ext_cert:" + domainID + ":" + resourceType + ":" + taskId)
+	data.SetId("ext_cert:" + domainID + ":" + resourceType + ":" + *task.Id)
 
 	return resourceResourceExternalCertificateRead(ctx, data, meta)
 }

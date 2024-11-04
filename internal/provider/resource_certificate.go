@@ -88,13 +88,14 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if res.StatusCode() != 202 {
-		vcfError := api_client.GetError(res.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	taskId = *res.JSON202.Id
+	taskId = *task.Id
 	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
 	if err != nil {
 		return diag.FromErr(err)

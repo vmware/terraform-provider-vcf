@@ -118,16 +118,13 @@ func getDomainByName(ctx context.Context, apiClient *vcf.ClientWithResponses, na
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
-	if domainsResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(domainsResponse.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
 
-	for _, domainElement := range *domainsResponse.JSON200.Elements {
+	for _, domainElement := range *resp.Elements {
 		if *domainElement.Name == name {
 			return &domainElement, nil
 		}

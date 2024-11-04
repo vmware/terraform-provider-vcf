@@ -98,14 +98,14 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if roleResult.StatusCode() != 200 {
-			vcfError := api_client.GetError(roleResult.Body)
-			api_client.LogError(vcfError)
-			return diag.FromErr(errors.New(*vcfError.Message))
+		page, vcfErr := api_client.GetResponseAs[vcf.PageOfRole](roleResult.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
 		roleFound := false
-		for _, role := range *roleResult.JSON200.Elements {
+		for _, role := range *page.Elements {
 			if *role.Name == roleNameVal {
 				user.Role = vcf.RoleReference{Id: *role.Id}
 				roleFound = true
@@ -122,13 +122,13 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if created.StatusCode() != 201 {
-		vcfError := api_client.GetError(created.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](created.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	createdUser := (*created.JSON201.Elements)[0]
+	createdUser := (*page.Elements)[0]
 	d.SetId(*createdUser.Id)
 	return resourceUserRead(ctx, d, meta)
 }
@@ -142,9 +142,14 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](ok.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
 	// Check if the resource with the known id exists
-	for _, user := range *ok.JSON200.Elements {
+	for _, user := range *page.Elements {
 		if *user.Id == id {
 			_ = d.Set("api_key", user.ApiKey)
 			_ = d.Set("creation_timestamp", user.CreationTimestamp)
@@ -162,10 +167,10 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if res.StatusCode() >= 400 {
-		vcfError := api_client.GetError(res.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	_, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	log.Printf("%s: Delete complete", d.Id())

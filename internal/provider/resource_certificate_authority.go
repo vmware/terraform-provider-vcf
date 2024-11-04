@@ -167,15 +167,14 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	if authorityResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(authorityResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	certificateAuthority, vcfErr := api_client.GetResponseAs[vcf.CertificateAuthority](authorityResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	// The ID doubles as type as per API
 	_ = data.Set("type", authorityId)
-	certificateAuthority := authorityResponse.JSON200
 	if authorityId == "Microsoft" {
 		microsoftConfigAttribute, microsoftConfigExists := data.GetOk("microsoft")
 		var microsoftConfigRaw []interface{}

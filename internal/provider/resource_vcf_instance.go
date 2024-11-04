@@ -271,11 +271,15 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 		}
 
 		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, *sddcSpec)
-		if res != nil && res.JSON202 != nil {
-			bringUpId = *res.JSON202.Id
-		}
+
+		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res.Body)
 		if err != nil {
 			return "", diag.FromErr(err)
+		}
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+		} else {
+			bringUpId = *sddcTask.Id
 		}
 	} else {
 		diags := validateBringupSpec(ctx, client, sddcSpec)
@@ -284,11 +288,17 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 		}
 
 		res, err := client.ApiClient.StartBringupWithResponse(ctx, *sddcSpec)
-		if res != nil && res.JSON202 != nil {
-			bringUpId = *res.JSON202.Id
-		}
 		if err != nil {
 			return "", diag.FromErr(err)
+		}
+		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res.Body)
+		if err != nil {
+			return "", diag.FromErr(err)
+		}
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+		} else {
+			bringUpId = *sddcTask.Id
 		}
 
 		tflog.Info(ctx, fmt.Sprintf("Bring-Up workflow with ID %s has started", bringUpId))
@@ -309,7 +319,7 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 		}
 
 		if *task.Status == "COMPLETED_WITH_FAILURE" {
-			err := fmt.Errorf("Task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
+			err := fmt.Errorf("task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
 			return diag.FromErr(err)
 		}
 
@@ -322,15 +332,19 @@ func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) 
 	if err != nil {
 		return nil, err
 	}
-	if retrieveAllSddcsResp.JSON200 != nil && len(*retrieveAllSddcsResp.JSON200.Elements) > 0 {
-		elements := *retrieveAllSddcsResp.JSON200.Elements
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfSddcTask](retrieveAllSddcsResp.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+	if page != nil && len(*page.Elements) > 0 {
+		elements := *page.Elements
 		return &(elements)[0], nil
 	}
 	return nil, nil
 }
 
 func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec) diag.Diagnostics {
-	var validationResponse *vcf.Validation
 	bringupParams := &vcf.ValidateBringupSpecParams{
 		Redo: utils.ToBoolPointer(true),
 	}
@@ -338,35 +352,29 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if validateSpecRes.StatusCode() != 200 && validateSpecRes.StatusCode() != 202 {
-		vcfError := api_client.GetError(validateSpecRes.Body)
-		api_client.LogError(vcfError)
-		if vcfError != nil {
-			return diag.FromErr(errors.New(*vcfError.Message))
-		}
-
-		return diag.Errorf("failed to validate bringup spec")
-	}
-	if validateSpecRes.JSON200 != nil {
-		validationResponse = validateSpecRes.JSON200
-	} else if validateSpecRes.JSON202 != nil {
-		validationResponse = validateSpecRes.JSON202
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateSpecRes.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	if err != nil {
 		return validationutils.ConvertVcfErrorToDiag(err)
 	}
-	if validationutils.HasValidationFailed(validationResponse) {
-		return validationutils.ConvertValidationResultToDiag(validationResponse)
+	if validationutils.HasValidationFailed(validationResult) {
+		return validationutils.ConvertValidationResultToDiag(validationResult)
 	}
-	validationId := validationResponse.Id
 	for {
-		getValidationResponse, err := client.ApiClient.GetBringupValidationWithResponse(ctx, *validationId)
+		getValidationResponse, err := client.ApiClient.GetBringupValidationWithResponse(ctx, *validationResult.Id)
 		if err != nil {
 			return validationutils.ConvertVcfErrorToDiag(err)
 		}
-		validationResponse = getValidationResponse.JSON200
-		if validationResponse != nil && validationutils.HaveValidationChecksFinished(*validationResponse.ValidationChecks) {
+		validationResult, vcfErr = api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
+		}
+		if validationResult != nil && validationutils.HaveValidationChecksFinished(*validationResult.ValidationChecks) {
 			break
 		}
 		time.Sleep(10 * time.Second)
@@ -374,8 +382,8 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	if err != nil {
 		return validationutils.ConvertVcfErrorToDiag(err)
 	}
-	if validationutils.HasValidationFailed(validationResponse) {
-		return validationutils.ConvertValidationResultToDiag(validationResponse)
+	if validationutils.HasValidationFailed(validationResult) {
+		return validationutils.ConvertValidationResultToDiag(validationResult)
 	}
 
 	return nil
@@ -386,7 +394,12 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudB
 	if err != nil {
 		return nil, err
 	}
-	return retrieveSddcResponse.JSON200, nil
+	sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](retrieveSddcResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+	return sddcTask, nil
 }
 
 func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcManagerInfo, error) {
@@ -394,5 +407,11 @@ func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_clien
 	if err != nil {
 		return nil, err
 	}
-	return getSddcManagerInfoResponse.JSON200, nil
+	info, vcfErr := api_client.GetResponseAs[vcf.SddcManagerInfo](getSddcManagerInfoResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+
+	return info, nil
 }

@@ -146,14 +146,14 @@ func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validateResponse.StatusCode() != 200 {
-		vcfError := api_client.GetError(validateResponse.Body)
-		api_client.LogError(vcfError)
-		return diag.FromErr(errors.New(*vcfError.Message))
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if validationUtils.HasValidationFailed(validateResponse.JSON200) {
-		return validationUtils.ConvertValidationResultToDiag(validateResponse.JSON200)
+	if validationUtils.HasValidationFailed(validationResult) {
+		return validationUtils.ConvertValidationResultToDiag(validationResult)
 	}
 	return nil
 }
@@ -392,13 +392,11 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	if err != nil {
 		return nil, err
 	}
-	if clusterRes.StatusCode() != 200 {
-		vcfError := api_client.GetError(clusterRes.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterRes.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
-
-	clusterObj := clusterRes.JSON200
 
 	data.SetId(*clusterObj.Id)
 	_ = data.Set("name", clusterObj.Name)
@@ -426,12 +424,12 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	if err != nil {
 		return nil, err
 	}
-	if domainsRes.StatusCode() != 200 {
-		vcfError := api_client.GetError(domainsRes.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsRes.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
-	allDomains := *domainsRes.JSON200.Elements
+	allDomains := *page.Elements
 	for _, domain := range allDomains {
 		for _, clusterRef := range *domain.Clusters {
 			if clusterRef.Id == clusterId {
@@ -459,12 +457,11 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostRefere
 		if err != nil {
 			return nil, err
 		}
-		if res.StatusCode() != 200 {
-			vcfError := api_client.GetError(res.Body)
-			api_client.LogError(vcfError)
-			return nil, errors.New(*vcfError.Message)
+		hostObj, vcfErr := api_client.GetResponseAs[vcf.Host](res.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return nil, errors.New(*vcfErr.Message)
 		}
-		hostObj := res.JSON200
 		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(*hostObj))
 	}
 	return flattenedHostSpecs, nil

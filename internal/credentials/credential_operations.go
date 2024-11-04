@@ -65,14 +65,13 @@ func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *
 	if err != nil {
 		return nil, err
 	}
-
-	if res.StatusCode() != 200 {
-		vcfError := api_client.GetError(res.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	pageOfCredential, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
 
-	return *res.JSON200.Elements, nil
+	return *pageOfCredential.Elements, nil
 }
 
 func FlattenCredentials(creds []vcf.Credential) []map[string]interface{} {
@@ -202,8 +201,12 @@ func executeCredentialsUpdate(ctx context.Context, updateSpec *vcf.CredentialsUp
 	if err != nil {
 		return err
 	}
-
-	if err := sddcClient.WaitForTask(ctx, *res.JSON202.Id); err != nil {
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return errors.New(*vcfErr.Message)
+	}
+	if err := sddcClient.WaitForTask(ctx, *task.Id); err != nil {
 		return err
 	}
 

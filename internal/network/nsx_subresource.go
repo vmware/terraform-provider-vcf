@@ -155,12 +155,11 @@ func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef vcf.NsxTClusterRef
 	if err != nil {
 		return nil, err
 	}
-	if res.StatusCode() != 200 {
-		vcfError := api_client.GetError(res.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	nsxtCluster, vcfErr := api_client.GetResponseAs[vcf.NsxTCluster](res.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
-	nsxtCluster := res.JSON200
 	if nsxtCluster.Nodes != nil {
 		nsxtManagerNodes := *nsxtCluster.Nodes
 		// Since backend API returns objects in random order sort nsxtManagerNodes list to ensure

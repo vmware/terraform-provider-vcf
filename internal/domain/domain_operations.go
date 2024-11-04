@@ -65,14 +65,14 @@ func ReadAndSetClustersDataToDomainResource(domainClusterRefs []vcf.ClusterRefer
 	if err != nil {
 		return err
 	}
-	if clustersResult.StatusCode() != 200 {
-		vcfError := api_client.GetError(clustersResult.Body)
-		api_client.LogError(vcfError)
-		return errors.New(*vcfError.Message)
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](clustersResult.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return errors.New(*vcfErr.Message)
 	}
 	domainClusterData := data.Get("cluster")
 	domainClusterDataList := domainClusterData.([]interface{})
-	allClusters := clustersResult.JSON200.Elements
+	allClusters := page.Elements
 	for _, domainClusterRaw := range domainClusterDataList {
 		domainCluster := domainClusterRaw.(map[string]interface{})
 		if allClusters != nil {
@@ -103,12 +103,11 @@ func SetBasicDomainAttributes(ctx context.Context, domainId string, data *schema
 	if err != nil {
 		return nil, err
 	}
-	if domainRes.StatusCode() != 200 {
-		vcfError := api_client.GetError(domainRes.Body)
-		api_client.LogError(vcfError)
-		return nil, errors.New(*vcfError.Message)
+	domain, vcfErr := api_client.GetResponseAs[vcf.Domain](domainRes.Body)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
-	domain := domainRes.JSON200
 
 	data.SetId(*domain.Id)
 	_ = data.Set("name", *domain.Name)
@@ -203,13 +202,11 @@ func setClustersDataToDomainDataSource(domainClusterRefs []vcf.ClusterReference,
 		if err != nil {
 			return err
 		}
-
-		if res.StatusCode() != 200 {
-			vcfError := api_client.GetError(res.Body)
-			api_client.LogError(vcfError)
-			return errors.New(*vcfError.Message)
+		clusterRef, vcfErr := api_client.GetResponseAs[vcf.Cluster](res.Body)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return errors.New(*vcfErr.Message)
 		}
-		clusterRef := res.JSON200
 		flattenedCluster, err := cluster.FlattenCluster(ctx, clusterRef, apiClient)
 		if err != nil {
 			return err
