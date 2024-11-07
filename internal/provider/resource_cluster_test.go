@@ -14,7 +14,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/vcf-sdk-go/client/clusters"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -22,7 +21,7 @@ import (
 )
 
 func TestAccResourceVcfClusterCreate(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfClusterDestroy,
@@ -56,7 +55,7 @@ func TestAccResourceVcfClusterCreate(t *testing.T) {
 }
 
 func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfClusterDestroy,
@@ -93,14 +92,14 @@ func TestAccResourceVcfClusterStretchUnstretch(t *testing.T) {
 }
 
 func TestAccResourceVcfClusterFull(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfClusterDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccVcfClusterResourceConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestDomainName),
 					os.Getenv(constants.VcfTestHost5Fqdn),
 					os.Getenv(constants.VcfTestHost5Pass),
 					os.Getenv(constants.VcfTestHost6Fqdn),
@@ -130,7 +129,7 @@ func TestAccResourceVcfClusterFull(t *testing.T) {
 			{
 				// add another host to the cluster
 				Config: testAccVcfClusterResourceConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestDomainName),
 					os.Getenv(constants.VcfTestHost5Fqdn),
 					os.Getenv(constants.VcfTestHost5Pass),
 					os.Getenv(constants.VcfTestHost6Fqdn),
@@ -161,7 +160,7 @@ func TestAccResourceVcfClusterFull(t *testing.T) {
 			{
 				// remove the added host
 				Config: testAccVcfClusterResourceConfig(
-					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestDomainName),
 					os.Getenv(constants.VcfTestHost5Fqdn),
 					os.Getenv(constants.VcfTestHost5Pass),
 					os.Getenv(constants.VcfTestHost6Fqdn),
@@ -300,6 +299,7 @@ func testAccVcfClusterResourcеStretchTestConfig(name, stretchConfig string) str
 	resource "vcf_cluster" "cluster" {
 		domain_id = %q
 		name = %q
+		high_availability_enabled = true
 		%s
 		host {
 			id = vcf_host.host1.id
@@ -413,6 +413,7 @@ func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn
 	resource "vcf_cluster" "cluster1" {
 		domain_name = %q
 		name = "sfo-m01-cl01"
+		high_availability_enabled = true
 		host {
 			id = vcf_host.host1.id
 			license_key = %q
@@ -534,17 +535,12 @@ func testCheckVcfClusterDestroy(state *terraform.State) error {
 		}
 
 		clusterId := rs.Primary.Attributes["id"]
-		getClusterParams := clusters.NewGetClusterParams().
-			WithTimeout(constants.DefaultVcfApiCallTimeout).
-			WithContext(context.TODO())
-		getClusterParams.ID = clusterId
-
-		clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
+		clusterResult, err := apiClient.GetClusterWithResponse(context.TODO(), clusterId)
 		if err != nil && strings.Contains(err.Error(), "CLUSTER_NOT_FOUND") {
 			log.Println("error = ", err)
 			return nil
 		}
-		if clusterResult != nil && clusterResult.Payload != nil {
+		if clusterResult != nil && clusterResult.JSON200 != nil {
 			return fmt.Errorf("domain with id %q not destroyed", clusterId)
 		}
 
@@ -559,8 +555,8 @@ func clusterImportStateCheck(states []*terraform.InstanceState) error {
 		if state.Ephemeral.Type != "vcf_cluster" {
 			continue
 		}
-		if state.Attributes["domain_id"] != os.Getenv(constants.VcfTestDomainDataSourceId) {
-			return fmt.Errorf("cluster has wrong domain_id attribute set")
+		if state.Attributes["domain_name"] != os.Getenv(constants.VcfTestDomainName) {
+			return fmt.Errorf("cluster has wrong domain_name attribute set")
 		}
 		if validationUtils.IsEmpty(state.Attributes["id"]) {
 			return fmt.Errorf("cluster has no id attribute set")

@@ -28,6 +28,14 @@ func ToInt32Pointer(object interface{}) *int32 {
 	return &objectAsInt32
 }
 
+func ToIntPointer(object interface{}) *int {
+	if object == nil {
+		return nil
+	}
+	objectAsInt := object.(int)
+	return &objectAsInt
+}
+
 func ToStringSlice(params []interface{}) []string {
 	var paramSlice []string
 	for _, p := range params {

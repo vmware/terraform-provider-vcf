@@ -7,7 +7,7 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
@@ -81,41 +81,43 @@ func getNiocSchema() *schema.Schema {
 	}
 }
 
-func GetDvsSpecsFromSchema(rawData []interface{}) []*models.DvsSpec {
-	var dvsSpecs []*models.DvsSpec
+func GetDvsSpecsFromSchema(rawData []interface{}) *[]vcf.DvsSpec {
+	var dvsSpecs []vcf.DvsSpec
 	for _, dvsSpecListEntry := range rawData {
 		dvsSpecRaw := dvsSpecListEntry.(map[string]interface{})
 		dvsName := utils.ToStringPointer(dvsSpecRaw["dvs_name"])
 		isUsedByNsxt := dvsSpecRaw["is_used_by_nsxt"].(bool)
 		mtu := int32(dvsSpecRaw["mtu"].(int))
 
-		dvsSpec := &models.DvsSpec{
+		dvsSpec := vcf.DvsSpec{
 			DvsName:      dvsName,
-			IsUsedByNSXT: isUsedByNsxt,
-			Mtu:          mtu,
+			IsUsedByNsxt: &isUsedByNsxt,
+			Mtu:          &mtu,
 		}
 		if networksData, ok := dvsSpecRaw["networks"].([]interface{}); ok {
-			dvsSpec.Networks = utils.ToStringSlice(networksData)
+			networks := utils.ToStringSlice(networksData)
+			dvsSpec.Networks = &networks
 		}
 		if niocSpecsData := getNiocSpecsFromSchema(dvsSpecRaw["nioc"].([]interface{})); len(niocSpecsData) > 0 {
-			dvsSpec.NiocSpecs = niocSpecsData
+			dvsSpec.NiocSpecs = &niocSpecsData
 		}
 		if vmnicsData, ok := dvsSpecRaw["vmnics"].([]interface{}); ok {
-			dvsSpec.Vmnics = utils.ToStringSlice(vmnicsData)
+			vmnics := utils.ToStringSlice(vmnicsData)
+			dvsSpec.Vmnics = &vmnics
 		}
 		dvsSpecs = append(dvsSpecs, dvsSpec)
 	}
-	return dvsSpecs
+	return &dvsSpecs
 }
 
-func getNiocSpecsFromSchema(rawData []interface{}) []*models.NiocSpec {
-	var niocSpecBindingsList []*models.NiocSpec
+func getNiocSpecsFromSchema(rawData []interface{}) []vcf.NiocSpec {
+	var niocSpecBindingsList []vcf.NiocSpec
 	for _, niocSpecListEntry := range rawData {
 		niocSpecRaw := niocSpecListEntry.(map[string]interface{})
-		trafficType := utils.ToStringPointer(niocSpecRaw["traffic_type"])
-		value := utils.ToStringPointer(niocSpecRaw["value"])
+		trafficType := niocSpecRaw["traffic_type"].(string)
+		value := niocSpecRaw["value"].(string)
 
-		niocSpecsBinding := &models.NiocSpec{
+		niocSpecsBinding := vcf.NiocSpec{
 			TrafficType: trafficType,
 			Value:       value,
 		}

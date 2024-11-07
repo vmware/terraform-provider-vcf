@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/vmware/vcf-sdk-go/client/domains"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -21,7 +20,7 @@ import (
 )
 
 func TestAccResourceVcfDomainCreate(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfDomainDestroy,
@@ -75,7 +74,7 @@ func TestAccResourceVcfDomainCreate(t *testing.T) {
 }
 
 func TestAccResourceVcfDomainFull(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfDomainDestroy,
@@ -443,6 +442,7 @@ func testAccVcfClusterInDomainConfig(clusterName, hostConfig, vsanLicenseKey str
 	return fmt.Sprintf(`
 		cluster {
 			name = %q
+			high_availability_enabled = true
 			// hosts config
 			%s
 			vds {
@@ -504,17 +504,13 @@ func testCheckVcfDomainDestroy(state *terraform.State) error {
 		}
 
 		domainId := rs.Primary.Attributes["id"]
-		getDomainParams := domains.NewGetDomainParams().
-			WithTimeout(constants.DefaultVcfApiCallTimeout).
-			WithContext(context.TODO())
-		getDomainParams.ID = domainId
 
-		domainResult, err := apiClient.Domains.GetDomain(getDomainParams)
+		domainResult, err := apiClient.GetDomainWithResponse(context.TODO(), domainId)
 		if err != nil {
 			log.Println("error = ", err)
 			return nil
 		}
-		if domainResult != nil && domainResult.Payload != nil {
+		if domainResult != nil && domainResult.JSON200 != nil {
 			return fmt.Errorf("domain with id %q not destroyed", domainId)
 		}
 

@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"math"
 	"time"
 
@@ -13,12 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	vcfClient "github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/nsxt_edge_clusters"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/nsx_edge_cluster"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -166,39 +164,43 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	validationErr := validateClusterCreationSpec(client, ctx, spec)
+	validationErr := validateClusterCreationSpec(client, ctx, *spec)
 
 	if validationErr != nil {
 		return validationErr
 	}
 
-	createClusterParams := &nsxt_edge_clusters.CreateEdgeClusterParams{
-		EdgeCreationSpec: spec,
-		Context:          ctx,
-	}
-
-	_, task, err := client.NSXTEdgeClusters.CreateEdgeCluster(createClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
+	res, err := client.CreateEdgeClusterWithResponse(ctx, *spec)
 
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	tflog.Info(ctx, "Edge cluster creation has started.")
-	err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, task.Payload.ID, false)
+	err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	getClusterParams := &nsxt_edge_clusters.GetEdgeClustersParams{}
-	clusters, err := client.NSXTEdgeClusters.GetEdgeClusters(getClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
+	clusters, err := client.GetEdgeClustersWithResponse(ctx, nil)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters.Body, clusters.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
-	for _, cluster := range clusters.Payload.Elements {
+	for _, cluster := range *page.Elements {
 		if cluster.Name == data.Get("name") {
-			data.SetId(cluster.ID)
+			data.SetId(*cluster.Id)
 			tflog.Info(ctx, "Edge cluster created successfully.")
 			return nil
 		}
@@ -210,7 +212,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 func resourceNsxEdgeClusterRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
-	_, err := getEdgeCluster(ctx, client, data.Id())
+	_, err := client.GetEdgeClusterWithResponse(ctx, data.Id())
 
 	if err != nil {
 		return diag.FromErr(err)
@@ -227,10 +229,16 @@ func resourceNsxEdgeClusterDelete(ctx context.Context, d *schema.ResourceData, m
 func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
-	edgeClusterOk, err := getEdgeCluster(ctx, client, data.Id())
+	edgeClusterOk, err := client.GetEdgeClusterWithResponse(ctx, data.Id())
 
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	resp, vcfErr := api_client.GetResponseAs[vcf.EdgeCluster](edgeClusterOk.Body, edgeClusterOk.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	if data.HasChange("edge_node") {
@@ -241,38 +249,41 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 			return diag.Errorf("Adding and removing edge nodes is not supported in a single configuration change. Apply each change separately.")
 		}
 
-		updateParams := nsxt_edge_clusters.NewUpdateEdgeClusterParamsWithContext(ctx)
-		updateParams.ID = data.Id()
-		updateParams.EdgeClusterUpdateSpec = &models.EdgeClusterUpdateSpec{}
+		updateSpec := vcf.EdgeClusterUpdateSpec{}
 
 		// Shrink
 		if len(oldNodes) > len(newNodes) {
 			operation := shrinkage
-			updateParams.EdgeClusterUpdateSpec.Operation = &operation
-			updateParams.EdgeClusterUpdateSpec.EdgeClusterShrinkageSpec =
-				nsx_edge_cluster.GetNsxEdgeClusterShrinkageSpec(edgeClusterOk.Payload.EdgeNodes, newNodes)
+			updateSpec.Operation = operation
+			updateSpec.EdgeClusterShrinkageSpec =
+				nsx_edge_cluster.GetNsxEdgeClusterShrinkageSpec(*resp.EdgeNodes, newNodes)
 			tflog.Info(ctx, "Shrinking edge cluster")
 		}
 
 		// Expand
 		if len(oldNodes) < len(newNodes) {
 			operation := expansion
-			updateParams.EdgeClusterUpdateSpec.Operation = &operation
-			spec, err := nsx_edge_cluster.GetNsxEdgeClusterExpansionSpec(edgeClusterOk.Payload.EdgeNodes, newNodes, client)
+			updateSpec.Operation = operation
+			spec, err := nsx_edge_cluster.GetNsxEdgeClusterExpansionSpec(*resp.EdgeNodes, newNodes, client)
 
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			updateParams.EdgeClusterUpdateSpec.EdgeClusterExpansionSpec = spec
+			updateSpec.EdgeClusterExpansionSpec = spec
 			tflog.Info(ctx, "Expanding edge cluster")
 		}
 
-		_, task, err := client.NSXTEdgeClusters.UpdateEdgeCluster(updateParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
+		taskRes, err := client.UpdateEdgeClusterWithResponse(ctx, data.Id(), updateSpec)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+		task, vcfErr := api_client.GetResponseAs[vcf.Task](taskRes.Body, taskRes.StatusCode())
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
+		}
 
-		err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, task.Payload.ID, false)
+		err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -281,41 +292,37 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 	return nil
 }
 
-func getEdgeCluster(ctx context.Context, client *vcfClient.VcfClient, id string) (*nsxt_edge_clusters.GetEdgeClusterOK, error) {
-	params := nsxt_edge_clusters.NewGetEdgeClusterParamsWithContext(ctx)
-	params.ID = id
-
-	return client.NSXTEdgeClusters.GetEdgeCluster(params.WithTimeout(constants.DefaultVcfApiCallTimeout))
-}
-
-func validateClusterCreationSpec(client *vcfClient.VcfClient, ctx context.Context, spec *models.EdgeClusterCreationSpec) diag.Diagnostics {
-	validateClusterParams := &nsxt_edge_clusters.ValidateEdgeClusterCreationSpecParams{
-		EdgeCreationSpec: spec,
-	}
-
-	_, validateResponse, err := client.NSXTEdgeClusters.ValidateEdgeClusterCreationSpec(validateClusterParams.WithTimeout(constants.DefaultVcfApiCallTimeout))
+func validateClusterCreationSpec(client *vcf.ClientWithResponses, ctx context.Context, spec vcf.EdgeClusterCreationSpec) diag.Diagnostics {
+	validateResponse, err := client.ValidateEdgeClusterCreationSpecWithResponse(ctx, spec)
 
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body, validateResponse.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
-	validationResult := validateResponse.Payload
 	if validationUtils.HasValidationFailed(validationResult) {
 		return validationUtils.ConvertValidationResultToDiag(validationResult)
 	}
 
 	for {
-		getClusterValidationParams := nsxt_edge_clusters.NewGetEdgeClusterValidationByIDParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout)
-		getClusterValidationParams.SetID(validateResponse.Payload.ID)
-		getValidationResponse, err := client.NSXTEdgeClusters.GetEdgeClusterValidationByID(getClusterValidationParams)
+		getValidationResponse, err := client.GetEdgeClusterValidationByIDWithResponse(ctx, *validationResult.Id)
 		if err != nil {
 			return validationUtils.ConvertVcfErrorToDiag(err)
 		}
-		validationResult = getValidationResponse.Payload
-		if validationUtils.HaveValidationChecksFinished(validationResult.ValidationChecks) {
+		validationStatus, vcfErr := api_client.GetResponseAs[vcf.Validation](getValidationResponse.Body, getValidationResponse.StatusCode())
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
+		}
+
+		if validationUtils.HaveValidationChecksFinished(*validationStatus.ValidationChecks) {
 			break
 		}
+		// TODO: reimplement this block without timeouts
 		time.Sleep(10 * time.Second)
 	}
 

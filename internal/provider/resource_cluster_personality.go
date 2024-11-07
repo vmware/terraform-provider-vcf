@@ -6,15 +6,14 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client/personalities"
-	"github.com/vmware/vcf-sdk-go/client/vcenters"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 )
@@ -75,33 +74,48 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 
 	clusterId := data.Get("cluster_id").(string)
 
-	spec := models.PersonalityUploadSpec{
-		Name:       name,
-		UploadMode: &mode,
-		UploadSpecReferredMode: &models.PersonalityUploadSpecReferred{
-			ClusterID: &clusterId,
-			VCenterID: vcenterId,
+	spec := vcf.PersonalityUploadSpec{
+		Name:       &name,
+		UploadMode: mode,
+		UploadSpecReferredMode: &vcf.PersonalityUploadSpecReferred{
+			ClusterId: clusterId,
+			VCenterId: *vcenterId,
 		},
 	}
 
-	_, task, err := client.Personalities.UploadPersonality(&personalities.UploadPersonalityParams{PersonalityUploadSpec: &spec})
+	uploadPersonalityTask, err := client.UploadPersonalityWithResponse(ctx, spec)
 
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](uploadPersonalityTask.Body, uploadPersonalityTask.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
-	if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, task.Payload.ID, false); err != nil {
+	if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if personalitiesResp, err := client.Personalities.GetPersonalities(&personalities.GetPersonalitiesParams{
+	personalitiesResp, err := client.GetPersonalitiesWithResponse(ctx, &vcf.GetPersonalitiesParams{
 		PersonalityName: &name,
-	}); err != nil {
+	})
+	if err != nil {
 		return diag.FromErr(err)
-	} else if len(personalitiesResp.Payload.Elements) == 0 {
+	}
+
+	personalities, vcfErr := api_client.GetResponseAs[vcf.PageOfPersonality](personalitiesResp.Body, personalitiesResp.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
+
+	if personalities.Elements == nil || len(*personalities.Elements) == 0 {
 		return diag.Errorf("Personality %s not found", name)
 	} else {
-		data.SetId(*personalitiesResp.Payload.Elements[0].PersonalityID)
+		elements := *personalities.Elements
+		data.SetId(*elements[0].PersonalityId)
 	}
 
 	return nil
@@ -111,9 +125,7 @@ func resourceClusterPersonalityRead(ctx context.Context, data *schema.ResourceDa
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
 	// Just check if the personality exists. There are no computed attributes.
-	if _, err := client.Personalities.GetPersonality(&personalities.GetPersonalityParams{
-		PersonalityID: data.Id(),
-	}); err != nil {
+	if _, err := client.GetPersonalityWithResponse(ctx, data.Id()); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -124,8 +136,8 @@ func resourceClusterPersonalityDelete(ctx context.Context, data *schema.Resource
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
 	id := data.Id()
-	if _, err := client.Personalities.DeletePersonality(&personalities.DeletePersonalityParams{
-		PersonalityID: &id,
+	if _, err := client.DeletePersonalityWithResponse(ctx, &vcf.DeletePersonalityParams{
+		PersonalityId: &id,
 	}); err != nil {
 		return diag.FromErr(err)
 	}
@@ -138,12 +150,17 @@ func getVcenterId(data *schema.ResourceData, meta interface{}) (*string, error) 
 
 	domainId := data.Get("domain_id").(string)
 
-	if vcs, err := client.VCenters.GetVCENTERS(&vcenters.GetVCENTERSParams{}); err != nil {
+	if vcs, err := client.GetVcentersWithResponse(context.Background(), nil); err != nil {
 		return nil, err
 	} else {
-		for _, vc := range vcs.Payload.Elements {
-			if *vc.Domain.ID == domainId {
-				return &vc.ID, nil
+		page, vcfErr := api_client.GetResponseAs[vcf.PageOfVcenter](vcs.Body, vcs.StatusCode())
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return nil, errors.New(*vcfErr.Message)
+		}
+		for _, vc := range *page.Elements {
+			if vc.Domain.Id == domainId {
+				return vc.Id, nil
 			}
 		}
 	}

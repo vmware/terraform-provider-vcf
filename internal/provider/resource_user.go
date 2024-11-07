@@ -6,6 +6,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"log"
 	"strings"
 	"time"
@@ -13,11 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client/users"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 func ResourceUser() *schema.Resource {
@@ -77,37 +77,37 @@ func ResourceUser() *schema.Resource {
 
 func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.SddcManagerClient).ApiClient
-	log.Println(d)
-	params := users.NewAddUsersParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	user := models.User{}
+	user := vcf.User{}
 
 	if name, ok := d.GetOk("name"); ok {
-		nameVal := name.(string)
-		user.Name = &nameVal
+		user.Name = name.(string)
 	}
 
 	if domain, ok := d.GetOk("domain"); ok {
-		user.Domain = domain.(string)
+		user.Domain = utils.ToStringPointer(domain)
 	}
 
 	if roleType, ok := d.GetOk("type"); ok {
-		roleTypeVal := roleType.(string)
-		user.Type = &roleTypeVal
+		user.Type = roleType.(string)
 	}
 
 	if roleName, ok := d.GetOk("role_name"); ok {
 		roleNameVal := roleName.(string)
 
-		roleResult, err := client.Users.GetRoles(nil)
+		roleResult, err := client.GetRolesWithResponse(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+		page, vcfErr := api_client.GetResponseAs[vcf.PageOfRole](roleResult.Body, roleResult.StatusCode())
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return diag.FromErr(errors.New(*vcfErr.Message))
+		}
 
 		roleFound := false
-		for _, role := range roleResult.Payload.Elements {
+		for _, role := range *page.Elements {
 			if *role.Name == roleNameVal {
-				user.Role = &models.RoleReference{ID: role.ID}
+				user.Role = vcf.RoleReference{Id: *role.Id}
 				roleFound = true
 				break
 			}
@@ -117,15 +117,19 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 			return diag.Errorf("role not found: %s", roleNameVal)
 		}
 	}
-	params.Users = []*models.User{&user}
 
-	_, created, err := client.Users.AddUsers(params)
+	created, err := client.AddUsersWithResponse(ctx, []vcf.User{user})
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](created.Body, created.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
-	createdUser := created.Payload.Elements[0]
-	d.SetId(createdUser.ID)
+	createdUser := (*page.Elements)[0]
+	d.SetId(*createdUser.Id)
 	return resourceUserRead(ctx, d, meta)
 }
 
@@ -134,16 +138,20 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	id := d.Id()
 
-	ok, err := client.Users.GetUsers(
-		users.NewGetUsersParamsWithContext(ctx).WithTimeout(constants.DefaultVcfApiCallTimeout))
+	ok, err := client.GetUsersWithResponse(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](ok.Body, ok.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
 	// Check if the resource with the known id exists
-	for _, user := range ok.Payload.Elements {
-		if user.ID == id {
-			_ = d.Set("api_key", user.APIKey)
+	for _, user := range *page.Elements {
+		if *user.Id == id {
+			_ = d.Set("api_key", user.ApiKey)
 			_ = d.Set("creation_timestamp", user.CreationTimestamp)
 			return nil
 		}
@@ -155,14 +163,14 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
-	params := users.NewRemoveUserParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	params.ID = d.Id()
-
-	log.Println(params)
-	_, err := client.Users.RemoveUser(params)
+	res, err := client.RemoveUserWithResponse(ctx, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
+	}
+	_, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](res.Body, res.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
 	log.Printf("%s: Delete complete", d.Id())

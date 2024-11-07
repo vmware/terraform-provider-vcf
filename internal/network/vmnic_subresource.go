@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -41,7 +42,7 @@ func VMNicSchema() *schema.Resource {
 	}
 }
 
-func TryConvertToVmNic(object map[string]interface{}) (*models.VMNic, error) {
+func TryConvertToVmNic(object map[string]interface{}) (*vcf.VmNic, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to VMNic, object is nil")
 	}
@@ -49,10 +50,10 @@ func TryConvertToVmNic(object map[string]interface{}) (*models.VMNic, error) {
 	if len(id) == 0 {
 		return nil, fmt.Errorf("cannot convert to VMNic, id is required")
 	}
-	result := &models.VMNic{}
-	result.ID = id
+	result := &vcf.VmNic{}
+	result.Id = id
 	if uplink, ok := object["uplink"]; ok && !validationutils.IsEmpty(uplink) {
-		result.Uplink = uplink.(string)
+		result.Uplink = utils.ToStringPointer(uplink)
 	}
 	if vdsName, ok := object["vds_name"]; ok && !validationutils.IsEmpty(vdsName) {
 		result.VdsName = vdsName.(string)

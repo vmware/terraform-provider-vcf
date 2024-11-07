@@ -6,32 +6,30 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/clusters"
-	"github.com/vmware/vcf-sdk-go/client/domains"
-	"github.com/vmware/vcf-sdk-go/client/hosts"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
-func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*models.ClusterUpdateSpec, error) {
-	result := new(models.ClusterUpdateSpec)
+func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*vcf.ClusterUpdateSpec, error) {
+	result := new(vcf.ClusterUpdateSpec)
 	if markForDeletion {
-		result.MarkForDeletion = true
+		result.MarkForDeletion = &markForDeletion
 		return result, nil
 	}
 	if data.HasChange("name") {
-		result.Name = data.Get("name").(string)
+		result.Name = utils.ToStringPointer(data.Get("name"))
 	}
 
 	if data.HasChange("host") {
@@ -49,8 +47,8 @@ func CreateClusterUpdateSpec(data *schema.ResourceData, markForDeletion bool) (*
 
 // SetExpansionOrContractionSpec sets ClusterExpansionSpec or ClusterContractionSpec to a provided
 // ClusterUpdateSpec depending on weather hosts are being added or removed.
-func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
-	oldHostsList, newHostsList []interface{}) (*models.ClusterUpdateSpec, error) {
+func SetExpansionOrContractionSpec(updateSpec *vcf.ClusterUpdateSpec,
+	oldHostsList, newHostsList []interface{}) (*vcf.ClusterUpdateSpec, error) {
 
 	if len(newHostsList) == len(oldHostsList) {
 		return nil, fmt.Errorf("adding and removing hosts is not supported in a single configuration change. Apply each change separately")
@@ -58,28 +56,28 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 
 	addedHosts, removedHosts := resource_utils.CalculateAddedRemovedResources(newHostsList, oldHostsList)
 	if len(removedHosts) == 0 {
-		var hostSpecs []*models.HostSpec
+		var hostSpecs []vcf.HostSpec
 		for _, addedHostRaw := range addedHosts {
 			hostSpec, err := TryConvertToHostSpec(addedHostRaw)
 			if err != nil {
 				return nil, err
 			}
-			hostSpecs = append(hostSpecs, hostSpec)
+			hostSpecs = append(hostSpecs, *hostSpec)
 		}
-		clusterExpansionSpec := &models.ClusterExpansionSpec{
+		clusterExpansionSpec := &vcf.ClusterExpansionSpec{
 			HostSpecs: hostSpecs,
 		}
 		updateSpec.ClusterExpansionSpec = clusterExpansionSpec
 		return updateSpec, nil
 	} else {
-		var hostRefs []*models.HostReference
+		var hostRefs []vcf.HostReference
 		for _, removedHostRaw := range removedHosts {
-			hostRef := &models.HostReference{
-				ID: removedHostRaw["id"].(string),
+			hostRef := vcf.HostReference{
+				Id: utils.ToStringPointer(removedHostRaw["id"]),
 			}
 			hostRefs = append(hostRefs, hostRef)
 		}
-		clusterContractionSpec := &models.ClusterCompactionSpec{
+		clusterContractionSpec := &vcf.ClusterCompactionSpec{
 			Hosts: hostRefs,
 		}
 		updateSpec.ClusterCompactionSpec = clusterContractionSpec
@@ -89,7 +87,7 @@ func SetExpansionOrContractionSpec(updateSpec *models.ClusterUpdateSpec,
 
 // SetStretchOrUnstretchSpec sets ClusterStretchSpec or ClusterUnstretchSpec to a provided
 // ClusterUpdateSpec depending on weather a witness host is being added or removed.
-func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schema.ResourceData) (*models.ClusterUpdateSpec, error) {
+func SetStretchOrUnstretchSpec(updateSpec *vcf.ClusterUpdateSpec, data *schema.ResourceData) (*vcf.ClusterUpdateSpec, error) {
 	configOld, configNew := data.GetChange("vsan_stretch_configuration")
 
 	if len(configOld.([]interface{})) == len(configNew.([]interface{})) {
@@ -108,60 +106,59 @@ func SetStretchOrUnstretchSpec(updateSpec *models.ClusterUpdateSpec, data *schem
 		cidr := witnessHost["vsan_cidr"].(string)
 		fqdn := witnessHost["fqdn"].(string)
 
-		witnessSpec := models.WitnessSpec{
-			Fqdn:     &fqdn,
-			VSANCidr: &cidr,
-			VSANIP:   &ip,
+		witnessSpec := vcf.WitnessSpec{
+			Fqdn:     fqdn,
+			VsanCidr: cidr,
+			VsanIp:   ip,
 		}
 
 		// All new hosts are added to the secondary fault domain. All existing hosts in the cluster go into the primary domain.
 		secondaryFdHosts := config["secondary_fd_host"].([]interface{})
-		var hostSpecs []*models.HostSpec
+		var hostSpecs []vcf.HostSpec
 		for _, addedHostRaw := range secondaryFdHosts {
 			hostSpec, err := TryConvertToHostSpec(addedHostRaw.(map[string]interface{}))
 			if err != nil {
 				return nil, err
 			}
-			hostSpecs = append(hostSpecs, hostSpec)
+			hostSpecs = append(hostSpecs, *hostSpec)
 		}
 
 		// MultiAZ support is not yet implemented
 		var secondaryAzOverlayVlanId int32 = 0
 
-		stretchSpec := &models.ClusterStretchSpec{
+		stretchSpec := &vcf.ClusterStretchSpec{
 			HostSpecs:                         hostSpecs,
-			SecondaryAzOverlayVlanID:          secondaryAzOverlayVlanId,
-			WitnessSpec:                       &witnessSpec,
-			IsEdgeClusterConfiguredForMultiAZ: false,
+			SecondaryAzOverlayVlanId:          &secondaryAzOverlayVlanId,
+			WitnessSpec:                       witnessSpec,
+			IsEdgeClusterConfiguredForMultiAZ: utils.ToBoolPointer(false),
 		}
 		updateSpec.ClusterStretchSpec = stretchSpec
 	} else {
 		// unstretch
-		updateSpec.ClusterUnstretchSpec = EmptySpec{}
+		updateSpec.ClusterUnstretchSpec = &vcf.ClusterUnstretchSpec{}
 	}
 	return updateSpec, nil
 }
 
-type EmptySpec struct{}
-
 func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
-	clusterUpdateSpec *models.ClusterUpdateSpec, apiClient *client.VcfClient) diag.Diagnostics {
-	validateClusterSpec := clusters.NewValidateClusterUpdateSpecParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	validateClusterSpec.ClusterUpdateSpec = clusterUpdateSpec
-	validateClusterSpec.ID = clusterId
-
-	validateResponse, err := apiClient.Clusters.ValidateClusterUpdateSpec(validateClusterSpec)
+	clusterUpdateSpec vcf.ClusterUpdateSpec, apiClient *vcf.ClientWithResponses) diag.Diagnostics {
+	validateResponse, err := apiClient.ValidateClusterUpdateSpecWithResponse(ctx, clusterId, nil, clusterUpdateSpec)
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	if validationUtils.HasValidationFailed(validateResponse.Payload) {
-		return validationUtils.ConvertValidationResultToDiag(validateResponse.Payload)
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body, validateResponse.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
+
+	if validationUtils.HasValidationFailed(validationResult) {
+		return validationUtils.ConvertValidationResultToDiag(validationResult)
 	}
 	return nil
 }
 
-func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.ClusterSpec, error) {
+func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*vcf.ClusterSpec, error) {
 	intermediaryMap := map[string]interface{}{}
 	intermediaryMap["name"] = data.Get("name")
 	intermediaryMap["cluster_image_id"] = data.Get("cluster_image_id")
@@ -180,11 +177,9 @@ func TryConvertResourceDataToClusterSpec(data *schema.ResourceData) (*models.Clu
 	return TryConvertToClusterSpec(intermediaryMap)
 }
 
-// TODO implement support for VxRailDetails.
-
 // TryConvertToClusterSpec is a convenience method that converts a map[string]interface{}
 // received from the Terraform SDK to an API struct, used in VCF API calls.
-func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec, error) {
+func TryConvertToClusterSpec(object map[string]interface{}) (*vcf.ClusterSpec, error) {
 	if object == nil {
 		return nil, fmt.Errorf("cannot convert to ClusterSpec, object is nil")
 	}
@@ -192,33 +187,33 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	if len(name) == 0 {
 		return nil, fmt.Errorf("cannot convert to ClusterSpec, name is required")
 	}
-	result := &models.ClusterSpec{}
+	result := &vcf.ClusterSpec{}
 	result.Name = &name
 	if clusterImageId, ok := object["cluster_image_id"]; ok && !validationUtils.IsEmpty(clusterImageId) {
-		result.ClusterImageID = clusterImageId.(string)
+		result.ClusterImageId = utils.ToStringPointer(clusterImageId)
 	}
 	if evcMode, ok := object["evc_mode"]; ok && len(evcMode.(string)) > 0 {
 		if result.AdvancedOptions == nil {
-			result.AdvancedOptions = &models.AdvancedOptions{}
+			result.AdvancedOptions = &vcf.AdvancedOptions{}
 		}
-		result.AdvancedOptions.EvcMode = evcMode.(string)
+		result.AdvancedOptions.EvcMode = utils.ToStringPointer(evcMode)
 	}
 	if highAvailabilityEnabled, ok := object["high_availability_enabled"]; ok && !validationUtils.IsEmpty(highAvailabilityEnabled) {
 		if result.AdvancedOptions == nil {
-			result.AdvancedOptions = &models.AdvancedOptions{}
+			result.AdvancedOptions = &vcf.AdvancedOptions{}
 		}
-		result.AdvancedOptions.HighAvailability = &models.HighAvailability{
-			Enabled: resource_utils.ToBoolPointer(highAvailabilityEnabled),
+		result.AdvancedOptions.HighAvailability = &vcf.HighAvailability{
+			Enabled: highAvailabilityEnabled.(bool),
 		}
 	}
 
-	result.NetworkSpec = &models.NetworkSpec{}
-	result.NetworkSpec.NsxClusterSpec = &models.NsxClusterSpec{}
-	result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec = &models.NsxTClusterSpec{}
+	result.NetworkSpec = vcf.NetworkSpec{}
+	result.NetworkSpec.NsxClusterSpec = &vcf.NsxClusterSpec{}
+	result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec = &vcf.NsxTClusterSpec{}
 
 	if geneveVlanId, ok := object["geneve_vlan_id"]; ok && !validationUtils.IsEmpty(geneveVlanId) {
 		vlanValue := int32(geneveVlanId.(int))
-		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanID = &vlanValue
+		result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.GeneveVlanId = &vlanValue
 	}
 
 	if ipAddressPoolRaw, ok := object["ip_address_pool"]; ok && !validationUtils.IsEmpty(ipAddressPoolRaw) {
@@ -228,20 +223,20 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 			if err != nil {
 				return nil, err
 			}
-			result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.IPAddressPoolSpec = ipAddressPoolSpec
+			result.NetworkSpec.NsxClusterSpec.NsxTClusterSpec.IpAddressPoolSpec = ipAddressPoolSpec
 		}
 	}
 
 	if hostsRaw, ok := object["host"]; ok {
 		hostsList := hostsRaw.([]interface{})
 		if len(hostsList) > 0 {
-			result.HostSpecs = []*models.HostSpec{}
+			result.HostSpecs = []vcf.HostSpec{}
 			for _, hostListEntry := range hostsList {
 				hostSpec, err := TryConvertToHostSpec(hostListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.HostSpecs = append(result.HostSpecs, hostSpec)
+				result.HostSpecs = append(result.HostSpecs, *hostSpec)
 			}
 		} else {
 			return nil, fmt.Errorf("cannot convert to ClusterSpec, hosts list is empty")
@@ -253,14 +248,15 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	if vdsRaw, ok := object["vds"]; ok {
 		vdsList := vdsRaw.([]interface{})
 		if len(vdsList) > 0 {
-			result.NetworkSpec.VdsSpecs = []*models.VdsSpec{}
+			vdsSpecs := []vcf.VdsSpec{}
 			for _, vdsListEntry := range vdsList {
 				vdsSpec, err := network.TryConvertToVdsSpec(vdsListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.NetworkSpec.VdsSpecs = append(result.NetworkSpec.VdsSpecs, vdsSpec)
+				vdsSpecs = append(vdsSpecs, *vdsSpec)
 			}
+			result.NetworkSpec.VdsSpecs = &vdsSpecs
 		} else {
 			return nil, fmt.Errorf("cannot convert to ClusterSpec, vds list is empty")
 		}
@@ -272,7 +268,7 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	if err != nil {
 		return nil, err
 	} else {
-		result.DatastoreSpec = datastoreSpec
+		result.DatastoreSpec = *datastoreSpec
 	}
 
 	if stretchConf, ok := object["vsan_stretch_configuration"]; ok && !validationUtils.IsEmpty(stretchConf) {
@@ -282,8 +278,8 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*models.ClusterSpec
 	return result, nil
 }
 
-func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName string) (*models.DatastoreSpec, error) {
-	result := &models.DatastoreSpec{}
+func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName string) (*vcf.DatastoreSpec, error) {
+	result := &vcf.DatastoreSpec{}
 	atLeastOneTypeOfDatastoreConfigured := false
 	if vsanDatastoreRaw, ok := object["vsan_datastore"]; ok && !validationUtils.IsEmpty(vsanDatastoreRaw) {
 		if len(vsanDatastoreRaw.([]interface{})) > 1 {
@@ -295,7 +291,7 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 			return nil, err
 		}
 		atLeastOneTypeOfDatastoreConfigured = true
-		result.VSANDatastoreSpec = vsanDatastoreSpec
+		result.VsanDatastoreSpec = vsanDatastoreSpec
 	}
 	if vmfsDatastoreRaw, ok := object["vmfs_datastore"]; ok && !validationUtils.IsEmpty(vmfsDatastoreRaw) {
 		if len(vmfsDatastoreRaw.([]interface{})) > 1 {
@@ -320,35 +316,37 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 			return nil, err
 		}
 		atLeastOneTypeOfDatastoreConfigured = true
-		result.VSANRemoteDatastoreClusterSpec = vsanRemoteDatastoreClusterSpec
+		result.VsanRemoteDatastoreClusterSpec = vsanRemoteDatastoreClusterSpec
 	}
 	if nfsDatastoresRaw, ok := object["nfs_datastores"]; ok && !validationUtils.IsEmpty(nfsDatastoresRaw) {
 		nfsDatastoresList := nfsDatastoresRaw.([]interface{})
 		if len(nfsDatastoresList) > 0 {
-			result.NfsDatastoreSpecs = []*models.NfsDatastoreSpec{}
+			specs := []vcf.NfsDatastoreSpec{}
 			for _, nfsDatastoreListEntry := range nfsDatastoresList {
 				nfsDatastoreSpec, err := datastores.TryConvertToNfsDatastoreSpec(
 					nfsDatastoreListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.NfsDatastoreSpecs = append(result.NfsDatastoreSpecs, nfsDatastoreSpec)
+				specs = append(specs, *nfsDatastoreSpec)
 			}
+			result.NfsDatastoreSpecs = &specs
 			atLeastOneTypeOfDatastoreConfigured = true
 		}
 	}
 	if vvolDatastoresRaw, ok := object["vvol_datastores"]; ok && !validationUtils.IsEmpty(vvolDatastoresRaw) {
 		vvolDatastoresList := vvolDatastoresRaw.([]interface{})
 		if len(vvolDatastoresList) > 0 {
-			result.VvolDatastoreSpecs = []*models.VvolDatastoreSpec{}
+			specs := []vcf.VvolDatastoreSpec{}
 			for _, vvolDatastoreListEntry := range vvolDatastoresList {
 				vvolDatastoreSpec, err := datastores.TryConvertToVvolDatastoreSpec(
 					vvolDatastoreListEntry.(map[string]interface{}))
 				if err != nil {
 					return nil, err
 				}
-				result.VvolDatastoreSpecs = append(result.VvolDatastoreSpecs, vvolDatastoreSpec)
+				specs = append(specs, *vvolDatastoreSpec)
 			}
+			result.VvolDatastoreSpecs = &specs
 			atLeastOneTypeOfDatastoreConfigured = true
 		}
 	}
@@ -359,70 +357,84 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 	return result, nil
 }
 
-func FlattenCluster(ctx context.Context, clusterObj *models.Cluster, apiClient *client.VcfClient) (*map[string]interface{}, error) {
+func FlattenCluster(ctx context.Context, clusterObj *vcf.Cluster, apiClient *vcf.ClientWithResponses) (*map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	if clusterObj == nil {
 		return &result, nil
 	}
 
-	result["id"] = clusterObj.ID
+	result["id"] = clusterObj.Id
 	result["name"] = clusterObj.Name
 	result["primary_datastore_name"] = clusterObj.PrimaryDatastoreName
 	result["primary_datastore_type"] = clusterObj.PrimaryDatastoreType
 	result["is_default"] = clusterObj.IsDefault
 	result["is_stretched"] = clusterObj.IsStretched
 
-	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
-	result["vds"] = flattenedVdsSpecs
-
-	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
-	if err != nil {
-		return nil, err
+	if clusterObj.VdsSpecs != nil {
+		flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(*clusterObj.VdsSpecs)
+		result["vds"] = flattenedVdsSpecs
 	}
-	result["host"] = flattenedHostSpecs
+
+	if clusterObj.Hosts != nil {
+		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
+		if err != nil {
+			return nil, err
+		}
+		result["host"] = flattenedHostSpecs
+	}
 
 	return &result, nil
 }
 
-func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient,
+func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vcf.ClientWithResponses,
 	clusterId string) ([]*schema.ResourceData, error) {
-	getClusterParams := clusters.NewGetClusterParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-	getClusterParams.ID = clusterId
-	clusterResult, err := apiClient.Clusters.GetCluster(getClusterParams)
+	clusterRes, err := apiClient.GetClusterWithResponse(ctx, clusterId)
 	if err != nil {
 		return nil, err
 	}
-	clusterObj := clusterResult.Payload
+	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterRes.Body, clusterRes.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
 
-	data.SetId(clusterObj.ID)
+	data.SetId(*clusterObj.Id)
 	_ = data.Set("name", clusterObj.Name)
 	_ = data.Set("primary_datastore_name", clusterObj.PrimaryDatastoreName)
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
 	_ = data.Set("is_default", clusterObj.IsDefault)
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
-	flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(clusterObj.VdsSpecs)
-	_ = data.Set("vds", flattenedVdsSpecs)
-
-	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, clusterObj.Hosts, apiClient)
-	if err != nil {
-		return nil, err
+	if clusterObj.VdsSpecs != nil {
+		flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(*clusterObj.VdsSpecs)
+		_ = data.Set("vds", flattenedVdsSpecs)
 	}
-	_ = data.Set("host", flattenedHostSpecs)
 
-	//get all domains and find our cluster to set the "domain_id" attribute, because
+	if clusterObj.Hosts != nil {
+		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
+		if err != nil {
+			return nil, err
+		}
+		_ = data.Set("host", flattenedHostSpecs)
+	}
+
+	// get all domains and find our cluster to set the "domain_id" attribute, because
 	// cluster API doesn't provide parent domain ID.
-	getDomainsParams := domains.NewGetDomainsParamsWithTimeout(constants.DefaultVcfApiCallTimeout).
-		WithContext(ctx)
-	domainsResult, err := apiClient.Domains.GetDomains(getDomainsParams)
+	getDomainsParams := &vcf.GetDomainsParams{}
+	domainsRes, err := apiClient.GetDomainsWithResponse(ctx, getDomainsParams)
 	if err != nil {
 		return nil, err
 	}
-	allDomains := domainsResult.Payload.Elements
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsRes.Body, domainsRes.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+	allDomains := *page.Elements
 	for _, domain := range allDomains {
-		for _, clusterRef := range domain.Clusters {
-			if *clusterRef.ID == clusterId {
-				_ = data.Set("domain_id", domain.ID)
+		for _, clusterRef := range *domain.Clusters {
+			if clusterRef.Id == clusterId {
+				_ = data.Set("domain_id", domain.Id)
+				_ = data.Set("domain_name", domain.Name)
 			}
 		}
 	}
@@ -433,33 +445,34 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *cl
 // getFlattenedHostSpecsForRefs The HostRef is supposed to have all the relevant information,
 // but the backend returns everything as nil except the host ID which forces us to make a separate request
 // to get some useful info about the hosts in the cluster.
-func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []*models.HostReference,
-	apiClient *client.VcfClient) ([]map[string]interface{}, error) {
+func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostReference,
+	apiClient *vcf.ClientWithResponses) ([]map[string]interface{}, error) {
 	flattenedHostSpecs := *new([]map[string]interface{})
 	// Sort for reproducibility
 	sort.SliceStable(hostRefs, func(i, j int) bool {
-		return hostRefs[i].ID < hostRefs[j].ID
+		return *hostRefs[i].Id < *hostRefs[j].Id
 	})
 	for _, hostRef := range hostRefs {
-		getHostParams := hosts.NewGetHostParamsWithContext(ctx).
-			WithTimeout(constants.DefaultVcfApiCallTimeout)
-		getHostParams.ID = hostRef.ID
-		getHostResult, err := apiClient.Hosts.GetHost(getHostParams)
+		res, err := apiClient.GetHostWithResponse(ctx, *hostRef.Id)
 		if err != nil {
 			return nil, err
 		}
-		hostObj := getHostResult.Payload
-		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(hostObj))
+		hostObj, vcfErr := api_client.GetResponseAs[vcf.Host](res.Body, res.StatusCode())
+		if vcfErr != nil {
+			api_client.LogError(vcfErr)
+			return nil, errors.New(*vcfErr.Message)
+		}
+		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(*hostObj))
 	}
 	return flattenedHostSpecs, nil
 }
 
-func getFlattenedVdsSpecsForRefs(vdsSpecs []*models.VdsSpec) []map[string]interface{} {
+func getFlattenedVdsSpecsForRefs(vdsSpecs []vcf.VdsSpec) []map[string]interface{} {
 	flattenedVdsSpecs := *new([]map[string]interface{})
 	// Since backend API returns objects in random order sort VDSSpec list to ensure
 	// import is reproducible
 	sort.SliceStable(vdsSpecs, func(i, j int) bool {
-		return *vdsSpecs[i].Name < *vdsSpecs[j].Name
+		return vdsSpecs[i].Name < vdsSpecs[j].Name
 	})
 	for _, vdsSpec := range vdsSpecs {
 		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))

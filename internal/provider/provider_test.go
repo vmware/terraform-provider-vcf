@@ -24,10 +24,6 @@ import (
 var testAccProvider *schema.Provider
 var testAccFrameworkProvider provider.Provider
 
-func init() {
-	testAccProvider = Provider()
-}
-
 func TestProvider(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -35,6 +31,9 @@ func TestProvider(t *testing.T) {
 }
 
 func muxedFactories() map[string]func() (tfprotov6.ProviderServer, error) {
+	testAccProvider = Provider()
+	testAccFrameworkProvider = New()
+
 	ctx := context.Background()
 	upgradedSdkServer, err := tf5to6server.UpgradeServer(
 		ctx,
@@ -46,7 +45,7 @@ func muxedFactories() map[string]func() (tfprotov6.ProviderServer, error) {
 	}
 
 	providers := []func() tfprotov6.ProviderServer{
-		providerserver.NewProtocol6(New()),
+		providerserver.NewProtocol6(testAccFrameworkProvider),
 		func() tfprotov6.ProviderServer {
 			return upgradedSdkServer
 		},

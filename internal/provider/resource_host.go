@@ -15,15 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/credentials"
-	"github.com/vmware/vcf-sdk-go/client/hosts"
-	"github.com/vmware/vcf-sdk-go/client/network_pools"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 )
 
 func ResourceHost() *schema.Resource {
@@ -89,66 +83,62 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	params := hosts.NewCommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
-	commissionSpec := models.HostCommissionSpec{}
+	commissionSpec := vcf.HostCommissionSpec{}
 
 	if fqdn, ok := d.GetOk("fqdn"); ok {
-		fqdnVal := fqdn.(string)
-		commissionSpec.Fqdn = &fqdnVal
+		commissionSpec.Fqdn = fqdn.(string)
 	}
 
 	if storageType, ok := d.GetOk("storage_type"); ok {
-		storageTypeVal := storageType.(string)
-		commissionSpec.StorageType = &storageTypeVal
+		commissionSpec.StorageType = storageType.(string)
 	}
 
 	if username, ok := d.GetOk("username"); ok {
-		usernameVal := username.(string)
-		commissionSpec.Username = &usernameVal
+		commissionSpec.Username = username.(string)
 	}
 
 	if password, ok := d.GetOk("password"); ok {
-		passwordVal := password.(string)
-		commissionSpec.Password = &passwordVal
+		commissionSpec.Password = password.(string)
 	}
 
 	if networkPoolId, ok := d.GetOk("network_pool_id"); ok {
-		networkPoolIdStr := networkPoolId.(string)
-		commissionSpec.NetworkPoolID = &networkPoolIdStr
+		commissionSpec.NetworkPoolId = networkPoolId.(string)
 	}
 
 	if networkPoolName, ok := d.GetOk("network_pool_name"); ok {
-		if commissionSpec.NetworkPoolID != nil {
+		if commissionSpec.NetworkPoolId != "" {
 			return diag.FromErr(errors.New("you cannot set network_pool_id and network_pool_name at the same time"))
 		}
 
-		networkPool, err := getNetworkPool(networkPoolName.(string), apiClient)
+		networkPool, err := getNetworkPool(networkPoolName.(string), apiClient, ctx)
 
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		commissionSpec.NetworkPoolID = &networkPool.ID
+		commissionSpec.NetworkPoolId = *networkPool.Id
 	}
 
-	params.HostCommissionSpecs = []*models.HostCommissionSpec{&commissionSpec}
-
-	_, accepted, err := apiClient.Hosts.CommissionHosts(params)
+	accepted, err := apiClient.CommissionHostsWithResponse(ctx, []vcf.HostCommissionSpec{commissionSpec})
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	taskId := accepted.Payload.ID
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
-		*commissionSpec.Fqdn, taskId))
+		commissionSpec.Fqdn, *task.Id))
 
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, false)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	hostId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Esxi")
+	hostId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *task.Id, "Esxi")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -161,39 +151,40 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 
-	hostId := d.Id()
-
-	getHostParams := hosts.NewGetHostParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
-	getHostParams.ID = hostId
-
-	hostResponse, err := apiClient.Hosts.GetHost(getHostParams)
+	hostResponse, err := apiClient.GetHostWithResponse(ctx, d.Id())
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	host := hostResponse.Payload
+	host, vcfErr := api_client.GetResponseAs[vcf.Host](hostResponse.Body, hostResponse.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
-	_ = d.Set("network_pool_id", host.Networkpool.ID)
+	_ = d.Set("network_pool_id", host.Networkpool.Id)
 	_ = d.Set("network_pool_name", host.Networkpool.Name)
 	_ = d.Set("fqdn", host.Fqdn)
 	_ = d.Set("status", host.Status)
-
-	getHostCredentialsParams := credentials.NewGetCredentialsParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout).WithResourceName(&host.Fqdn)
-	getCredentialsResponse, err := apiClient.Credentials.GetCredentials(getHostCredentialsParams)
+	params := &vcf.GetCredentialsParams{
+		ResourceName: host.Fqdn,
+	}
+	getCredentialsResponse, err := apiClient.GetCredentialsWithResponse(ctx, params)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	for _, credential := range getCredentialsResponse.Payload.Elements {
-		if credential == nil {
-			continue
-		}
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](getCredentialsResponse.Body, getCredentialsResponse.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
+	for _, credential := range *page.Elements {
 		// we're interested in the SSH credentials, not service account
 		if *credential.AccountType != "USER" || *credential.CredentialType != "SSH" {
 			continue
 		}
-		if *credential.Resource.ResourceID != hostId {
+		if credential.Resource.ResourceId != *host.Id {
 			return diag.FromErr(fmt.Errorf("hostId doesn't match host FQDN when requesting credentials"))
 		}
 		_ = d.Set("username", *credential.Username)
@@ -209,25 +200,26 @@ func resourceHostUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	apiClient := meta.(*api_client.SddcManagerClient).ApiClient
 	vcfClient := meta.(*api_client.SddcManagerClient)
+	apiClient := vcfClient.ApiClient
 
-	params := hosts.NewDecommissionHostsParamsWithTimeout(constants.DefaultVcfApiCallTimeout)
-	decommissionSpec := models.HostDecommissionSpec{}
-	decommissionSpec.Fqdn = resource_utils.ToStringPointer(d.Get("fqdn"))
-	params.HostDecommissionSpecs = []*models.HostDecommissionSpec{&decommissionSpec}
+	decommissionSpec := vcf.HostDecommissionSpec{}
+	decommissionSpec.Fqdn = d.Get("fqdn").(string)
 
-	log.Println(params)
-
-	_, accepted, err := apiClient.Hosts.DecommissionHosts(params)
+	accepted, err := apiClient.DecommissionHostsWithResponse(ctx, []vcf.HostDecommissionSpec{decommissionSpec})
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return diag.FromErr(errors.New(*vcfErr.Message))
+	}
 
 	log.Printf("%s %s: Decommission task initiated. Task id %s",
-		d.Get("fqdn").(string), d.Id(), accepted.Payload.ID)
-	err = vcfClient.WaitForTaskComplete(ctx, accepted.Payload.ID, false)
+		d.Get("fqdn").(string), d.Id(), *task.Id)
+	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -236,21 +228,22 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func getNetworkPool(name string, client *client.VcfClient) (*models.NetworkPool, error) {
-	params := network_pools.NewGetNetworkPoolParams().WithTimeout(constants.DefaultVcfApiCallTimeout)
-
-	ok, err := client.NetworkPools.GetNetworkPool(params)
+func getNetworkPool(name string, client *vcf.ClientWithResponses, ctx context.Context) (*vcf.NetworkPool, error) {
+	ok, err := client.GetNetworkPoolWithResponse(ctx)
 
 	if err != nil {
 		return nil, err
 	}
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](ok.Body, ok.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
 
-	networkPools := ok.Payload.Elements
-
-	if len(networkPools) > 0 {
-		for _, pool := range networkPools {
+	if page != nil {
+		for _, pool := range *page.Elements {
 			if pool.Name == name {
-				return pool, nil
+				return &pool, nil
 			}
 		}
 	}

@@ -5,6 +5,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -18,7 +19,7 @@ import (
 )
 
 func TestAccResourceVcfHost(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfHostDestroy,
@@ -44,7 +45,7 @@ func TestAccResourceVcfHost(t *testing.T) {
 
 // Verifies host commissioning when the network pool is specified by its name.
 func TestAccResourceVcfHost_networkPoolName(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		CheckDestroy:             testCheckVcfHostDestroy,
@@ -142,15 +143,15 @@ func testAccVcfHostConfigNetworkPoolName(hostFqdn, hostSshPassword string) strin
 func testCheckVcfHostDestroy(_ *terraform.State) error {
 	apiClient := testAccProvider.Meta().(*api_client.SddcManagerClient).ApiClient
 
-	hosts, err := apiClient.Hosts.GetHosts(nil)
+	hosts, err := apiClient.GetHostsWithResponse(context.TODO(), nil)
 	if err != nil {
 		log.Println("error = ", err)
 		return err
 	}
 
-	for _, host := range hosts.Payload.Elements {
-		if host.Fqdn == os.Getenv(constants.VcfTestHost1Fqdn) {
-			return fmt.Errorf("found host %q", host.ID)
+	for _, host := range *hosts.JSON200.Elements {
+		if *host.Fqdn == os.Getenv(constants.VcfTestHost1Fqdn) {
+			return fmt.Errorf("found host %q", *host.Id)
 		}
 	}
 

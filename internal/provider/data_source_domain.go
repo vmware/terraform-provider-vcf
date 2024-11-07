@@ -13,12 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/domains"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/terraform-provider-vcf/internal/domain"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	"github.com/vmware/terraform-provider-vcf/internal/vcenter"
@@ -104,7 +101,7 @@ func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta i
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		domainId = domainInfo.ID
+		domainId = *domainInfo.Id
 	}
 
 	_, err := domain.ImportDomain(ctx, data, apiClient, domainId, true)
@@ -115,23 +112,21 @@ func dataSourceDomainRead(ctx context.Context, data *schema.ResourceData, meta i
 	return nil
 }
 
-func getDomainByName(ctx context.Context, apiClient *client.VcfClient, name string) (*models.Domain, error) {
-	params := domains.NewGetDomainsParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-
-	domainsResponse, err := apiClient.Domains.GetDomains(params)
+func getDomainByName(ctx context.Context, apiClient *vcf.ClientWithResponses, name string) (*vcf.Domain, error) {
+	domainsResponse, err := apiClient.GetDomainsWithResponse(ctx, &vcf.GetDomainsParams{})
 	if err != nil {
 		return nil, err
 	}
 
-	if domainsResponse.Payload == nil {
-		return nil, errors.New("no domains found")
+	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsResponse.Body, domainsResponse.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
 	}
 
-	for _, domainElement := range domainsResponse.Payload.Elements {
-		domain := *domainElement
-		if domain.Name == name {
-			return &domain, nil
+	for _, domainElement := range *resp.Elements {
+		if *domainElement.Name == name {
+			return &domainElement, nil
 		}
 	}
 

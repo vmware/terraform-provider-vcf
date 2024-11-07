@@ -15,65 +15,66 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/credentials"
-	"github.com/vmware/vcf-sdk-go/models"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 )
 
-func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *client.VcfClient) ([]*models.Credential, error) {
-	getCredentialsParam := credentials.NewGetCredentialsParamsWithContext(ctx)
+func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *vcf.ClientWithResponses) ([]vcf.Credential, error) {
+	getCredentialsParam := &vcf.GetCredentialsParams{}
 	resourceName, nameOk := data.Get("resource_name").(string)
 	if nameOk && len(resourceName) > 0 {
-		getCredentialsParam.WithResourceName(&resourceName)
+		getCredentialsParam.ResourceName = &resourceName
 	}
 
 	ip, ipOk := data.Get("resource_ip").(string)
 	if ipOk && len(ip) > 0 {
-		getCredentialsParam.WithResourceIP(&ip)
+		getCredentialsParam.ResourceIp = &ip
 	}
 
 	resType, resTypeOK := data.Get("resource_type").(string)
 	if resTypeOK && len(resType) > 0 {
-		getCredentialsParam.WithResourceType(&resType)
+		getCredentialsParam.ResourceType = &resType
 	}
 
 	domainName, domainNameOk := data.Get("domain_name").(string)
 	if domainNameOk && len(domainName) > 0 {
-		getCredentialsParam.WithDomainName(&domainName)
+		getCredentialsParam.DomainName = &domainName
 	}
 
 	accountType, accountTypeOk := data.Get("account_type").(string)
 	if accountTypeOk && len(accountType) > 0 {
-		getCredentialsParam.WithAccountType(&accountType)
+		getCredentialsParam.AccountType = &accountType
 	}
 
 	page, pageOk := data.Get("page").(int)
 	if pageOk && page > 0 {
 		pageNum := strconv.Itoa(page)
-		getCredentialsParam.WithPageNumber(&pageNum)
+		getCredentialsParam.PageNumber = &pageNum
 	}
 
 	pageSize, pageSizeOk := data.Get("page_size").(int)
 	if pageSizeOk && pageSize > 0 {
 		pageSizeNum := strconv.Itoa(pageSize)
-		getCredentialsParam.WithPageSize(&pageSizeNum)
+		getCredentialsParam.PageSize = &pageSizeNum
 	}
 
-	creds, err := apiClient.Credentials.GetCredentials(getCredentialsParam)
+	res, err := apiClient.GetCredentialsWithResponse(ctx, getCredentialsParam)
 	if err != nil {
 		return nil, err
 	}
+	pageOfCredential, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](res.Body, res.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
 
-	result := creds.Payload.Elements
-
-	return result, nil
+	return *pageOfCredential.Elements, nil
 }
 
-func FlattenCredentials(creds []*models.Credential) []map[string]interface{} {
+func FlattenCredentials(creds []vcf.Credential) []map[string]interface{} {
 	if creds == nil {
 		return []map[string]interface{}{}
 	}
@@ -82,7 +83,7 @@ func FlattenCredentials(creds []*models.Credential) []map[string]interface{} {
 
 	for _, entry := range creds {
 		entryMap := map[string]interface{}{
-			"id":                entry.ID,
+			"id":                entry.Id,
 			"account_type":      entry.AccountType,
 			"creation_time":     entry.CreationTimestamp,
 			"credential_type":   entry.CredentialType,
@@ -90,11 +91,11 @@ func FlattenCredentials(creds []*models.Credential) []map[string]interface{} {
 			"user_name":         entry.Username,
 			"password":          entry.Password,
 			"resource": []map[string]string{{
-				"id":     *entry.Resource.ResourceID,
+				"id":     entry.Resource.ResourceId,
 				"domain": *entry.Resource.DomainName,
-				"ip":     *entry.Resource.ResourceIP,
-				"name":   *entry.Resource.ResourceName,
-				"type":   *entry.Resource.ResourceType,
+				"ip":     entry.Resource.ResourceIp,
+				"name":   entry.Resource.ResourceName,
+				"type":   entry.Resource.ResourceType,
 			}},
 		}
 
@@ -127,10 +128,6 @@ func CreateAutoRotatePolicy(ctx context.Context, data *schema.ResourceData, meta
 		return err
 	}
 
-	if err := credentialsUpdateSpec.Validate(strfmt.Default); err != nil {
-		return err
-	}
-
 	sddcClient := meta.(*api_client.SddcManagerClient)
 	return executeCredentialsUpdate(ctx, credentialsUpdateSpec, sddcClient)
 
@@ -152,10 +149,6 @@ func mutatePassword(ctx context.Context, data *schema.ResourceData, meta interfa
 
 	credentialsUpdateSpec := makeCredentialsChangeSpec(resourceType, resourceName, creds, operationName)
 
-	if err := credentialsUpdateSpec.Validate(strfmt.Default); err != nil {
-		return err
-	}
-
 	sddcClient := meta.(*api_client.SddcManagerClient)
 
 	return executeCredentialsUpdate(ctx, credentialsUpdateSpec, sddcClient)
@@ -172,59 +165,48 @@ func RemoveAutoRotatePolicy(ctx context.Context, data *schema.ResourceData, meta
 		return err
 	}
 
-	if err := credentialsUpdateSpec.Validate(strfmt.Default); err != nil {
-		return err
-	}
-
 	sddcClient := meta.(*api_client.SddcManagerClient)
 	return executeCredentialsUpdate(ctx, credentialsUpdateSpec, sddcClient)
 }
 
-func makeAutoRotatePolicySpec(autoRotateEnabled bool, autoRotateDays int32, resourceName string, resourceId string, resourceType string, userName string) (*models.CredentialsUpdateSpec, error) {
+func makeAutoRotatePolicySpec(autoRotateEnabled bool, autoRotateDays int32, resourceName string, resourceId string, resourceType string, userName string) (*vcf.CredentialsUpdateSpec, error) {
 	if len(resourceId) == 0 && len(resourceName) == 0 {
 		log.Print("[ERROR] resource_id or resource_name attributes must be set")
 		return nil, errors.New("resource_id or resource_name must be set")
 	}
 
 	operation := ConfigAutoRotate
-	return &models.CredentialsUpdateSpec{
-		AutoRotatePolicy: &models.AutoRotateCredentialPolicyInputSpec{
-			EnableAutoRotatePolicy: &autoRotateEnabled,
-			FrequencyInDays:        autoRotateDays,
+	return &vcf.CredentialsUpdateSpec{
+		AutoRotatePolicy: &vcf.AutoRotateCredentialPolicyInputSpec{
+			EnableAutoRotatePolicy: autoRotateEnabled,
+			FrequencyInDays:        &autoRotateDays,
 		},
-		Elements: []*models.ResourceCredentials{
+		Elements: []vcf.ResourceCredentials{
 			{
-				ResourceID:   resourceId,
-				ResourceName: resourceName,
-				ResourceType: &resourceType,
-				Credentials: []*models.BaseCredential{{
-					Username: &userName,
+				ResourceId:   &resourceId,
+				ResourceName: &resourceName,
+				ResourceType: resourceType,
+				Credentials: []vcf.BaseCredential{{
+					Username: userName,
 				}},
 			},
 		},
-		OperationType: &operation,
+		OperationType: operation,
 	}, nil
 }
 
-func executeCredentialsUpdate(ctx context.Context, updateSpec *models.CredentialsUpdateSpec, sddcClient *api_client.SddcManagerClient) error {
-	param := credentials.NewUpdateOrRotatePasswordsParamsWithContext(ctx)
-	param.WithCredentialsUpdateSpec(updateSpec)
-
+func executeCredentialsUpdate(ctx context.Context, updateSpec *vcf.CredentialsUpdateSpec, sddcClient *api_client.SddcManagerClient) error {
 	apiClient := sddcClient.ApiClient
-	ok, accepted, err := apiClient.Credentials.UpdateOrRotatePasswords(param)
+	res, err := apiClient.UpdateOrRotatePasswordsWithResponse(ctx, *updateSpec)
 	if err != nil {
 		return err
 	}
-
-	if ok != nil && !ok.IsSuccess() {
-		return errors.New(ok.Error())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return errors.New(*vcfErr.Message)
 	}
-
-	if accepted != nil && !accepted.IsSuccess() {
-		return errors.New(accepted.Error())
-	}
-
-	if err := sddcClient.WaitForTask(ctx, accepted.Payload.ID); err != nil {
+	if err := sddcClient.WaitForTask(ctx, *task.Id); err != nil {
 		return err
 	}
 
@@ -260,33 +242,33 @@ func HashFields(fields []string) (string, error) {
 	return hex.EncodeToString(md5.Sum(nil)), nil
 }
 
-func makeCredentialsChangeSpec(resourceType string, resourceName string, credentialsList []interface{}, operation string) *models.CredentialsUpdateSpec {
-	baseCredentials := make([]*models.BaseCredential, 0)
+func makeCredentialsChangeSpec(resourceType string, resourceName string, credentialsList []interface{}, operation string) *vcf.CredentialsUpdateSpec {
+	baseCredentials := make([]vcf.BaseCredential, 0)
 	for _, listEntry := range credentialsList {
 		entry := listEntry.(map[string]interface{})
 		userName := entry["user_name"].(string)
 		password, passwordOk := entry["password"].(string)
-		credential := &models.BaseCredential{
-			Username:       &userName,
-			CredentialType: entry["credential_type"].(string),
+		credential := vcf.BaseCredential{
+			Username:       userName,
+			CredentialType: utils.ToStringPointer(entry["credential_type"]),
 		}
 
 		if passwordOk && len(password) > 0 {
-			credential.Password = password
+			credential.Password = &password
 		}
 
 		baseCredentials = append(baseCredentials, credential)
 	}
 
-	return &models.CredentialsUpdateSpec{
-		Elements: []*models.ResourceCredentials{
+	return &vcf.CredentialsUpdateSpec{
+		Elements: []vcf.ResourceCredentials{
 			{
-				ResourceName: resourceName,
-				ResourceType: &resourceType,
+				ResourceName: &resourceName,
+				ResourceType: resourceType,
 				Credentials:  baseCredentials,
 			},
 		},
-		OperationType: &operation,
+		OperationType: operation,
 	}
 
 }

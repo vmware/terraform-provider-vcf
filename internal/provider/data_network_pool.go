@@ -1,4 +1,5 @@
-// Copyright 2023-2024 Broadcom. All Rights Reserved.
+// © Broadcom. All Rights Reserved.
+// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
@@ -9,12 +10,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/client"
-	"github.com/vmware/vcf-sdk-go/client/network_pools"
-	"github.com/vmware/vcf-sdk-go/models"
+	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 func DataSourceNetworkPool() *schema.Resource {
@@ -102,36 +100,40 @@ func dataSourceNetworkPoolRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	d.SetId(networkPool.ID)
+	d.SetId(*networkPool.Id)
 	_ = d.Set("name", networkPool.Name)
 	_ = d.Set("network", flattenNetworks(networkPool.Networks))
 
 	return nil
 }
 
-func getNetworkPoolByName(ctx context.Context, apiClient *client.VcfClient, name string) (*models.NetworkPool, error) {
-	params := network_pools.NewGetNetworkPoolParamsWithContext(ctx).
-		WithTimeout(constants.DefaultVcfApiCallTimeout)
-
-	networkPoolsPayload, err := apiClient.NetworkPools.GetNetworkPool(params)
+func getNetworkPoolByName(ctx context.Context, apiClient *vcf.ClientWithResponses, name string) (*vcf.NetworkPool, error) {
+	networkPoolsRes, err := apiClient.GetNetworkPoolWithResponse(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if networkPoolsPayload.Payload == nil {
+	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](networkPoolsRes.Body, networkPoolsRes.StatusCode())
+
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+
+	if resp == nil || resp.Elements == nil {
 		return nil, errors.New("network pool not found")
 	}
 
-	for _, networkPool := range networkPoolsPayload.Payload.Elements {
+	for _, networkPool := range *resp.Elements {
 		if networkPool.Name == name {
-			return networkPool, nil
+			return &networkPool, nil
 		}
 	}
 
 	return nil, errors.New("network pool not found")
 }
 
-func flattenNetworks(networks []*models.Network) []interface{} {
+func flattenNetworks(networks []vcf.Network) []interface{} {
 	if networks == nil {
 		return []interface{}{}
 	}
@@ -144,12 +146,12 @@ func flattenNetworks(networks []*models.Network) []interface{} {
 			"mtu":     network.Mtu,
 			"subnet":  network.Subnet,
 			"type":    network.Type,
-			"vlan_id": network.VlanID,
+			"vlan_id": network.VlanId,
 		}
 
-		if network.IPPools != nil {
+		if network.IpPools != nil {
 			var ipPools []interface{}
-			for _, ipPool := range network.IPPools {
+			for _, ipPool := range *network.IpPools {
 				ipPoolMap := map[string]interface{}{
 					"start": ipPool.Start,
 					"end":   ipPool.End,

@@ -21,7 +21,7 @@ import (
  * Certificate Chain and Certificate CA and assign them to the appropriate env variables.
  */
 func TestAccResourceVcfResourceExternalCertificate(t *testing.T) {
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
 			testAccVcfResourceExternalCertificatePreCheck(t)
@@ -31,6 +31,7 @@ func TestAccResourceVcfResourceExternalCertificate(t *testing.T) {
 			{
 				Config: testAccVcfResourceExternalCertificate(
 					os.Getenv(constants.VcfTestDomainDataSourceId),
+					os.Getenv(constants.VcfTestVcenterFqdn),
 					os.Getenv(constants.VcfTestResourceCertificate),
 					os.Getenv(constants.VcfTestResourceCaCertificate)),
 				Check: resource.ComposeTestCheckFunc(
@@ -66,16 +67,17 @@ func testAccVcfResourceExternalCertificatePreCheck(t *testing.T) {
 	}
 }
 
-func testAccVcfResourceExternalCertificate(domainID, resourceCert, caCert string) string {
+func testAccVcfResourceExternalCertificate(domainID, resourceFqdn, resourceCert, caCert string) string {
 	return fmt.Sprintf(`
 
 	resource "vcf_external_certificate" "vcenter_cert" {
-		csr_id = "csr:%s:VCENTER:some-task-id"
+		csr_id = "csr:%s:VCENTER:%s:some-task-id"
 		resource_certificate = %q
 		ca_certificate = %q
 	}
 	`,
 		domainID,
+		resourceFqdn,
 		resourceCert,
 		caCert,
 	)
