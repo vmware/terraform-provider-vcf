@@ -88,7 +88,7 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](uploadPersonalityTask.Body, uploadPersonalityTask.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](uploadPersonalityTask)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -105,7 +105,7 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	personalities, vcfErr := api_client.GetResponseAs[vcf.PageOfPersonality](personalitiesResp.Body, personalitiesResp.StatusCode())
+	personalities, vcfErr := api_client.GetResponseAs[vcf.PageOfPersonality](personalitiesResp)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -153,7 +153,7 @@ func getVcenterId(data *schema.ResourceData, meta interface{}) (*string, error) 
 	if vcs, err := client.GetVcentersWithResponse(context.Background(), nil); err != nil {
 		return nil, err
 	} else {
-		page, vcfErr := api_client.GetResponseAs[vcf.PageOfVcenter](vcs.Body, vcs.StatusCode())
+		page, vcfErr := api_client.GetResponseAs[vcf.PageOfVcenter](vcs)
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return nil, errors.New(*vcfErr.Message)

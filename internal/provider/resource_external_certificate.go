@@ -120,7 +120,7 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](responseAcc.Body, responseAcc.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](responseAcc)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))

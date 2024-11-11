@@ -196,7 +196,7 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to create network pool", err.Error()))
 		return
 	}
-	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](created.Body, created.StatusCode())
+	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](created)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return
@@ -213,7 +213,7 @@ func (r *ResourceNetworkPool) Read(ctx context.Context, req resource.ReadRequest
 	res.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	networkPoolPayload, _ := r.client.GetNetworkPoolByIDWithResponse(ctx, data.Id.ValueString())
-	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload.Body, networkPoolPayload.StatusCode())
+	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return
@@ -232,7 +232,7 @@ func (r *ResourceNetworkPool) Delete(ctx context.Context, req resource.DeleteReq
 	res.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	networkPoolPayload, _ := r.client.DeleteNetworkPoolWithResponse(ctx, data.Id.ValueString(), nil)
-	_, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload.Body, networkPoolPayload.StatusCode())
+	_, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return
