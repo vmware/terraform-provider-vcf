@@ -146,7 +146,7 @@ func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body, validateResponse.StatusCode())
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -392,7 +392,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	if err != nil {
 		return nil, err
 	}
-	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterRes.Body, clusterRes.StatusCode())
+	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterRes)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
@@ -424,7 +424,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	if err != nil {
 		return nil, err
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsRes.Body, domainsRes.StatusCode())
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsRes)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
@@ -457,7 +457,7 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostRefere
 		if err != nil {
 			return nil, err
 		}
-		hostObj, vcfErr := api_client.GetResponseAs[vcf.Host](res.Body, res.StatusCode())
+		hostObj, vcfErr := api_client.GetResponseAs[vcf.Host](res)
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return nil, errors.New(*vcfErr.Message)

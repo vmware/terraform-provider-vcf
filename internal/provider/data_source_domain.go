@@ -118,7 +118,7 @@ func getDomainByName(ctx context.Context, apiClient *vcf.ClientWithResponses, na
 		return nil, err
 	}
 
-	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsResponse.Body, domainsResponse.StatusCode())
+	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)

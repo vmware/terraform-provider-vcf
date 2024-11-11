@@ -2,6 +2,7 @@ package api_client
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/vmware/vcf-sdk-go/vcf"
@@ -11,18 +12,23 @@ func TestGetResponseAs_pos(t *testing.T) {
 	taskId := "id"
 	model := vcf.Task{Id: &taskId}
 	body, _ := json.Marshal(model)
+	httpResponse := http.Response{StatusCode: 200}
+	response := vcf.GetTaskResponse{
+		Body:         body,
+		HTTPResponse: &httpResponse,
+	}
 
-	res, err := GetResponseAs[vcf.Task](body, 200)
+	result, err := GetResponseAs[vcf.Task](response)
 
 	if err != nil {
 		t.Fatal("received an unexpected error", err)
 	}
 
-	if res == nil {
+	if result == nil {
 		t.Fatal("response is nil")
 	}
 
-	if *res.Id != taskId {
+	if *result.Id != taskId {
 		t.Fatal("response does not contain correct payload")
 	}
 }
@@ -31,11 +37,16 @@ func TestGetResponseAs_neg(t *testing.T) {
 	message := "message"
 	model := vcf.Error{Message: &message}
 	body, _ := json.Marshal(model)
+	httpResponse := http.Response{StatusCode: 400}
+	response := vcf.GetTaskResponse{
+		Body:         body,
+		HTTPResponse: &httpResponse,
+	}
 
-	res, err := GetResponseAs[vcf.Task](body, 400)
+	result, err := GetResponseAs[vcf.Task](response)
 
-	if res != nil {
-		t.Fatal("received an unexpected response", res)
+	if result != nil {
+		t.Fatal("received an unexpected response", result)
 	}
 
 	if err == nil {

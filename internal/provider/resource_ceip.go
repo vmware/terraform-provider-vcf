@@ -67,7 +67,7 @@ func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		return diag.FromErr(err)
 	}
 
-	resp, vcfErr := api_client.GetResponseAs[vcf.Ceip](ceipResult.Body, ceipResult.StatusCode())
+	resp, vcfErr := api_client.GetResponseAs[vcf.Ceip](ceipResult)
 
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
@@ -99,7 +99,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -129,7 +129,7 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](ceipAccepted.Body, ceipAccepted.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](ceipAccepted)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
