@@ -125,7 +125,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse.Body, validateResponse.StatusCode())
+	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -138,7 +138,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return validationUtils.ConvertVcfErrorToDiag(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -191,7 +191,7 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
+		task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 		if vcfErr != nil {
 			api_client.LogError(vcfErr)
 			return diag.FromErr(errors.New(*vcfErr.Message))
@@ -298,7 +298,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	_, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask.Body, acceptedUpdateTask.StatusCode())
+	_, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -308,7 +308,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask.Body, acceptedDeleteTask.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))

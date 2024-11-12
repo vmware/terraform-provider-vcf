@@ -27,7 +27,7 @@ func ValidateResourceCertificates(ctx context.Context, client *vcf.ClientWithRes
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.CertificateValidationTask](okResponse.Body, okResponse.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.CertificateValidationTask](okResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -42,7 +42,7 @@ func ValidateResourceCertificates(ctx context.Context, client *vcf.ClientWithRes
 			if err != nil {
 				return validationutils.ConvertVcfErrorToDiag(err)
 			}
-			task, vcfErr = api_client.GetResponseAs[vcf.CertificateValidationTask](getValidationResponse.Body, getValidationResponse.StatusCode())
+			task, vcfErr = api_client.GetResponseAs[vcf.CertificateValidationTask](getValidationResponse)
 			if vcfErr != nil {
 				api_client.LogError(vcfErr)
 				return diag.FromErr(errors.New(*vcfErr.Message))
@@ -78,7 +78,7 @@ func GenerateCertificateForResource(ctx context.Context, client *api_client.Sddc
 	if err != nil {
 		return err
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](res.Body, res.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
@@ -98,7 +98,7 @@ func ReadCertificate(ctx context.Context, client *vcf.ClientWithResponses,
 		return nil, fmt.Errorf("failed to get certificate by domain: %w", err)
 	}
 
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCertificate](certificatesResponse.Body, certificatesResponse.StatusCode())
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCertificate](certificatesResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)

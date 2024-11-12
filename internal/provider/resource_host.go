@@ -124,7 +124,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -156,7 +156,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	host, vcfErr := api_client.GetResponseAs[vcf.Host](hostResponse.Body, hostResponse.StatusCode())
+	host, vcfErr := api_client.GetResponseAs[vcf.Host](hostResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -174,7 +174,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](getCredentialsResponse.Body, getCredentialsResponse.StatusCode())
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](getCredentialsResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -211,7 +211,7 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
 	}
-	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted.Body, accepted.StatusCode())
+	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
@@ -234,7 +234,7 @@ func getNetworkPool(name string, client *vcf.ClientWithResponses, ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](ok.Body, ok.StatusCode())
+	page, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](ok)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
