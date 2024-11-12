@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.17.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.35.0
 	github.com/stretchr/testify v1.9.0
-	github.com/vmware/vcf-sdk-go v0.4.0
+	github.com/vmware/vcf-sdk-go v0.4.1
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 )
 
