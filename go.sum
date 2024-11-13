@@ -106,8 +106,8 @@ github.com/hashicorp/terraform-json v0.23.0 h1:sniCkExU4iKtTADReHzACkk8fnpQXrdD2
 github.com/hashicorp/terraform-json v0.23.0/go.mod h1:MHdXbBAbSg0GvzuWazEGKAn/cyNfIB7mN6y7KJN6y2c=
 github.com/hashicorp/terraform-plugin-docs v0.20.0 h1:ox7rm1FN0dVZaJBUzkVVh10R1r3+FeMQWL0QopQ9d7o=
 github.com/hashicorp/terraform-plugin-docs v0.20.0/go.mod h1:A/+4SVMdAkQYtIBtaxV0H7AU862TxVZk/hhKaMDQB6Y=
-github.com/hashicorp/terraform-plugin-framework v1.12.0 h1:7HKaueHPaikX5/7cbC1r9d1m12iYHY+FlNZEGxQ42CQ=
-github.com/hashicorp/terraform-plugin-framework v1.12.0/go.mod h1:N/IOQ2uYjW60Jp39Cp3mw7I/OpC/GfZ0385R0YibmkE=
+github.com/hashicorp/terraform-plugin-framework v1.13.0 h1:8OTG4+oZUfKgnfTdPTJwZ532Bh2BobF4H+yBiYJ/scw=
+github.com/hashicorp/terraform-plugin-framework v1.13.0/go.mod h1:j64rwMGpgM3NYXTKuxrCnyubQb/4VKldEKlcG8cvmjU=
 github.com/hashicorp/terraform-plugin-framework-timeouts v0.4.1 h1:gm5b1kHgFFhaKFhm4h2TgvMUlNzFAtUqlcOWnWPm+9E=
 github.com/hashicorp/terraform-plugin-framework-timeouts v0.4.1/go.mod h1:MsjL1sQ9L7wGwzJ5RjcI6FzEMdyoBnw+XK8ZnOvQOLY=
 github.com/hashicorp/terraform-plugin-framework-validators v0.14.0 h1:3PCn9iyzdVOgHYOBmncpSSOxjQhCTYmc+PGvbdlqSaI=
@@ -209,8 +209,6 @@ github.com/vmihailenco/msgpack/v5 v5.4.1 h1:cQriyiUvjTwOHg8QZaPihLWeRAAVoCpE00IU
 github.com/vmihailenco/msgpack/v5 v5.4.1/go.mod h1:GaZTsDaehaPpQVyxrf5mtQlH+pc21PIudVV/E3rRQok=
 github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAhO7/IwNM9g=
 github.com/vmihailenco/tagparser/v2 v2.0.0/go.mod h1:Wri+At7QHww0WTrCBeu4J6bNtoV6mEfg5OIWRZA9qds=
-github.com/vmware/vcf-sdk-go v0.4.0 h1:fBYghbQ6VLFN70MfcsmgK/VAx2dPKoIyBQxRM+1rAro=
-github.com/vmware/vcf-sdk-go v0.4.0/go.mod h1:MsPAnZU3YLGEIOc0RZcoHAk9sEIEQcuyJSWBPhRv8mQ=
 github.com/vmware/vcf-sdk-go v0.4.1 h1:Hd5flatP0xg0oEBcEabS6zYcMm6doVePJXzj4gfrfus=
 github.com/vmware/vcf-sdk-go v0.4.1/go.mod h1:MsPAnZU3YLGEIOc0RZcoHAk9sEIEQcuyJSWBPhRv8mQ=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
