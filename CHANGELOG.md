@@ -6,7 +6,6 @@
 
 FEATURES:
 
-- `d/host`: Added a data source for hosts [#236](https://github.com/vmware/terraform-provider-vcf/pull/236)
 - Added support for VCF 5.2.0 [#246](https://github.com/vmware/terraform-provider-vcf/pull/246)
 
 CHORES:
