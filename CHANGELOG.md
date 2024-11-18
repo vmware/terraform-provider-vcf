@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [v0.12.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.12.0)
+
+> Release Date: 2024-11-18
+
+FEATURES:
+
+- Added support for VCF 5.2.0 [#246](https://github.com/vmware/terraform-provider-vcf/pull/246)
+
+CHORES:
+
+- Updated `actions/setup-go` to 5.1.0 [#249](https://github.com/vmware/terraform-provider-vcf/pull/249)
+- Updated `crazy-max/ghaction-import-gpg` to 6.2.0 [#250](https://github.com/vmware/terraform-provider-vcf/pull/250)
+- Updated `terraform-plugin-framework-validators` to 0.14.0 [#248](https://github.com/vmware/terraform-provider-vcf/pull/248)
+- Updated `terraform-plugin-mux` to 0.17.0 [#255](https://github.com/vmware/terraform-provider-vcf/pull/255)
+- Updated `terraform-plugin-sdk/v2` to 2.35.0 [#260](https://github.com/vmware/terraform-provider-vcf/pull/260)
+- Updated `goreleaser-action` to 6.1.0 [#262](https://github.com/vmware/terraform-provider-vcf/pull/262)
+- Updated `terraform-plugin-docs` to 0.20.0 [#261](https://github.com/vmware/terraform-provider-vcf/pull/261)
+- Updated `terraform-plugin-framework` to 1.13.0 [#258](https://github.com/vmware/terraform-provider-vcf/pull/258)
+- Updated `golangci-lint` configuration [#247](https://github.com/vmware/terraform-provider-vcf/pull/247)
+- Updated codeowners configuration [#257](https://github.com/vmware/terraform-provider-vcf/pull/257)
+
 ## [v0.11.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.11.0)
 
 > Release Date: 2024-10-07
