@@ -156,7 +156,7 @@ func UplinkNetworkSchema() *schema.Resource {
 			},
 			"bgp_peer": {
 				Type:        schema.TypeList,
-				Optional:    true,
+				Required:    true,
 				Description: "List of BGP Peer configurations",
 				Elem:        BgpPeerSchema(),
 			},

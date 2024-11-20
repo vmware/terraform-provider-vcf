@@ -33,11 +33,15 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 	formFactor := data.Get("form_factor").(string)
 	highAvailability := data.Get("high_availability").(string)
 	tier0Name := data.Get("tier0_name").(string)
-	tier1Name := data.Get("tier1_name").(string)
 	mtu := int32(data.Get("mtu").(int))
 	asn := int64(data.Get("asn").(int))
 	tier1Unhosted := data.Get("tier1_unhosted").(bool)
 	skipTepRoutabilityCheck := data.Get("skip_tep_routability_check").(bool)
+
+	var tier1Name *string
+	if data.Get("tier1_name").(string) != "" {
+		tier1Name = resource_utils.ToStringPointer(data.Get("tier1Name"))
+	}
 
 	transitSubnets := resource_utils.ToStringSlice(data.Get("transit_subnets").([]interface{}))
 	internalTransitSubnets := resource_utils.ToStringSlice(data.Get("internal_transit_subnets").([]interface{}))
@@ -70,7 +74,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 		Tier0Name:                     &tier0Name,
 		Tier0RoutingType:              &routingType,
 		Tier0ServicesHighAvailability: &highAvailability,
-		Tier1Name:                     &tier1Name,
+		Tier1Name:                     tier1Name,
 		Tier1Unhosted:                 &tier1Unhosted,
 		TransitSubnets:                &transitSubnets,
 		SkipTepRoutabilityCheck:       &skipTepRoutabilityCheck,
@@ -159,8 +163,14 @@ func getNodeSpec(node map[string]interface{}, client *vcf.ClientWithResponses) (
 	managementIP := node["management_ip"].(string)
 	managementGateway := node["management_gateway"].(string)
 
-	firstVdsUplink := node["first_nsx_vds_uplink"].(string)
-	secondVdsUplink := node["second_nsx_vds_uplink"].(string)
+	var firstVdsUplink *string = nil
+	var secondVdsUplink *string = nil
+	if node["first_nsx_vds_uplink"].(string) != "" {
+		firstVdsUplink = resource_utils.ToStringPointer(node["first_nsx_vds_uplink"])
+	}
+	if node["second_nsx_vds_uplink"].(string) != "" {
+		secondVdsUplink = resource_utils.ToStringPointer(node["second_nsx_vds_uplink"])
+	}
 
 	interRackCluster := node["inter_rack_cluster"].(bool)
 
@@ -191,8 +201,8 @@ func getNodeSpec(node map[string]interface{}, client *vcf.ClientWithResponses) (
 		EdgeTepVlan:        tepVlan,
 		ManagementGateway:  managementGateway,
 		ManagementIP:       managementIP,
-		FirstNsxVdsUplink:  &firstVdsUplink,
-		SecondNsxVdsUplink: &secondVdsUplink,
+		FirstNsxVdsUplink:  firstVdsUplink,
+		SecondNsxVdsUplink: secondVdsUplink,
 		InterRackCluster:   &interRackCluster,
 		UplinkNetwork:      getUplinkNetworkSpecs(node),
 	}
@@ -248,10 +258,11 @@ func getBgpPeerSpecs(bgpPeersRaw []interface{}) *[]vcf.BgpPeerSpec {
 	return &peers
 }
 
-func getClusterProfileSpec(data *schema.ResourceData) vcf.NsxTEdgeClusterProfileSpec {
-	profileSpec := vcf.NsxTEdgeClusterProfileSpec{}
+func getClusterProfileSpec(data *schema.ResourceData) *vcf.NsxTEdgeClusterProfileSpec {
+	var profileSpec *vcf.NsxTEdgeClusterProfileSpec = nil
 	profileType := data.Get("profile_type").(string)
 	if profileType == "CUSTOM" {
+		profileSpec = &vcf.NsxTEdgeClusterProfileSpec{}
 		profileRaw := data.Get("profile").([]interface{})
 
 		if len(profileRaw) > 0 {
