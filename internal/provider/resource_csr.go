@@ -150,8 +150,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 	data.SetId(fmt.Sprintf("csr:%s:%s:%s:%s", domainId, resourceType, resourceFqdn, *task.Id))

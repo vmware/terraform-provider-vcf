@@ -206,11 +206,7 @@ func executeCredentialsUpdate(ctx context.Context, updateSpec *vcf.CredentialsUp
 		api_client.LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
 	}
-	if err := sddcClient.WaitForTask(ctx, *task.Id); err != nil {
-		return err
-	}
-
-	return nil
+	return api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask()
 }
 
 func CreatePasswordChangeID(data *schema.ResourceData, operation string) (string, error) {

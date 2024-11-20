@@ -182,8 +182,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	}
 
 	tflog.Info(ctx, "Edge cluster creation has started.")
-	err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, client, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -283,8 +282,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
-		err = meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false)
-		if err != nil {
+		if err = api_client.NewTaskTracker(ctx, client, *task.Id).WaitForTask(); err != nil {
 			return diag.FromErr(err)
 		}
 	}

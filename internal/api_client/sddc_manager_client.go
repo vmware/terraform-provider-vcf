@@ -12,12 +12,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/vmware/vcf-sdk-go/vcf"
-	"golang.org/x/exp/slices"
 )
 
 // SddcManagerClient model that represents properties to authenticate against VCF instance.
@@ -30,7 +28,6 @@ type SddcManagerClient struct {
 	allowUnverifiedTls bool
 	lastRefreshTime    time.Time
 	isRefreshing       bool
-	getTaskRetries     int
 }
 
 // NewSddcManagerClient constructs new Client instance with vcf credentials.
@@ -42,12 +39,8 @@ func NewSddcManagerClient(username, password, url string, allowUnverifiedTls boo
 		allowUnverifiedTls: allowUnverifiedTls,
 		lastRefreshTime:    time.Now(),
 		isRefreshing:       false,
-		getTaskRetries:     0,
 	}
 }
-
-const maxGetTaskRetries int = 10
-const maxTaskRetries int = 6
 
 func (sddcManagerClient *SddcManagerClient) authEditor(ctx context.Context, req *http.Request) error {
 	// Refresh the access token every 20 minutes so that SDK operations won't start to
@@ -106,89 +99,6 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 	return nil
 }
 
-// WaitForTask Wait for a task to complete (waits for up to a minute).
-func (sddcManagerClient *SddcManagerClient) WaitForTask(ctx context.Context, taskId string) error {
-	// Fetch task status 10 times with a delay of 20 seconds each time
-	taskStatusRetry := 10
-
-	for taskStatusRetry > 0 {
-		task, err := sddcManagerClient.getTask(ctx, taskId)
-		if err != nil {
-			log.Println("error = ", err)
-			return err
-		}
-		waitStatuses := []string{"in progress", "pending", "in_progress"}
-		if slices.Contains(waitStatuses, strings.ToLower(*task.Status)) {
-			time.Sleep(20 * time.Second)
-			taskStatusRetry--
-			continue
-		}
-
-		failStatuses := []string{"failed", "cancelled"}
-		if slices.Contains(failStatuses, strings.ToLower(*task.Status)) {
-			errorMsg := fmt.Sprintf("Task with ID = %s is in state %s", taskId, *task.Status)
-			log.Println(errorMsg)
-			return errors.New(errorMsg)
-		}
-
-		var completionTimestamp string
-		if task.CompletionTimestamp != nil {
-			completionTimestamp = *task.CompletionTimestamp
-		}
-
-		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, *task.Status, completionTimestamp)
-		return nil
-	}
-
-	return fmt.Errorf("timedout waiting for task %s", taskId)
-}
-
-// WaitForTaskComplete Wait for task till it completes (either succeeds or fails).
-func (sddcManagerClient *SddcManagerClient) WaitForTaskComplete(ctx context.Context, taskId string, retry bool) error {
-	log.Printf("Getting status of task %s", taskId)
-	currentTaskRetries := 0
-	for {
-		task, err := sddcManagerClient.getTask(ctx, taskId)
-		if err != nil {
-			return err
-		}
-
-		waitStatuses := []string{"in progress", "pending", "in_progress"}
-		if slices.Contains(waitStatuses, strings.ToLower(*task.Status)) {
-			time.Sleep(20 * time.Second)
-			continue
-		}
-
-		failStatuses := []string{"failed", "cancelled"}
-		if slices.Contains(failStatuses, strings.ToLower(*task.Status)) {
-			errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s", taskId, *task.Name, *task.Type, *task.Status)
-			tflog.Error(ctx, errorMsg)
-
-			if retry && currentTaskRetries < maxTaskRetries {
-				currentTaskRetries++
-				err := sddcManagerClient.retryTask(ctx, taskId)
-				if err != nil {
-					tflog.Error(ctx, fmt.Sprintf("Task %q %q failed after %d retries",
-						taskId, *task.Type, currentTaskRetries))
-					return err
-				}
-			} else {
-				return errors.New(errorMsg)
-			}
-			time.Sleep(20 * time.Second)
-			continue
-		}
-
-		var completionTimestamp string
-		if task.CompletionTimestamp != nil {
-			completionTimestamp = *task.CompletionTimestamp
-		}
-
-		log.Printf("Task with ID = %s is in state %s, completed at %s", taskId, *task.Status, completionTimestamp)
-		return nil
-	}
-}
-
 func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx context.Context, taskId, resourceType string) (string, error) {
 	task, err := sddcManagerClient.getTask(ctx, taskId)
 	if err != nil {
@@ -210,27 +120,11 @@ func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId 
 	res, err := apiClient.GetTaskWithResponse(ctx, taskId)
 	task, vcfErr := GetResponseAs[vcf.Task](res)
 	if err != nil || vcfErr != nil {
-		// retry the task up to maxGetTaskRetries
-		if sddcManagerClient.getTaskRetries < maxGetTaskRetries {
-			sddcManagerClient.getTaskRetries++
-			return sddcManagerClient.getTask(ctx, taskId)
-		}
 		log.Println("error = ", err)
 		return nil, err
 	}
-	// reset the counter
-	sddcManagerClient.getTaskRetries = 0
 
 	return task, nil
-}
-
-func (sddcManagerClient *SddcManagerClient) retryTask(ctx context.Context, taskId string) error {
-	apiClient := sddcManagerClient.ApiClient
-	_, err := apiClient.RetryTaskWithResponse(ctx, taskId)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 type Response interface {

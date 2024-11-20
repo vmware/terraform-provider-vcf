@@ -143,12 +143,10 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := *task.Id
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
-	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Domain")
+	domainId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *task.Id, "Domain")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -197,8 +195,7 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
-		err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
-		if err != nil {
+		if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -313,8 +310,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 

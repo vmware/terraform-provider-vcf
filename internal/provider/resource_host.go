@@ -133,9 +133,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	tflog.Info(ctx, fmt.Sprintf("%s commissionSpec commission initiated. waiting for task id = %s",
 		commissionSpec.Fqdn, *task.Id))
 
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
-	if err != nil {
-		tflog.Error(ctx, err.Error())
+	if err = api_client.NewTaskTrackerWithCustomPollingInterval(ctx, apiClient, *task.Id, time.Second*5).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 	hostId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *task.Id, "Esxi")
@@ -219,9 +217,7 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 
 	log.Printf("%s %s: Decommission task initiated. Task id %s",
 		d.Get("fqdn").(string), d.Id(), *task.Id)
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
-	if err != nil {
-		tflog.Error(ctx, err.Error())
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 
