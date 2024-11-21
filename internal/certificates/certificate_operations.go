@@ -83,11 +83,7 @@ func GenerateCertificateForResource(ctx context.Context, client *api_client.Sddc
 		api_client.LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
 	}
-	err = client.WaitForTaskComplete(ctx, *task.Id, true)
-	if err != nil {
-		return err
-	}
-	return nil
+	return api_client.NewTaskTracker(ctx, client.ApiClient, *task.Id).WaitForTask()
 }
 
 func ReadCertificate(ctx context.Context, client *vcf.ClientWithResponses,

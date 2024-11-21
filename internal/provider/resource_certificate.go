@@ -83,7 +83,6 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 		}},
 	}
 
-	var taskId string
 	res, err := apiClient.ReplaceCertificatesWithResponse(ctx, domainID, certificateOperationSpec)
 	if err != nil {
 		return diag.FromErr(err)
@@ -95,12 +94,10 @@ func resourceResourceCertificateCreate(ctx context.Context, data *schema.Resourc
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	taskId = *task.Id
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
-	data.SetId("cert:" + domainID + ":" + resourceType + ":" + taskId)
+	data.SetId("cert:" + domainID + ":" + resourceType + ":" + *task.Id)
 
 	return resourceResourceCertificateRead(ctx, data, meta)
 }

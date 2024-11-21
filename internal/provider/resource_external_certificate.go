@@ -125,8 +125,7 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 		api_client.LogError(vcfErr)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 	data.SetId("ext_cert:" + domainID + ":" + resourceType + ":" + *task.Id)

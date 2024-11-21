@@ -335,12 +335,10 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 		api_client.LogError(vcfErr)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
-	taskId := *task.Id
-	err = vcfClient.WaitForTaskComplete(ctx, taskId, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return "", diag.FromErr(err)
 	}
-	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, taskId, "Cluster")
+	clusterId, err := vcfClient.GetResourceIdAssociatedWithTask(ctx, *task.Id, "Cluster")
 	if err != nil {
 		return "", diag.FromErr(err)
 	}
@@ -366,8 +364,7 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec vcf.
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, false)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 	return nil
@@ -400,8 +397,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	err = vcfClient.WaitForTaskComplete(ctx, *task.Id, true)
-	if err != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 	return nil

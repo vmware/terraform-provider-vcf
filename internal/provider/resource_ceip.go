@@ -105,7 +105,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if vcfClient.WaitForTask(ctx, *task.Id) != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -135,7 +135,7 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if vcfClient.WaitForTask(ctx, *task.Id) != nil {
+	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 

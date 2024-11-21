@@ -94,7 +94,7 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if err := meta.(*api_client.SddcManagerClient).WaitForTaskComplete(ctx, *task.Id, false); err != nil {
+	if err = api_client.NewTaskTracker(ctx, client, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
 	}
 
