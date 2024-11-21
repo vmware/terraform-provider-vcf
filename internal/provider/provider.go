@@ -76,8 +76,9 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"vcf_cluster":      DataSourceCluster(),
-			"vcf_domain":       DataSourceDomain(),
 			"vcf_credentials":  DataSourceCredentials(),
+			"vcf_domain":       DataSourceDomain(),
+			"vcf_host":         DataSourceHost(),
 			"vcf_network_pool": DataSourceNetworkPool(),
 			"vcf_certificate":  DataSourceCertificate(),
 		},
