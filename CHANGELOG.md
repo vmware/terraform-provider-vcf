@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [v0.13.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.13.0)
+
+> Release Date: 2024-11-26
+
+FEATURES:
+
+- Added support for VCF 5.2.1 [#270](https://github.com/vmware/terraform-provider-vcf/pull/270)
+- Added a data source for hosts [#266](https://github.com/vmware/terraform-provider-vcf/pull/266)
+- Enabled detailed task logging [#268](https://github.com/vmware/terraform-provider-vcf/pull/268)
+
 ## [v0.12.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.12.0)
 
 > Release Date: 2024-11-18
