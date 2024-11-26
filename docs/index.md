@@ -12,7 +12,8 @@ The following table lists the supported platforms for this provider.
 
 | Platform                       | Support     |
 |--------------------------------|-------------|
-| VMware Cloud Foundation 5.2.0+ | `≥ v0.12.0` |
+| VMware Cloud Foundation 5.2.1  | `≥ v0.13.0` |
+| VMware Cloud Foundation 5.2.0  | `≥ v0.12.0` |
 | VMware Cloud Foundation 5.1+   | `≥ v0.9.0`  |
 | VMware Cloud Foundation 5.0    | `≥ v0.9.0`  |
 | VMware Cloud Foundation 4.5    | `≤ v0.8.0`  |

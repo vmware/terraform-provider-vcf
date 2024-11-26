@@ -1,7 +1,8 @@
 module github.com/vmware/terraform-provider-vcf
 
-go 1.22.6
-toolchain go1.22.9
+go 1.22.7
+
+toolchain go1.23.2
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.20.0
@@ -13,8 +14,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.17.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.35.0
 	github.com/stretchr/testify v1.9.0
-	github.com/vmware/vcf-sdk-go v0.4.1
-	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
+	github.com/vmware/vcf-sdk-go v0.5.0
 )
 
 require (
@@ -80,6 +80,7 @@ require (
 	github.com/zclconf/go-cty v1.15.0 // indirect
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
