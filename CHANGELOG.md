@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v0.13.1
+
+> Release Date: Not Released
+
+BUG FIXES:
+
+- Adds 8.0.3 to the allowed `dvSwitchVersion` to support vSphere 8.0 U3. [#274](https://github.com/vmware/terraform-provider-vcf/pull/274)
+
 ## [v0.13.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.13.0)
 
 > Release Date: 2024-11-26
