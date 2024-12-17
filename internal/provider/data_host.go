@@ -318,22 +318,28 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	// Status information.
 	_ = d.Set("status", host.Status)
 
-	// Domain information.
-	domain := []map[string]interface{}{
-		{
-			"id":   host.Domain.Id,
-			"name": host.Domain.Name,
-		},
+	// host.Domain will not be set if the host is in the unassigned pool
+	if host.Domain != nil {
+		// Domain information.
+		domain := []map[string]interface{}{
+			{
+				"id":   host.Domain.Id,
+				"name": host.Domain.Name,
+			},
+		}
+		_ = d.Set("domain", domain)
 	}
-	_ = d.Set("domain", domain)
 
-	// Cluster information.
-	cluster := []map[string]interface{}{
-		{
-			"id": host.Cluster.Id,
-		},
+	// host.Cluster will not be set if the host is in the unassigned pool
+	if host.Cluster != nil {
+		// Cluster information.
+		cluster := []map[string]interface{}{
+			{
+				"id": host.Cluster.Id,
+			},
+		}
+		_ = d.Set("cluster", cluster)
 	}
-	_ = d.Set("cluster", cluster)
 
 	// Network pool information.
 	networkPool := []map[string]interface{}{
@@ -376,7 +382,7 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("memory", memory)
 
 	// Compatible storage type information.
-	_ = d.Set("compatible_storage_type", host.CompatibleStorageType)
+	_ = d.Set("storage_type", host.CompatibleStorageType)
 
 	// Storage information.
 	disks := []map[string]interface{}{}

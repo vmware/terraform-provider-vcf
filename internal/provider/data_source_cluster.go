@@ -38,7 +38,12 @@ func DataSourceCluster() *schema.Resource {
 			"domain_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The ID of a workload domain that the cluster belongs to",
+				Description: "The ID of the domain that the cluster belongs to",
+			},
+			"domain_name": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The name of the domain that the cluster belongs to",
 			},
 			"host": {
 				Type:        schema.TypeList,

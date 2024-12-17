@@ -76,8 +76,8 @@ func (t *TaskTracker) WaitForTask() error {
 
 				return errors.New(errorMsg)
 			default:
-				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s is in state %s, completed at %s",
-					*task.Id, *task.Status, *task.CompletionTimestamp))
+				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s is in state %s",
+					*task.Id, *task.Status))
 				return nil
 			}
 		}

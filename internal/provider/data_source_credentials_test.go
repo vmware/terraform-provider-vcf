@@ -28,7 +28,7 @@ func TestAccDataSourceCredentials_VC(t *testing.T) {
 		Steps: []resource.TestStep{{
 			Config: testAccDataSourceCredentialsVc(),
 			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("data.vcf_credentials.creds", "credentials.0.credential_type", "SSH"),
+				resource.TestCheckResourceAttr("data.vcf_credentials.creds", "credentials.0.credential_type", "SSO"),
 				resource.TestCheckResourceAttr("data.vcf_credentials.creds", "credentials.1.credential_type", "SSO"),
 			),
 		}},

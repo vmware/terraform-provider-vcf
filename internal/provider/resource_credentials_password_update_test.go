@@ -6,12 +6,10 @@ package provider
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
 
 func TestAccCredentialsResourcePasswordUpdate(t *testing.T) {
@@ -31,24 +29,24 @@ func testAccResourceCredentialsPasswordUpdateConfig(newPassword string) string {
 
 	return fmt.Sprintf(`
 		resource "vcf_credentials_update" "vc_0_update" {
-			resource_name = %[1]q
+			resource_name = "esxi-4.vrack.vsphere.local"
 			resource_type = "ESXI"
 			credentials {
 				credential_type = "SSH"
 				user_name = "root"
-				password = %[2]q
+				password = %[1]q
 			}
 		}
 
 		data "vcf_credentials" "esx_creds" {
 			resource_type = "ESXI"
 			account_type = "USER"
-			resource_name = %[1]q
+			resource_name = "esxi-4.vrack.vsphere.local"
 
 			depends_on = [
 				vcf_credentials_update.vc_0_update
 			]
 		}
 
-`, os.Getenv(constants.VcfTestHost1Fqdn), newPassword)
+`, newPassword)
 }

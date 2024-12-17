@@ -30,12 +30,12 @@ func TestAccResourceVcfDomainCreate(t *testing.T) {
 				Config: testAccVcfDomainConfig(
 					testGenerateCommissionHostConfigs(
 						3,
-						os.Getenv(constants.VcfTestHost2Fqdn),
-						os.Getenv(constants.VcfTestHost2Pass),
-						os.Getenv(constants.VcfTestHost3Fqdn),
-						os.Getenv(constants.VcfTestHost3Pass),
 						os.Getenv(constants.VcfTestHost4Fqdn),
-						os.Getenv(constants.VcfTestHost4Pass)),
+						os.Getenv(constants.VcfTestHost4Pass),
+						os.Getenv(constants.VcfTestHost5Fqdn),
+						os.Getenv(constants.VcfTestHost5Pass),
+						os.Getenv(constants.VcfTestHost6Fqdn),
+						os.Getenv(constants.VcfTestHost6Pass)),
 					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",

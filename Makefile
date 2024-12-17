@@ -1,4 +1,4 @@
-TEST?=$$(go list ./... |grep -v 'vendor')
+TEST?=$$(go list ./... | grep -v 'vendor')
 PKG_NAME=internal
 
 documentation:
@@ -24,4 +24,4 @@ test: fmtcheck
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 testacc:
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -parallel=4
+	./acc_test/run_acc_tests.sh

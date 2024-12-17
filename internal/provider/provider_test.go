@@ -66,7 +66,7 @@ func muxedFactories() map[string]func() (tfprotov6.ProviderServer, error) {
 // tests are set.
 func testAccPreCheck(t *testing.T) {
 	testAccSDDCManagerOrCloudBuilderPreCheck(t)
-	testAccHostsPreCheck(t, 8)
+	testAccHostsPreCheck(t, 6)
 
 	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
 		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
@@ -114,8 +114,6 @@ func testAccHostsPreCheck(t *testing.T, numberOfHosts int) {
 		constants.VcfTestHost4Fqdn,
 		constants.VcfTestHost5Fqdn,
 		constants.VcfTestHost6Fqdn,
-		constants.VcfTestHost7Fqdn,
-		constants.VcfTestHost8Fqdn,
 	}
 
 	passwordList := []string{
@@ -125,8 +123,6 @@ func testAccHostsPreCheck(t *testing.T, numberOfHosts int) {
 		constants.VcfTestHost4Pass,
 		constants.VcfTestHost5Pass,
 		constants.VcfTestHost6Pass,
-		constants.VcfTestHost7Pass,
-		constants.VcfTestHost8Pass,
 	}
 
 	if numberOfHosts < len(hostList) {
