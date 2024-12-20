@@ -79,8 +79,8 @@ Required:
 
 Optional:
 
-- `compute_cluster_id` (String) The id of the compute cluster
-- `compute_cluster_name` (String) The name of the compute cluster
+* `compute_cluster_id` (String) The id of the compute cluster. You cannot specify a value for `compute_cluster_name` if you set this attribute.
+* `compute_cluster_name` (String) The name of the compute cluster. You cannot specify a value for `compute_cluster_name` if you set this attribute.
 - `first_nsx_vds_uplink` (String) The name of the first NSX-enabled VDS uplink
 - `management_network` (Block List, Max: 1) The management network which will be created for this node (see [below for nested schema](#nestedblock--edge_node--management_network))
 - `second_nsx_vds_uplink` (String) The name of the second NSX-enabled VDS uplink
