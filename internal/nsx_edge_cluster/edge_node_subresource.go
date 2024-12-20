@@ -5,8 +5,6 @@
 package nsx_edge_cluster
 
 import (
-	"math"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -179,10 +177,10 @@ func BgpPeerSchema() *schema.Resource {
 				Description: "Password",
 			},
 			"asn": {
-				Type:         schema.TypeInt,
+				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "ASN",
-				ValidateFunc: validation.IntBetween(1, int(math.Pow(2, 31)-1)),
+				ValidateFunc: validationUtils.ValidASN,
 			},
 		},
 	}
