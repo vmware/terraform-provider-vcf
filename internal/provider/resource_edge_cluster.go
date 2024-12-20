@@ -7,7 +7,6 @@ package provider
 import (
 	"context"
 	"errors"
-	"math"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -114,10 +113,10 @@ func ResourceEdgeCluster() *schema.Resource {
 				ValidateFunc: validation.IntBetween(1600, 9000),
 			},
 			"asn": {
-				Type:         schema.TypeInt,
+				Type:         schema.TypeString,
 				Required:     true,
 				Description:  "ASN for the cluster",
-				ValidateFunc: validation.IntBetween(1, int(math.Pow(2, 31)-1)),
+				ValidateFunc: validationUtils.ValidASN,
 			},
 			"skip_tep_routability_check": {
 				Type:        schema.TypeBool,
