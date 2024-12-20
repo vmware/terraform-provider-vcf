@@ -10,16 +10,16 @@ description: |-
 
 Prerequisites for creating an NSX edge cluster
 
-- The following conditions must be met:
-  - Separate VLANs must be available for Host TEP VLAN and Edge TEP VLAN use
-  - Host TEP VLAN and Edge TEP VLAN need to be routed
-  - If dynamic routing is desired, two BGP peers (on TORs or infra ESG) with an interface IP, ASN and BGP password are required
-  - An ASN has to be reserved for the NSX Edge cluster's Tier-0 interfaces
-  - DNS entries for NSX Edge components should be populated in a customer-managed DNS server
-  - The vSphere clusters hosting the Edge clusters should be L2 Uniform. All host nodes in a hosting vSphere cluster need to have identical management, uplink, Edge and host TEP networks
-  - The vSphere clusters hosting the NSX Edge node VMs must have the same pNIC speed for NSX enabled VDS uplinks chosen for Edge overlay (e.g., either 10G or 25G but not both)
-  - All nodes of an NSX Edge cluster must use the same set of NSX enabled VDS uplinks. The selected uplinks must be prepared for overlay use
-  - If the vSphere cluster hosting the Edge nodes has hosts with a DPU device then enable SR-IOV in the BIOS and in the vSphere Client (if required by your DPU vendor)
+* The following conditions must be met:
+  * Separate VLANs must be available for Host TEP VLAN and Edge TEP VLAN use
+  * Host TEP VLAN and Edge TEP VLAN need to be routed
+  * If dynamic routing is desired, two BGP peers (on TORs or infra ESG) with an interface IP, ASN and BGP password are required
+  * An ASN has to be reserved for the NSX Edge cluster's Tier-0 interfaces
+  * DNS entries for NSX Edge components should be populated in a customer-managed DNS server
+  * The vSphere clusters hosting the Edge clusters should be L2 Uniform. All host nodes in a hosting vSphere cluster need to have identical management, uplink, Edge and host TEP networks
+  * The vSphere clusters hosting the NSX Edge node VMs must have the same pNIC speed for NSX enabled VDS uplinks chosen for Edge overlay (e.g., either 10G or 25G but not both)
+  * All nodes of an NSX Edge cluster must use the same set of NSX enabled VDS uplinks. The selected uplinks must be prepared for overlay use
+  * If the vSphere cluster hosting the Edge nodes has hosts with a DPU device then enable SR-IOV in the BIOS and in the vSphere Client (if required by your DPU vendor)
 
 Do not attempt to add and remove edge nodes in a single configuration change. You can either shrink or expand a cluster, but you cannot run both operations
 simultaneously.
