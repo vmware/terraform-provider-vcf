@@ -24,7 +24,7 @@ resource "vcf_edge_cluster" "cluster_1" {
   routing_type      = "EBGP"
   high_availability = "ACTIVE_ACTIVE"
   mtu               = 9000
-  asn               = 65004
+  asn               = "65004"
 
   edge_node {
     name               = var.edge_node_1_name
@@ -46,7 +46,7 @@ resource "vcf_edge_cluster" "cluster_1" {
       bgp_peer {
         ip       = "192.168.18.10/24"
         password = "VMware1!"
-        asn      = 65001
+        asn      = "65001"
       }
     }
 
@@ -56,7 +56,7 @@ resource "vcf_edge_cluster" "cluster_1" {
       bgp_peer {
         ip       = "192.168.19.10/24"
         password = "VMware1!"
-        asn      = 65001
+        asn      = "65001"
       }
     }
   }
@@ -81,7 +81,7 @@ resource "vcf_edge_cluster" "cluster_1" {
       bgp_peer {
         ip       = "192.168.18.10/24"
         password = "VMware1!"
-        asn      = 65001
+        asn      = "65001"
       }
     }
 
@@ -91,7 +91,7 @@ resource "vcf_edge_cluster" "cluster_1" {
       bgp_peer {
         ip       = "192.168.19.10/24"
         password = "VMware1!"
-        asn      = 65001
+        asn      = "65001"
       }
     }
   }
