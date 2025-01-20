@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
@@ -34,7 +35,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 	highAvailability := data.Get("high_availability").(string)
 	tier0Name := data.Get("tier0_name").(string)
 	mtu := int32(data.Get("mtu").(int))
-	asn := int64(data.Get("asn").(int))
+	asn := data.Get("asn").(string)
 	tier1Unhosted := data.Get("tier1_unhosted").(bool)
 	skipTepRoutabilityCheck := data.Get("skip_tep_routability_check").(bool)
 
@@ -58,6 +59,12 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 		nodeSpecs = append(nodeSpecs, *nodeSpec)
 	}
 
+	// Convert asn to int64 to match vcf spec
+	asnInt, err := strconv.ParseInt(asn, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
 	spec := &vcf.EdgeClusterCreationSpec{
 		EdgeAdminPassword:             adminPassword,
 		EdgeAuditPassword:             auditPassword,
@@ -70,7 +77,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 		EdgeRootPassword:              rootPassword,
 		InternalTransitSubnets:        &internalTransitSubnets,
 		Mtu:                           mtu,
-		Asn:                           &asn,
+		Asn:                           &asnInt,
 		Tier0Name:                     &tier0Name,
 		Tier0RoutingType:              &routingType,
 		Tier0ServicesHighAvailability: &highAvailability,
@@ -192,6 +199,11 @@ func getNodeSpec(node map[string]interface{}, client *vcf.ClientWithResponses) (
 		clusterId = *cluster.Id
 	}
 
+	uplinkNetwork, err := getUplinkNetworkSpecs(node)
+	if err != nil {
+		return nil, err
+	}
+
 	nodeSpec := &vcf.NsxTEdgeNodeSpec{
 		ClusterId:          &clusterId,
 		EdgeNodeName:       name,
@@ -204,7 +216,7 @@ func getNodeSpec(node map[string]interface{}, client *vcf.ClientWithResponses) (
 		FirstNsxVdsUplink:  firstVdsUplink,
 		SecondNsxVdsUplink: secondVdsUplink,
 		InterRackCluster:   &interRackCluster,
-		UplinkNetwork:      getUplinkNetworkSpecs(node),
+		UplinkNetwork:      uplinkNetwork,
 	}
 
 	mgmtNetworkRaw := node["management_network"].([]interface{})
@@ -220,7 +232,7 @@ func getNodeSpec(node map[string]interface{}, client *vcf.ClientWithResponses) (
 	return nodeSpec, nil
 }
 
-func getUplinkNetworkSpecs(node map[string]interface{}) *[]vcf.NsxTEdgeUplinkNetwork {
+func getUplinkNetworkSpecs(node map[string]interface{}) (*[]vcf.NsxTEdgeUplinkNetwork, error) {
 	uplinks := node["uplink"].([]interface{})
 	specs := make([]vcf.NsxTEdgeUplinkNetwork, 0, len(uplinks))
 
@@ -228,26 +240,36 @@ func getUplinkNetworkSpecs(node map[string]interface{}) *[]vcf.NsxTEdgeUplinkNet
 		ip := uplink.(map[string]interface{})["interface_ip"].(string)
 		vlan := int32(uplink.(map[string]interface{})["vlan"].(int))
 		bgpPeersRaw := uplink.(map[string]interface{})["bgp_peer"].([]interface{})
+		bgpPeers, err := getBgpPeerSpecs(bgpPeersRaw)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing bgp peers: %w", err)
+		}
 		spec := vcf.NsxTEdgeUplinkNetwork{
 			UplinkInterfaceIP: ip,
 			UplinkVlan:        vlan,
-			BgpPeers:          getBgpPeerSpecs(bgpPeersRaw),
+			BgpPeers:          bgpPeers,
 		}
 
 		specs = append(specs, spec)
 	}
-	return &specs
+	return &specs, nil
 }
 
-func getBgpPeerSpecs(bgpPeersRaw []interface{}) *[]vcf.BgpPeerSpec {
+func getBgpPeerSpecs(bgpPeersRaw []interface{}) (*[]vcf.BgpPeerSpec, error) {
 	peers := make([]vcf.BgpPeerSpec, 0, len(bgpPeersRaw))
 
 	for _, peer := range bgpPeersRaw {
 		ip := peer.(map[string]interface{})["ip"].(string)
 		password := peer.(map[string]interface{})["password"].(string)
-		asn := int64(peer.(map[string]interface{})["asn"].(int))
+		asn := peer.(map[string]interface{})["asn"].(string)
+
+		asnInt, err := strconv.ParseInt(asn, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing asn %s: %w", asn, err)
+		}
+
 		peer := vcf.BgpPeerSpec{
-			Asn:      asn,
+			Asn:      asnInt,
 			Ip:       ip,
 			Password: password,
 		}
@@ -255,7 +277,7 @@ func getBgpPeerSpecs(bgpPeersRaw []interface{}) *[]vcf.BgpPeerSpec {
 		peers = append(peers, peer)
 	}
 
-	return &peers
+	return &peers, nil
 }
 
 func getClusterProfileSpec(data *schema.ResourceData) *vcf.NsxTEdgeClusterProfileSpec {

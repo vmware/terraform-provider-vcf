@@ -82,7 +82,7 @@ func getEdgeClusterConfigFullInitial() string {
 			routing_type = "EBGP"
 			high_availability = "ACTIVE_ACTIVE"
 			mtu = 8940
-			asn = 65004
+			asn = "65004"
 			%s
 			%s
 		}
@@ -131,7 +131,7 @@ func getEdgeClusterConfigFullExpansion() string {
 			routing_type = "EBGP"
 			high_availability = "ACTIVE_ACTIVE"
 			mtu = 8940
-			asn = 65004
+			asn = "65004"
 			%s
 			%s
 			%s
@@ -168,7 +168,7 @@ func getEdgeNodeConfigFull(name, ip, tep1, tep2, uplink1, uplink2 string) string
 				bgp_peer {
 					ip = "192.168.18.10/24"
 					password = "VMware1!"
-					asn = 65001
+					asn = "65001"
 				}
 			}
 
@@ -178,7 +178,7 @@ func getEdgeNodeConfigFull(name, ip, tep1, tep2, uplink1, uplink2 string) string
 				bgp_peer {
 					ip = "192.168.19.10/24"
 					password = "VMware1!"
-					asn = 65001
+					asn = "65001"
 				}
 			}
 		}
@@ -209,6 +209,7 @@ func getEdgeClusterChecks(numNodes int) []resource.TestCheckFunc {
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "routing_type"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "high_availability"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "mtu"),
+		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "asn"),
 	}
 
 	for i := 0; i < numNodes; i++ {
