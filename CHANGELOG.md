@@ -1,12 +1,22 @@
 # CHANGELOG
 
-## v0.13.1
+## [v0.14.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.14.0)
 
-> Release Date: Not Released
+> Release Date: 2025-01-22
+
+BREAKING CHANGES:
+
+- Updated ASN support to allow configuration of 4-byte ASN values in the full range (0-4294967295), addressing the previous limitation that prevented values above 2147483647. ASN input is now expected to be a string instead of an integer. Users must update configurations to represent ASNs as strings values [#278](https://github.com/vmware/terraform-provider-vcf/pull/278)
 
 BUG FIXES:
 
-- Adds 8.0.3 to the allowed `dvSwitchVersion` to support vSphere 8.0 U3. [#274](https://github.com/vmware/terraform-provider-vcf/pull/274)
+- Added 8.0.3 to the allowed `dvSwitchVersion` to support vSphere 8.0 U3. [#274](https://github.com/vmware/terraform-provider-vcf/pull/274)
+
+CHORES:
+
+- Updated `golang.org/x/net` to v0.33.0. [#280](https://github.com/vmware/terraform-provider-vcf/pull/280)
+- Updated `golang.org/x/crypto` to 0.31.0. [#276](https://github.com/vmware/terraform-provider-vcf/pull/276)
+- Updated `github.com/stretchr/testify` to 1.10.0. [#269](https://github.com/vmware/terraform-provider-vcf/pull/269)
 
 ## [v0.13.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.13.0)
 
