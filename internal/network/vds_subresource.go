@@ -9,9 +9,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
@@ -98,23 +98,30 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*vcf.VdsSpec, error) {
 	return result, nil
 }
 
-func FlattenVdsSpec(vdsSpec vcf.VdsSpec) map[string]interface{} {
+func FlattenVdsSpec(vdsSpec *vcf.VdsSpec) map[string]interface{} {
 	result := make(map[string]interface{})
+	if vdsSpec == nil {
+		return result
+	}
 	result["name"] = vdsSpec.Name
 	result["is_used_by_nsx"] = vdsSpec.IsUsedByNsxt
-	flattenedNiocBandwidthAllocationSpecs := *new([]map[string]interface{})
-	for _, niocBandwidthAllocationSpec := range *vdsSpec.NiocBandwidthAllocationSpecs {
-		flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs,
-			flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec))
-	}
-	result["nioc_bandwidth_allocations"] = flattenedNiocBandwidthAllocationSpecs
 
-	flattenedPortgroupSpecs := *new([]map[string]interface{})
-	for _, portgroupSpec := range *vdsSpec.PortGroupSpecs {
-		flattenedPortgroupSpecs = append(flattenedPortgroupSpecs,
-			flattenPortgroupSpec(portgroupSpec))
+	if vdsSpec.NiocBandwidthAllocationSpecs != nil {
+		flattenedNiocBandwidthAllocationSpecs := make([]map[string]interface{}, 0, len(*vdsSpec.NiocBandwidthAllocationSpecs))
+		for _, niocBandwidthAllocationSpec := range *vdsSpec.NiocBandwidthAllocationSpecs {
+			flattenedSpec := flattenNiocBandwidthAllocationSpec(niocBandwidthAllocationSpec)
+			flattenedNiocBandwidthAllocationSpecs = append(flattenedNiocBandwidthAllocationSpecs, flattenedSpec)
+		}
+		result["nioc_bandwidth_allocations"] = flattenedNiocBandwidthAllocationSpecs
 	}
-	result["portgroup"] = flattenedPortgroupSpecs
+
+	if vdsSpec.PortGroupSpecs != nil {
+		flattenedPortgroupSpecs := make([]map[string]interface{}, 0, len(*vdsSpec.PortGroupSpecs))
+		for _, portgroupSpec := range *vdsSpec.PortGroupSpecs {
+			flattenedPortgroupSpecs = append(flattenedPortgroupSpecs, flattenPortgroupSpec(portgroupSpec))
+		}
+		result["portgroup"] = flattenedPortgroupSpecs
+	}
 
 	return result
 }
