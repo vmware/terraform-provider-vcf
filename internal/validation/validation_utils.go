@@ -315,20 +315,15 @@ func IsEmpty(object interface{}) bool {
 }
 
 func ValidASN(v interface{}, k string) (ws []string, errors []error) {
-	value := v.(string)
-
-	asn, err := strconv.ParseInt(value, 10, 64)
+	asn, err := strconv.ParseInt(v.(string), 10, 64)
 	if err != nil {
 		errors = append(errors, fmt.Errorf("%q (%q) must be a 64-bit integer", k, v))
 		return
 	}
 
-	isLegacyAsn := func(a int64) bool {
-		return a == 7224 || a == 9059 || a == 10124 || a == 17493
+	if asn < 1 || asn > 4294967294 {
+		errors = append(errors, fmt.Errorf("%q (%q) must be in the range 1 to 4294967294", k, v))
 	}
 
-	if !isLegacyAsn(asn) && ((asn < 64512) || (asn > 65534 && asn < 4200000000) || (asn > 4294967294)) {
-		errors = append(errors, fmt.Errorf("%q (%q) must be 7224, 9059, 10124 or 17493 or in the range 64512 to 65534 or 4200000000 to 4294967294", k, v))
-	}
 	return
 }

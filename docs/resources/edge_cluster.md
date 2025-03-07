@@ -42,12 +42,10 @@ Review the documentation for VMware Cloud Foundation for more information about 
 - `profile_type` (String) One among: DEFAULT, CUSTOM. If set to CUSTOM a 'profile' must be provided
 - `root_password` (String) Root user password for the NSX manager
 - `routing_type` (String) One among: EBGP, STATIC
-- `tier0_name` (String) Name for the Tier-0 gateway
 
 ### Optional
 
 - `internal_transit_subnets` (List of String) Subnet addresses in CIDR notation that are used to assign addresses to logical links connecting service routers and distributed routers
-
 - `profile` (Block List, Max: 1) The specification for the edge cluster profile (see [below for nested schema](#nestedblock--profile))
 - `skip_tep_routability_check` (Boolean) Set to true to bypass normal ICMP-based check of Edge TEP / host TEP routability (default is false, meaning do check)
 - `tier1_name` (String) Name for the Tier-1 gateway
@@ -60,7 +58,6 @@ Review the documentation for VMware Cloud Foundation for more information about 
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--edge_node"></a>
-
 ### Nested Schema for `edge_node`
 
 Required:
@@ -79,16 +76,14 @@ Required:
 
 Optional:
 
-- `compute_cluster_id` (String) The id of the compute cluster. You cannot specify a value for `compute_cluster_name` if you set this attribute.
-- `compute_cluster_name` (String) The name of the compute cluster. You cannot specify a value for `compute_cluster_id` if you set this attribute.
-
+- `compute_cluster_id` (String) The id of the compute cluster
+- `compute_cluster_name` (String) The name of the compute cluster
 - `first_nsx_vds_uplink` (String) The name of the first NSX-enabled VDS uplink
 - `management_network` (Block List, Max: 1) The management network which will be created for this node (see [below for nested schema](#nestedblock--edge_node--management_network))
 - `second_nsx_vds_uplink` (String) The name of the second NSX-enabled VDS uplink
 - `uplink` (Block List) Specifications of Tier-0 uplinks for the edge node (see [below for nested schema](#nestedblock--edge_node--uplink))
 
 <a id="nestedblock--edge_node--management_network"></a>
-
 ### Nested Schema for `edge_node.management_network`
 
 Required:
@@ -96,8 +91,8 @@ Required:
 - `portgroup_name` (String) The name of the portgroup
 - `vlan_id` (Number) The VLAN ID for the portgroup
 
-<a id="nestedblock--edge_node--uplink"></a>
 
+<a id="nestedblock--edge_node--uplink"></a>
 ### Nested Schema for `edge_node.uplink`
 
 Required:
@@ -107,7 +102,6 @@ Required:
 - `vlan` (Number) The VLAN ID for the distributed switch uplink
 
 <a id="nestedblock--edge_node--uplink--bgp_peer"></a>
-
 ### Nested Schema for `edge_node.uplink.bgp_peer`
 
 Required:
@@ -116,8 +110,10 @@ Required:
 - `ip` (String) IP address
 - `password` (String) Password
 
-<a id="nestedblock--profile"></a>
 
+
+
+<a id="nestedblock--profile"></a>
 ### Nested Schema for `profile`
 
 Required:
@@ -128,8 +124,8 @@ Required:
 - `name` (String) The name of the profile
 - `standby_relocation_threshold` (Number) Standby relocation threshold
 
-<a id="nestedblock--timeouts"></a>
 
+<a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:

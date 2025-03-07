@@ -65,7 +65,7 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"tier0_name": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "Name for the Tier-0 gateway",
 				ValidateFunc: validation.NoZeroValues,
 			},
