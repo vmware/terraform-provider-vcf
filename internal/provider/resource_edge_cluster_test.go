@@ -75,8 +75,6 @@ func getEdgeClusterConfigFullInitial() string {
 			root_password = %q
 			admin_password = %q
 			audit_password = %q
-			tier0_name = "T0_testCluster1"
-			tier1_name = "T1_testCluster1"
 			form_factor = "MEDIUM"
 			profile_type = "DEFAULT"
 			routing_type = "EBGP"

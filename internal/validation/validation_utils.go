@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
-	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -322,11 +321,8 @@ func ValidASN(v interface{}, k string) (ws []string, errors []error) {
 		return
 	}
 
-	isLegacyAsn := slices.Contains([]int64{7224, 9059, 10124, 17493}, asn)
-	isPublicAsn := (asn >= 1 && asn <= 64495) || (asn >= 131072 && asn <= 4199999999)
-
-	if !isLegacyAsn && !isPublicAsn && ((asn < 64512) || (asn > 65534 && asn < 4200000000) || (asn > 4294967294)) {
-		errors = append(errors, fmt.Errorf("%q (%q) must be a legacy ASN, a non-private ASN, or in the range 64512 to 65534 or 4200000000 to 4294967294", k, v))
+	if asn < 1 || asn > 4294967294 {
+		errors = append(errors, fmt.Errorf("%q (%q) must be in the range 1 to 4294967294", k, v))
 	}
 
 	return
