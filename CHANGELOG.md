@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [v0.15.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.15.0)
+
+> Release Date: 2025-03-10
+
+FEATURES:
+
+- `resource/vcf_edge_cluster`: Allow `tier0_name` as optional. [#295](https://github.com/vmware/terraform-provider-vcf/pull/295/)
+- `resource/vcf_edge_cluster`: Allow `asn` as optional. [#297](https://github.com/vmware/terraform-provider-vcf/pull/297/)
+- `resource/vcf_edge_cluster`: Allow `routing_type` as optional. [#297](https://github.com/vmware/terraform-provider-vcf/pull/297/)
+- `resource/vcf_edge_cluster`: Relaxed ASN restrictions while preserving the range limit. [#295](https://github.com/vmware/terraform-provider-vcf/pull/295/)
+
+CHORES:
+
+- Updated `hashicorp/terraform-plugin-docs` from 0.20.1 to 0.21.0. [#292](https://github.com/vmware/terraform-provider-vcf/pull/292/)
+- Updated `hashicorp/terraform-plugin-framework` from 1.14.0 to 1.14.1. [#290](https://github.com/vmware/terraform-provider-vcf/pull/290/)
+- Updated `/hashicorp/terraform-plugin-sdk` from 2.36.0 to 2.36.1. [#288](https://github.com/vmware/terraform-provider-vcf/pull/288/)
+- Updated `/hashicorp/terraform-plugin-framework-validators` from 0.16.0 to 0.17.0. [#287](https://github.com/vmware/terraform-provider-vcf/pull/287/)
+- Updated `hashicorp/terraform-plugin-framework-timeouts` from 0.4.1 to 0.5.0. [#281](https://github.com/vmware/terraform-provider-vcf/pull/281/)
+- Updated `/hashicorp/yamux` from v0.1.1 to v0.1.2. [#286](https://github.com/vmware/terraform-provider-vcf/pull/286/)
+
 ## [v0.14.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.14.0)
 
 > Release Date: 2025-01-22
