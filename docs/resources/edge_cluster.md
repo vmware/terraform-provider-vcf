@@ -32,7 +32,6 @@ Review the documentation for VMware Cloud Foundation for more information about 
 ### Required
 
 - `admin_password` (String) Administrator password for the NSX manager
-- `asn` (String) ASN for the cluster
 - `audit_password` (String) Audit user password for the NSX manager
 - `edge_node` (Block List, Min: 1) The nodes in the edge cluster (see [below for nested schema](#nestedblock--edge_node))
 - `form_factor` (String) One among: XLARGE, LARGE, MEDIUM, SMALL
@@ -41,13 +40,15 @@ Review the documentation for VMware Cloud Foundation for more information about 
 - `name` (String) The name of the edge cluster
 - `profile_type` (String) One among: DEFAULT, CUSTOM. If set to CUSTOM a 'profile' must be provided
 - `root_password` (String) Root user password for the NSX manager
-- `routing_type` (String) One among: EBGP, STATIC
 
 ### Optional
 
+- `asn` (String) ASN for the cluster
 - `internal_transit_subnets` (List of String) Subnet addresses in CIDR notation that are used to assign addresses to logical links connecting service routers and distributed routers
 - `profile` (Block List, Max: 1) The specification for the edge cluster profile (see [below for nested schema](#nestedblock--profile))
+- `routing_type` (String) One among: EBGP, STATIC
 - `skip_tep_routability_check` (Boolean) Set to true to bypass normal ICMP-based check of Edge TEP / host TEP routability (default is false, meaning do check)
+- `tier0_name` (String) Name for the Tier-0 gateway
 - `tier1_name` (String) Name for the Tier-1 gateway
 - `tier1_unhosted` (Boolean) Select whether Tier-1 being created per this spec is hosted on the new Edge cluster or not (default value is false, meaning hosted)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

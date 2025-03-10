@@ -77,10 +77,8 @@ func getEdgeClusterConfigFullInitial() string {
 			audit_password = %q
 			form_factor = "MEDIUM"
 			profile_type = "DEFAULT"
-			routing_type = "EBGP"
 			high_availability = "ACTIVE_ACTIVE"
 			mtu = 8940
-			asn = "65004"
 			%s
 			%s
 		}
@@ -122,14 +120,10 @@ func getEdgeClusterConfigFullExpansion() string {
 			root_password = %q
 			admin_password = %q
 			audit_password = %q
-			tier0_name = "T0_testCluster1"
-			tier1_name = "T1_testCluster1"
 			form_factor = "MEDIUM"
 			profile_type = "DEFAULT"
-			routing_type = "EBGP"
 			high_availability = "ACTIVE_ACTIVE"
 			mtu = 8940
-			asn = "65004"
 			%s
 			%s
 			%s
