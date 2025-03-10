@@ -90,7 +90,7 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"routing_type": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "One among: EBGP, STATIC",
 				ValidateFunc: validation.StringInSlice([]string{"EBGP", "STATIC"}, false),
 			},
@@ -114,7 +114,7 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"asn": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "ASN for the cluster",
 				ValidateFunc: validationUtils.ValidASN,
 			},
