@@ -7,9 +7,8 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 var esxiCertsModes = []string{"Custom", "VMCA"}
@@ -58,14 +57,14 @@ func getRootCaCertsSchema() *schema.Schema {
 	}
 }
 
-func GetSecuritySpecSchema(rawData []interface{}) *vcf.SecuritySpec {
+func GetSecuritySpecSchema(rawData []interface{}) *installer.SecuritySpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
 	data := rawData[0].(map[string]interface{})
 	esxiCertsMode := data["esxi_certs_mode"].(string)
 
-	securitySpecBinding := &vcf.SecuritySpec{
+	securitySpecBinding := &installer.SecuritySpec{
 		EsxiCertsMode: &esxiCertsMode,
 	}
 	if rootCaCerts := getRootCaCertsBindingFromSchema(data["root_ca_certs"].([]interface{})); len(rootCaCerts) > 0 {
@@ -75,13 +74,13 @@ func GetSecuritySpecSchema(rawData []interface{}) *vcf.SecuritySpec {
 	return securitySpecBinding
 }
 
-func getRootCaCertsBindingFromSchema(rawData []interface{}) []vcf.RootCaCerts {
-	var rootCaCertsBindingsList []vcf.RootCaCerts
+func getRootCaCertsBindingFromSchema(rawData []interface{}) []installer.RootCaCerts {
+	var rootCaCertsBindingsList []installer.RootCaCerts
 	for _, rootCaCerts := range rawData {
 		data := rootCaCerts.(map[string]interface{})
 		alias := data["alias"].(string)
 
-		rootCaCertsBinding := vcf.RootCaCerts{
+		rootCaCertsBinding := installer.RootCaCerts{
 			Alias: &alias,
 		}
 		if certChain, ok := data["cert_chain"].([]interface{}); ok {

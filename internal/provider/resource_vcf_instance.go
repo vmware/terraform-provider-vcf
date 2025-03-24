@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/vmware/vcf-sdk-go/installer"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
@@ -111,7 +112,6 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
-		"psc":          sddc.GetPscSchema(),
 		"sddc_manager": sddc.GetSddcManagerSchema(),
 		"security":     sddc.GetSecuritySchema(),
 		"skip_esx_thumbprint_validation": {
@@ -119,19 +119,13 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Description: "Skip ESXi thumbprint validation",
 			Required:    true,
 		},
-		"task_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "workflowconfig/workflowspec-ems.json",
-		},
-		"vcenter":    sddc.GetVcenterSchema(),
-		"vsan":       sddc.GetVsanSchema(),
-		"vx_manager": sddc.GetVxManagerSchema(),
+		"vcenter": sddc.GetVcenterSchema(),
+		"vsan":    sddc.GetVsanSchema(),
 	}
 }
 
-func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
-	sddcSpec := &vcf.SddcSpec{}
+func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
+	sddcSpec := &installer.SddcSpec{}
 	if rawCeipEnabled, ok := data.GetOk("ceip_enabled"); ok {
 		sddcSpec.CeipEnabled = utils.ToBoolPointer(rawCeipEnabled)
 	}
@@ -146,15 +140,6 @@ func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
 	if dvsSpecs, ok := data.GetOk("dvs"); ok {
 		sddcSpec.DvsSpecs = sddc.GetDvsSpecsFromSchema(dvsSpecs.([]interface{}))
 	}
-	if dvSwitchVersion, ok := data.GetOk("dv_switch_version"); ok {
-		sddcSpec.DvSwitchVersion = utils.ToStringPointer(dvSwitchVersion)
-	}
-	if esxLicense, ok := data.GetOk("esx_license"); ok {
-		sddcSpec.EsxLicense = utils.ToStringPointer(esxLicense)
-	}
-	if fipsEnabled, ok := data.GetOk("fips_enabled"); ok {
-		sddcSpec.FipsEnabled = utils.ToBoolPointer(fipsEnabled)
-	}
 	if hostSpecs, ok := data.GetOk("host"); ok {
 		sddcSpec.HostSpecs = sddc.GetSddcHostSpecsFromSchema(hostSpecs.([]interface{}))
 	}
@@ -168,10 +153,8 @@ func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
 		sddcSpec.NsxtSpec = sddc.GetNsxSpecFromSchema(nsxSpec.([]interface{}))
 	}
 	if ntpServers, ok := data.GetOk("ntp_servers"); ok {
-		sddcSpec.NtpServers = utils.ToStringSlice(ntpServers.([]interface{}))
-	}
-	if pscSpecs, ok := data.GetOk("psc"); ok {
-		sddcSpec.PscSpecs = sddc.GetPscSpecsFromSchema(pscSpecs.([]interface{}))
+		ntpServersValue := utils.ToStringSlice(ntpServers.([]interface{}))
+		sddcSpec.NtpServers = &ntpServersValue
 	}
 	if sddcID, ok := data.GetOk("instance_id"); ok {
 		sddcSpec.SddcId = sddcID.(string)
@@ -185,19 +168,14 @@ func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
 	if skipEsxThumbPrintValidation, ok := data.GetOk("skip_esx_thumbprint_validation"); ok {
 		sddcSpec.SkipEsxThumbprintValidation = utils.ToBoolPointer(skipEsxThumbPrintValidation)
 	}
-	if taskName, ok := data.GetOk("task_name"); ok {
-		sddcSpec.TaskName = utils.ToStringPointer(taskName)
-	}
 	if vcenterSpec, ok := data.GetOk("vcenter"); ok {
 		if spec := sddc.GetVcenterSpecFromSchema(vcenterSpec.([]interface{})); spec != nil {
 			sddcSpec.VcenterSpec = *spec
 		}
 	}
 	if vsanSpec, ok := data.GetOk("vsan"); ok {
+		// TODO - wrap in SddcDatastoreSpec
 		sddcSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
-	}
-	if vxManagerSpec, ok := data.GetOk("vx_manager"); ok {
-		sddcSpec.VxManagerSpec = sddc.GetVxManagerSpecFromSchema(vxManagerSpec.([]interface{}))
 	}
 	return sddcSpec
 }
