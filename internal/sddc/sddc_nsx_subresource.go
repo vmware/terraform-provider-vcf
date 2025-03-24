@@ -111,13 +111,14 @@ func GetNsxSpecFromSchema(rawData []interface{}) *installer.SddcNsxtSpec {
 		nsxtSpecBinding.NsxtManagers = nsxtManagersData
 	}
 
-	if ipAddressPoolRaw, ok := data["ip_address_pool"]; ok && !validation_utils.IsEmpty(ipAddressPoolRaw) {
-		ipAddressPoolList := ipAddressPoolRaw.([]interface{})
-		// Only one IP Address pool spec is allowed in the resource
-		if ipAddressPoolSpec, err := network.GetIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{})); err == nil {
-			nsxtSpecBinding.IpAddressPoolSpec = ipAddressPoolSpec
-		}
-	}
+	// TODO build IP pool spec using installer bindings
+	//if ipAddressPoolRaw, ok := data["ip_address_pool"]; ok && !validation_utils.IsEmpty(ipAddressPoolRaw) {
+	//	ipAddressPoolList := ipAddressPoolRaw.([]interface{})
+	//	// Only one IP Address pool spec is allowed in the resource
+	//	if ipAddressPoolSpec, err := network.GetIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{})); err == nil {
+	//		nsxtSpecBinding.IpAddressPoolSpec = ipAddressPoolSpec
+	//	}
+	//}
 	return nsxtSpecBinding
 }
 

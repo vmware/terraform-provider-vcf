@@ -40,9 +40,6 @@ func GetSddcManagerSchema() *schema.Schema {
 			},
 		},
 	}
-	sddcManagerSchemaElements := sddcManagerSchema.Elem.(*schema.Resource)
-	sddcManagerSchemaElements.Schema["root_user_credentials"].Description = "Root user credentials for the SDDC Manager VM, UserName must be root. Password needs to be a strong password with at least one alphabet and one special character and at least 8 characters in length."
-	sddcManagerSchemaElements.Schema["second_user_credentials"].Description = "Second user credentials for the SDDC Manager VM, UserName must be vcf.  Password needs to be a strong password with at least one alphabet and one special character and at least 8 characters in length."
 
 	return sddcManagerSchema
 }

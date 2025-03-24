@@ -90,11 +90,6 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Required:     true,
 			ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
 		},
-		"esx_license": {
-			Type:      schema.TypeString,
-			Sensitive: true,
-			Optional:  true,
-		},
 		"host": sddc.GetSddcHostSchema(),
 		"management_pool_name": {
 			Type:        schema.TypeString,
@@ -173,35 +168,38 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 			sddcSpec.VcenterSpec = *spec
 		}
 	}
-	if vsanSpec, ok := data.GetOk("vsan"); ok {
-		// TODO - wrap in SddcDatastoreSpec
-		sddcSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
-	}
+	// TODO - wrap in SddcDatastoreSpec
+	//if vsanSpec, ok := data.GetOk("vsan"); ok {
+	//	sddcSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+	//}
 	return sddcSpec
 }
 
 func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*api_client.CloudBuilderClient)
-
-	sddcSpec := buildSddcSpec(data)
-
-	bringUpInfo, err := getLastBringUp(ctx, client)
-	if err != nil {
-		tflog.Error(ctx, err.Error())
-		return diag.FromErr(err)
-	}
-
-	bringUpID, diags := invokeBringupWorkflow(ctx, client, sddcSpec, bringUpInfo)
-	if diags != nil {
-		return diags
-	}
-
-	diags = waitForBringupProcess(ctx, bringUpID, client)
-	if diags != nil {
-		return diags
-	}
-
-	return resourceVcfInstanceRead(ctx, data, meta)
+	//client := meta.(*api_client.CloudBuilderClient)
+	//
+	//sddcSpec := buildSddcSpec(data)
+	//
+	//bringUpInfo, err := getLastBringUp(ctx, client)
+	//if err != nil {
+	//	tflog.Error(ctx, err.Error())
+	//	return diag.FromErr(err)
+	//}
+	//
+	//bringUpID, diags := invokeBringupWorkflow(ctx, client, sddcSpec, bringUpInfo)
+	//if diags != nil {
+	//	return diags
+	//}
+	//
+	//diags = waitForBringupProcess(ctx, bringUpID, client)
+	//if diags != nil {
+	//	return diags
+	//}
+	//
+	//return resourceVcfInstanceRead(ctx, data, meta)
+	client := meta.(*api_client.InstallerClient)
+	client.Connect()
+	return nil
 }
 
 func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
