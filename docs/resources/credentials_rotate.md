@@ -3,7 +3,7 @@
 page_title: "vcf_credentials_rotate Resource - terraform-provider-vcf"
 subcategory: ""
 description: |-
-  
+
 ---
 
 # vcf_credentials_rotate (Resource)
@@ -20,10 +20,6 @@ description: |-
 - `credentials` (Block List, Min: 1) The credentials that should be rotated (see [below for nested schema](#nestedblock--credentials))
 - `resource_name` (String) The name of the resource which credentials will be rotated
 - `resource_type` (String) The type of the resource which credentials will be rotated
-
-### Optional
-
-- `once_only` (Boolean) If set to true operation is executed only once otherwise rotation is done each time.
 
 ### Read-Only
 
