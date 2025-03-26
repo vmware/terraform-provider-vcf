@@ -130,13 +130,13 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 	}
 }
 
-func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
+func buildSddcSpec(data *schema.ResourceData, apiClient *vcf.ClientWithResponses) *vcf.SddcSpec {
 	sddcSpec := &vcf.SddcSpec{}
 	if rawCeipEnabled, ok := data.GetOk("ceip_enabled"); ok {
 		sddcSpec.CeipEnabled = utils.ToBoolPointer(rawCeipEnabled)
 	}
 	if clusterSpec, ok := data.GetOk("cluster"); ok {
-		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
+		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}), apiClient)
 	}
 	if dnsSpec, ok := data.GetOk("dns"); ok {
 		spec := sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
@@ -205,7 +205,7 @@ func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
 func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*api_client.CloudBuilderClient)
 
-	sddcSpec := buildSddcSpec(data)
+	sddcSpec := buildSddcSpec(data, client.ApiClient)
 
 	bringUpInfo, err := getLastBringUp(ctx, client)
 	if err != nil {
