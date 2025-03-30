@@ -65,13 +65,6 @@ func ResourceCredentialsRotate() *schema.Resource {
 					},
 				},
 			},
-			"once_only": {
-				Type:        schema.TypeBool,
-				Default:     true,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "If set to true operation is executed only once otherwise rotation is done each time.",
-			},
 			"last_rotate_time": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -111,7 +104,7 @@ func resourceCredentialsPasswordRotationRead(ctx context.Context, data *schema.R
 }
 
 func resourceCredentialsPasswordRotationCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if d.Get("last_rotate_time").(string) != "" && d.Get("once_only").(bool) {
+	if d.Get("last_rotate_time").(string) != "" {
 		log.Print("[DEBUG] Skipping password rotation")
 		return nil
 	}

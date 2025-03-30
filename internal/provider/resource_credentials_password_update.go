@@ -64,13 +64,6 @@ func ResourceCredentialsUpdate() *schema.Resource {
 					},
 				},
 			},
-			"once_only": {
-				Type:        schema.TypeBool,
-				Default:     true,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "If set to true operation is executed only once otherwise rotation is done each time.",
-			},
 			"last_update_time": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -111,7 +104,7 @@ func resourceCredentialsPasswordUpdateRead(ctx context.Context, data *schema.Res
 }
 
 func resourceCredentialsPasswordUpdateCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	if d.Get("last_update_time").(string) != "" && d.Get("once_only").(bool) {
+	if d.Get("last_update_time").(string) != "" {
 		log.Print("[DEBUG] Skipping password rotation")
 		return nil
 	}
