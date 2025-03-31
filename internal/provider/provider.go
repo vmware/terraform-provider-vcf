@@ -120,7 +120,7 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		if !isSetPassword || !isSetHost {
 			return nil, diag.Errorf("SDDC Manager username, password, and host must be provided.")
 		}
-		var sddcManagerClient = api_client.NewSddcManagerClient(sddcManagerUsername.(string), password.(string),
+		sddcManagerClient := api_client.NewSddcManagerClient(sddcManagerUsername.(string), password.(string),
 			hostName.(string), allowUnverifiedTLS.(bool))
 		err := sddcManagerClient.Connect()
 		if err != nil {
@@ -135,9 +135,9 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		if !isSetPassword || !isSetHost {
 			return nil, diag.Errorf("Installer username, password, and host must be provided.")
 		}
-		var cloudBuilderClient = api_client.NewInstallerClient(installerUsername.(string), password.(string),
+		installerClient := api_client.NewInstallerClient(installerUsername.(string), password.(string),
 			hostName.(string), allowUnverifiedTLS.(bool))
-		return cloudBuilderClient, nil
+		return installerClient, nil
 	}
 
 	return nil, diag.Errorf("Failed to configure the provider. Please check the provider configuration settings.")

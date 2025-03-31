@@ -45,7 +45,7 @@ func testAccCheckSddcResourceExists() resource.TestCheckFunc {
 			}
 
 			instanceId := rs.Primary.Attributes["id"]
-			client := testAccProvider.Meta().(*api_client.CloudBuilderClient)
+			client := testAccProvider.Meta().(*api_client.InstallerClient)
 			response, err := getLastBringUp(context.Background(), client)
 			if err != nil {
 				return fmt.Errorf("error occurred while retrieving all sddcs")

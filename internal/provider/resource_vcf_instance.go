@@ -203,7 +203,7 @@ func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, m
 }
 
 func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*api_client.CloudBuilderClient)
+	client := meta.(*api_client.InstallerClient)
 
 	bringUpInfo, err := getLastBringUp(ctx, client)
 	if err != nil {
@@ -237,7 +237,7 @@ func resourceVcfInstanceDelete(_ context.Context, _ *schema.ResourceData, _ inte
 	return nil
 }
 
-func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec, lastBringup *vcf.SddcTask) (string, diag.Diagnostics) {
+func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClient, sddcSpec *vcf.SddcSpec, lastBringup *vcf.SddcTask) (string, diag.Diagnostics) {
 	var bringUpId string
 	if lastBringup != nil && *lastBringup.Status != "COMPLETED_WITH_SUCCESS" {
 		bringUpId = *lastBringup.Id
@@ -282,7 +282,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 	return bringUpId, nil
 }
 
-func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.CloudBuilderClient) diag.Diagnostics {
+func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.InstallerClient) diag.Diagnostics {
 	for {
 		task, err := getBringUp(ctx, bringUpID, client)
 		if err != nil {
@@ -303,7 +303,7 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 	}
 }
 
-func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) (*vcf.SddcTask, error) {
+func getLastBringUp(ctx context.Context, client *api_client.InstallerClient) (*vcf.SddcTask, error) {
 	retrieveAllSddcsResp, err := client.ApiClient.GetBringupTasksWithResponse(ctx)
 	if err != nil {
 		return nil, err
@@ -320,7 +320,7 @@ func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) 
 	return nil, nil
 }
 
-func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec) diag.Diagnostics {
+func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient, sddcSpec *vcf.SddcSpec) diag.Diagnostics {
 	bringupParams := &vcf.ValidateBringupSpecParams{
 		Redo: utils.ToBoolPointer(true),
 	}
@@ -365,7 +365,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	return nil
 }
 
-func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcTask, error) {
+func getBringUp(ctx context.Context, bringupId string, client *api_client.InstallerClient) (*vcf.SddcTask, error) {
 	retrieveSddcResponse, err := client.ApiClient.GetBringupTaskByIDWithResponse(ctx, bringupId)
 	if err != nil {
 		return nil, err
@@ -378,7 +378,7 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudB
 	return sddcTask, nil
 }
 
-func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcManagerInfo, error) {
+func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.InstallerClient) (*vcf.SddcManagerInfo, error) {
 	getSddcManagerInfoResponse, err := client.ApiClient.GetSddcManagerInfoWithResponse(ctx, bringupId)
 	if err != nil {
 		return nil, err
