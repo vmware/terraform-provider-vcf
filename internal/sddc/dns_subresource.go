@@ -49,8 +49,17 @@ func GetDnsSpecFromSchema(rawData []interface{}) *installer.DnsSpec {
 	nameServer := data["name_server"].(string)
 	secondaryNameserver := data["secondary_name_server"].(string)
 
+	nameservers := make([]string, 0)
+	if len(nameServer) > 0 {
+		nameservers = append(nameservers, nameServer)
+	}
+
+	if len(secondaryNameserver) > 0 {
+		nameservers = append(nameservers, secondaryNameserver)
+	}
+
 	dnsSpecBinding := &installer.DnsSpec{
-		Nameservers: &[]string{nameServer, secondaryNameserver},
+		Nameservers: &nameservers,
 		Subdomain:   *domain,
 	}
 	return dnsSpecBinding

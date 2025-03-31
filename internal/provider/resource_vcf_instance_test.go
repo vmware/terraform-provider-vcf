@@ -86,8 +86,16 @@ func testAccCheckVcfSddcConfigBasic() string {
 		mtu = "1500"
 		network_type = "MANAGEMENT"
 		gateway = "10.0.0.250"
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 	  }
 	  network {
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 		subnet = "10.0.4.0/24"
 		include_ip_address_ranges {
 		  start_ip_address = "10.0.4.7"
@@ -106,6 +114,10 @@ func testAccCheckVcfSddcConfigBasic() string {
 		gateway = "10.0.4.253"
 	  }
 	  network {
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 		subnet = "10.0.8.0/24"
 		include_ip_address_ranges {
 		  start_ip_address = "10.0.8.3"
@@ -169,10 +181,14 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  value = "LOW"
 		}
 		dvs_name = "SDDC-Dswitch-Private"
-		vmnics = [
-		  "vmnic0",
-		  "vmnic1"
-		]
+		vmnic_mapping {
+			vmnic = "vmnic0"
+			uplink = "uplink1"
+		}
+		vmnic_mapping {
+			vmnic = "vmnic1"
+			uplink = "uplink2"
+		}
 		networks = [
 		  "MANAGEMENT",
 		  "VSAN",
@@ -180,6 +196,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 		]
 	  }
 	  cluster {
+		datacenter_name = "SDDC-Datacenter"
 		cluster_name = "SDDC-Cluster1"
 		cluster_evc_mode = ""
 		resource_pool {

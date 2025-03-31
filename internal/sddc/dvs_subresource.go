@@ -40,11 +40,24 @@ func GetDvsSchema() *schema.Schema {
 					},
 				},
 				"nioc": getNiocSchema(),
-				"vmnics": {
+				"vmnic_mapping": {
 					Type:        schema.TypeList,
-					Description: "Vmnics to be attached to the DVS",
+					Description: "Vmnic to uplink mappings",
 					Required:    true,
-					Elem:        &schema.Schema{Type: schema.TypeString},
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"vmnic": {
+								Description: "Vmnic identifier",
+								Type:        schema.TypeString,
+								Required:    true,
+							},
+							"uplink": {
+								Description: "Uplink identifier",
+								Type:        schema.TypeString,
+								Required:    true,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -91,8 +104,21 @@ func GetDvsSpecsFromSchema(rawData []interface{}) *[]installer.DvsSpec {
 			dvsSpec.Networks = &networks
 		}
 
-		// TODO - add NSX settings
+		if vmnicMappings, ok := dvsSpecRaw["vmnic_mapping"].([]interface{}); ok {
+			dvsSpec.VmnicsToUplinks = make([]installer.VmnicToUplink, len(vmnicMappings))
+			for i, vmnicMapping := range vmnicMappings {
+				dvsSpec.VmnicsToUplinks[i] = getVmnicToUplink(vmnicMapping.(map[string]interface{}))
+			}
+		}
+
 		dvsSpecs = append(dvsSpecs, dvsSpec)
 	}
 	return &dvsSpecs
+}
+
+func getVmnicToUplink(rawData map[string]interface{}) installer.VmnicToUplink {
+	return installer.VmnicToUplink{
+		Uplink: rawData["uplink"].(string),
+		Id:     rawData["vmnic"].(string),
+	}
 }

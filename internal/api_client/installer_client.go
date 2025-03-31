@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vmware/vcf-sdk-go/vcf"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 // InstallerClient model that represents properties to authenticate against VCF installer.
@@ -22,7 +22,7 @@ type InstallerClient struct {
 	password           string
 	vcfInstallerUrl    string
 	accessToken        *string
-	ApiClient          *vcf.ClientWithResponses
+	ApiClient          *installer.ClientWithResponses
 	allowUnverifiedTls bool
 	lastRefreshTime    time.Time
 	isRefreshing       bool
@@ -67,15 +67,15 @@ func (installerClient *InstallerClient) Connect() error {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: installerClient.allowUnverifiedTls},
 	}
 	httpClient := &http.Client{Transport: tr}
-	client, err := vcf.NewClientWithResponses(fmt.Sprintf("https://%s", installerClient.vcfInstallerUrl),
-		vcf.WithRequestEditorFn(installerClient.authEditor), vcf.WithHTTPClient(httpClient))
+	client, err := installer.NewClientWithResponses(fmt.Sprintf("https://%s", installerClient.vcfInstallerUrl),
+		installer.WithRequestEditorFn(installerClient.authEditor), installer.WithHTTPClient(httpClient))
 	if err != nil {
 		return err
 	}
 
 	installerClient.ApiClient = client
 
-	tokenCreationSpec := vcf.TokenCreationSpec{
+	tokenCreationSpec := installer.TokenCreationSpec{
 		Username: &installerClient.username,
 		Password: &installerClient.password,
 	}
@@ -85,7 +85,7 @@ func (installerClient *InstallerClient) Connect() error {
 		return err
 	}
 
-	tokenPair, vcfErr := GetResponseAs[vcf.TokenPair](res)
+	tokenPair, vcfErr := GetResponseAs[installer.TokenPair](res)
 	if vcfErr != nil {
 		LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
@@ -113,10 +113,10 @@ func (installerClient *InstallerClient) GetResourceIdAssociatedWithTask(ctx cont
 	return "", fmt.Errorf("task %q did not contain resources of type %q", taskId, resourceType)
 }
 
-func (installerClient *InstallerClient) getTask(ctx context.Context, taskId string) (*vcf.Task, error) {
+func (installerClient *InstallerClient) getTask(ctx context.Context, taskId string) (*installer.Task, error) {
 	apiClient := installerClient.ApiClient
 	res, err := apiClient.GetTaskWithResponse(ctx, taskId)
-	task, vcfErr := GetResponseAs[vcf.Task](res)
+	task, vcfErr := GetResponseAs[installer.Task](res)
 	if err != nil || vcfErr != nil {
 		log.Println("error = ", err)
 		return nil, err

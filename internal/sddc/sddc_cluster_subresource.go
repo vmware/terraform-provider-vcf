@@ -22,6 +22,11 @@ func GetSddcClusterSchema() *schema.Schema {
 		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
+				"datacenter_name": {
+					Type:        schema.TypeString,
+					Description: "vCenter Datacenter Name",
+					Required:    true,
+				},
 				"cluster_name": {
 					Type:        schema.TypeString,
 					Description: "vCenter Cluster Name",
@@ -144,12 +149,13 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *installer.SddcClusterS
 	}
 	data := rawData[0].(map[string]interface{})
 	clusterName := utils.ToStringPointer(data["cluster_name"])
+	datacenterName := utils.ToStringPointer(data["datacenter_name"])
 	clusterEvcMode := data["cluster_evc_mode"].(string)
 
 	clusterSpecBinding := &installer.SddcClusterSpec{
 		ClusterEvcMode: &clusterEvcMode,
 		ClusterName:    clusterName,
-		DatacenterName: nil, // TODO
+		DatacenterName: datacenterName,
 	}
 
 	if resourcePoolSpecs := getResourcePoolSpecsFromSchema(

@@ -168,37 +168,36 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 			sddcSpec.VcenterSpec = *spec
 		}
 	}
-	// TODO - wrap in SddcDatastoreSpec
-	//if vsanSpec, ok := data.GetOk("vsan"); ok {
-	//	sddcSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
-	//}
+	if vsanSpec, ok := data.GetOk("vsan"); ok {
+		sddcSpec.DatastoreSpec = &installer.SddcDatastoreSpec{}
+		sddcSpec.DatastoreSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+	}
 	return sddcSpec
 }
 
 func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	//client := meta.(*api_client.CloudBuilderClient)
-	//
-	//sddcSpec := buildSddcSpec(data)
-	//
-	//bringUpInfo, err := getLastBringUp(ctx, client)
-	//if err != nil {
-	//	tflog.Error(ctx, err.Error())
-	//	return diag.FromErr(err)
-	//}
-	//
+	client := meta.(*api_client.InstallerClient)
+
+	sddcSpec := buildSddcSpec(data)
+
+	bringUpInfo, err := getLastBringUp(ctx, client)
+	if err != nil {
+		tflog.Error(ctx, err.Error())
+		return diag.FromErr(err)
+	}
+
 	//bringUpID, diags := invokeBringupWorkflow(ctx, client, sddcSpec, bringUpInfo)
-	//if diags != nil {
-	//	return diags
-	//}
-	//
+	_, diags := invokeBringupWorkflow(ctx, client, sddcSpec, bringUpInfo)
+	if diags != nil {
+		return diags
+	}
+
 	//diags = waitForBringupProcess(ctx, bringUpID, client)
 	//if diags != nil {
 	//	return diags
 	//}
 	//
 	//return resourceVcfInstanceRead(ctx, data, meta)
-	client := meta.(*api_client.InstallerClient)
-	client.Connect()
 	return nil
 }
 
@@ -216,15 +215,15 @@ func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, met
 	_ = data.Set("status", bringUpInfo.Status)
 	_ = data.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
 
-	sddcManagerInfo, err := getSddcManagerInfo(ctx, *bringupId, client)
-	if err != nil {
-		tflog.Error(ctx, err.Error())
-		return diag.FromErr(err)
-	}
-
-	_ = data.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
-	_ = data.Set("sddc_manager_id", sddcManagerInfo.Id)
-	_ = data.Set("sddc_manager_version", sddcManagerInfo.Version)
+	//sddcManagerInfo, err := getSddcManagerInfo(ctx, *bringupId, client)
+	//if err != nil {
+	//	tflog.Error(ctx, err.Error())
+	//	return diag.FromErr(err)
+	//}
+	//
+	//_ = data.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
+	//_ = data.Set("sddc_manager_id", sddcManagerInfo.Id)
+	//_ = data.Set("sddc_manager_version", sddcManagerInfo.Version)
 
 	return nil
 }
@@ -237,7 +236,7 @@ func resourceVcfInstanceDelete(_ context.Context, _ *schema.ResourceData, _ inte
 	return nil
 }
 
-func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClient, sddcSpec *vcf.SddcSpec, lastBringup *vcf.SddcTask) (string, diag.Diagnostics) {
+func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClient, sddcSpec *installer.SddcSpec, lastBringup *installer.SddcTask) (string, diag.Diagnostics) {
 	var bringUpId string
 	if lastBringup != nil && *lastBringup.Status != "COMPLETED_WITH_SUCCESS" {
 		bringUpId = *lastBringup.Id
@@ -246,7 +245,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClie
 			return bringUpId, diags
 		}
 
-		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, *sddcSpec)
+		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, nil, *sddcSpec)
 
 		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res)
 		if err != nil {
@@ -263,7 +262,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClie
 			return bringUpId, diags
 		}
 
-		res, err := client.ApiClient.StartBringupWithResponse(ctx, *sddcSpec)
+		res, err := client.ApiClient.DeploySddcWithResponse(ctx, nil, *sddcSpec)
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
@@ -282,33 +281,33 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClie
 	return bringUpId, nil
 }
 
-func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.InstallerClient) diag.Diagnostics {
-	for {
-		task, err := getBringUp(ctx, bringUpID, client)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+//func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.InstallerClient) diag.Diagnostics {
+//	for {
+//		task, err := getBringUp(ctx, bringUpID, client)
+//		if err != nil {
+//			return diag.FromErr(err)
+//		}
+//
+//		if *task.Status == "IN_PROGRESS" {
+//			time.Sleep(20 * time.Second)
+//			continue
+//		}
+//
+//		if *task.Status == "COMPLETED_WITH_FAILURE" {
+//			err := fmt.Errorf("task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
+//			return diag.FromErr(err)
+//		}
+//
+//		return nil
+//	}
+//}
 
-		if *task.Status == "IN_PROGRESS" {
-			time.Sleep(20 * time.Second)
-			continue
-		}
-
-		if *task.Status == "COMPLETED_WITH_FAILURE" {
-			err := fmt.Errorf("task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
-			return diag.FromErr(err)
-		}
-
-		return nil
-	}
-}
-
-func getLastBringUp(ctx context.Context, client *api_client.InstallerClient) (*vcf.SddcTask, error) {
-	retrieveAllSddcsResp, err := client.ApiClient.GetBringupTasksWithResponse(ctx)
+func getLastBringUp(ctx context.Context, client *api_client.InstallerClient) (*installer.SddcTask, error) {
+	retrieveAllSddcsResp, err := client.ApiClient.GetSddcTasksWithResponse(ctx)
 	if err != nil {
 		return nil, err
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfSddcTask](retrieveAllSddcsResp)
+	page, vcfErr := api_client.GetResponseAs[installer.PageOfSddcTask](retrieveAllSddcsResp)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
@@ -320,11 +319,8 @@ func getLastBringUp(ctx context.Context, client *api_client.InstallerClient) (*v
 	return nil, nil
 }
 
-func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient, sddcSpec *vcf.SddcSpec) diag.Diagnostics {
-	bringupParams := &vcf.ValidateBringupSpecParams{
-		Redo: utils.ToBoolPointer(true),
-	}
-	validateSpecRes, err := client.ApiClient.ValidateBringupSpecWithResponse(ctx, bringupParams, *sddcSpec)
+func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient, sddcSpec *installer.SddcSpec) diag.Diagnostics {
+	validateSpecRes, err := client.ApiClient.ValidateSddcSpecWithResponse(ctx, *sddcSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -341,7 +337,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient
 		return validationutils.ConvertValidationResultToDiag(validationResult)
 	}
 	for {
-		getValidationResponse, err := client.ApiClient.GetBringupValidationWithResponse(ctx, *validationResult.Id)
+		getValidationResponse, err := client.ApiClient.GetSddcSpecValidationWithResponse(ctx, *validationResult.Id)
 		if err != nil {
 			return validationutils.ConvertVcfErrorToDiag(err)
 		}
@@ -366,7 +362,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient
 }
 
 func getBringUp(ctx context.Context, bringupId string, client *api_client.InstallerClient) (*vcf.SddcTask, error) {
-	retrieveSddcResponse, err := client.ApiClient.GetBringupTaskByIDWithResponse(ctx, bringupId)
+	retrieveSddcResponse, err := client.ApiClient.GetSddcTaskByIDWithResponse(ctx, bringupId)
 	if err != nil {
 		return nil, err
 	}
@@ -378,16 +374,16 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.Instal
 	return sddcTask, nil
 }
 
-func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.InstallerClient) (*vcf.SddcManagerInfo, error) {
-	getSddcManagerInfoResponse, err := client.ApiClient.GetSddcManagerInfoWithResponse(ctx, bringupId)
-	if err != nil {
-		return nil, err
-	}
-	info, vcfErr := api_client.GetResponseAs[vcf.SddcManagerInfo](getSddcManagerInfoResponse)
-	if vcfErr != nil {
-		api_client.LogError(vcfErr)
-		return nil, errors.New(*vcfErr.Message)
-	}
-
-	return info, nil
-}
+//func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.InstallerClient) (*vcf.SddcManagerInfo, error) {
+//	getSddcManagerInfoResponse, err := client.ApiClient.GetSddcManagerInfoWithResponse(ctx, bringupId)
+//	if err != nil {
+//		return nil, err
+//	}
+//	info, vcfErr := api_client.GetResponseAs[vcf.SddcManagerInfo](getSddcManagerInfoResponse)
+//	if vcfErr != nil {
+//		api_client.LogError(vcfErr)
+//		return nil, errors.New(*vcfErr.Message)
+//	}
+//
+//	return info, nil
+//}

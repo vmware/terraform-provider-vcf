@@ -137,6 +137,10 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		}
 		installerClient := api_client.NewInstallerClient(installerUsername.(string), password.(string),
 			hostName.(string), allowUnverifiedTLS.(bool))
+		err := installerClient.Connect()
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
 		return installerClient, nil
 	}
 

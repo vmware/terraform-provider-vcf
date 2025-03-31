@@ -127,6 +127,8 @@ func (sddcManagerClient *SddcManagerClient) getTask(ctx context.Context, taskId 
 	return task, nil
 }
 
+// TODO - make these generic so that they can be shared between the vcf and installer binding packages
+
 type Response interface {
 	GetBody() []byte
 	StatusCode() int

@@ -177,6 +177,10 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 			getAttributeValue(data.AllowUnverifiedTls.ValueBool(), constants.VcfTestAllowUnverifiedTls).(bool),
 		)
 
+		if err := client.Connect(); err != nil {
+			res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to connect to the VCF Installer", err.Error()))
+		}
+
 		frameworkProvider.InstallerClient = client
 		res.ResourceData = client
 	}

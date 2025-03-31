@@ -30,7 +30,7 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					Required:     true,
 					ValidateFunc: validation.IntBetween(0, 4096),
 				},
-				"active_up_links": {
+				"active_uplinks": {
 					Type:        schema.TypeList,
 					Description: "Active Uplinks for teaming policy, specify uplink1 for failover_explicit VSAN Teaming Policy",
 					Optional:    true,
@@ -140,7 +140,7 @@ func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []installer.SddcNet
 			TeamingPolicy: teamingPolicy,
 			VlanId:        vlanID,
 		}
-		if activeUpLinksData, ok := data["active_up_links"].([]interface{}); ok {
+		if activeUpLinksData, ok := data["active_uplinks"].([]interface{}); ok {
 			uplinks := utils.ToStringSlice(activeUpLinksData)
 			networkSpecsBinding.ActiveUplinks = &uplinks
 		}
