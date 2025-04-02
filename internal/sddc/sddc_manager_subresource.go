@@ -37,6 +37,12 @@ func GetSddcManagerSchema() *schema.Schema {
 					Required:     true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
+				"ssh_password": {
+					Type:         schema.TypeString,
+					Description:  "TODO",
+					Required:     true,
+					ValidateFunc: validation_utils.ValidatePassword,
+				},
 			},
 		},
 	}
@@ -52,6 +58,7 @@ func GetSddcManagerSpecFromSchema(rawData []interface{}) *installer.SddcManagerS
 	hostname := data["hostname"].(string)
 	localUserPassword := data["local_user_password"].(string)
 	rootUserPassword := data["root_user_password"].(string)
+	sshPassword := data["ssh_password"].(string)
 
 	sddcManagerSpec := &installer.SddcManagerSpec{
 		Hostname: hostname,
@@ -63,6 +70,10 @@ func GetSddcManagerSpecFromSchema(rawData []interface{}) *installer.SddcManagerS
 
 	if rootUserPassword != "" {
 		sddcManagerSpec.RootPassword = &rootUserPassword
+	}
+
+	if sshPassword != "" {
+		sddcManagerSpec.SshPassword = &sshPassword
 	}
 
 	return sddcManagerSpec

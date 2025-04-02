@@ -71,7 +71,9 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  ceip_enabled = false
 	  sddc_manager {
 		hostname = "sddc-manager"
+		ssh_password = "MnogoSl0jn@P@rol@!"
 		root_user_password = "MnogoSl0jn@P@rol@!"
+		local_user_password = "MnogoSl0jn@P@rol@!"
 	  }
 	  ntp_servers = [
 		"10.0.0.250"
@@ -218,7 +220,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  }
 	  vcenter {
 		vcenter_hostname = "vcenter-1"
-		root_vcenter_password = "TestTest1!"
+		root_vcenter_password = "MnogoSl0jn@P@rol@!"
 		vm_size = "tiny"
 	  }
 	  host {
