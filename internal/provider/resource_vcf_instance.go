@@ -68,13 +68,7 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 		"cluster": sddc.GetSddcClusterSchema(),
 		"dns":     sddc.GetDnsSchema(),
 		"dvs":     sddc.GetDvsSchema(),
-		"dv_switch_version": {
-			Type:         schema.TypeString,
-			Description:  "The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3, 8.0.0, 8.0.3",
-			Required:     true,
-			ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
-		},
-		"host": sddc.GetSddcHostSchema(),
+		"host":    sddc.GetSddcHostSchema(),
 		"management_pool_name": {
 			Type:        schema.TypeString,
 			Description: "A string identifying the network pool associated with the management domain",

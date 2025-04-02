@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/installer"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
@@ -117,6 +118,40 @@ func GetIpAddressPoolSpecFromSchema(object map[string]interface{}) (*vcf.IpAddre
 	return result, nil
 }
 
+func GetInstallerIpAddressPoolSpecFromSchema(object map[string]interface{}) (*installer.IpAddressPoolSpec, error) {
+	result := &installer.IpAddressPoolSpec{}
+	if object == nil {
+		return nil, fmt.Errorf("cannot convert to IpAddressPoolSpec, object is nil")
+	}
+	name := object["name"].(string)
+	if len(name) == 0 {
+		return nil, fmt.Errorf("cannot convert to IpAddressPoolSpec, name is required")
+	}
+	result.Name = name
+	if description, ok := object["description"]; ok && !validationutils.IsEmpty(description) {
+		result.Description = utils.ToStringPointer(description)
+	}
+	if ignoreUnavailableNsxCluster, ok := object["ignore_unavailable_nsx_cluster"]; ok && !validationutils.IsEmpty(ignoreUnavailableNsxCluster) {
+		result.IgnoreUnavailableNsxtCluster = utils.ToBoolPointer(ignoreUnavailableNsxCluster)
+	}
+	if subnetsRaw, ok := object["subnet"]; ok {
+		subnetsList := subnetsRaw.([]interface{})
+		if len(subnetsList) > 0 {
+			subnets := []installer.IpAddressPoolSubnetSpec{}
+			for _, subnetsListEntry := range subnetsList {
+				ipAddressPoolSubnetSpec, err := getInstallerIpAddressPoolSubnetSpecFromSchema(subnetsListEntry.(map[string]interface{}))
+				if err != nil {
+					return nil, err
+				}
+				subnets = append(subnets, *ipAddressPoolSubnetSpec)
+			}
+			result.Subnets = &subnets
+		}
+	}
+
+	return result, nil
+}
+
 func getIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*vcf.IpAddressPoolSubnetSpec, error) {
 	result := &vcf.IpAddressPoolSubnetSpec{}
 	if object == nil {
@@ -138,6 +173,40 @@ func getIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*vcf.I
 			result.IpAddressPoolRanges = []vcf.IpAddressPoolRangeSpec{}
 			for _, ipAddressPoolRangeEntry := range ipAddressPoolRangeList {
 				ipAddressPoolSubnetSpec := vcf.IpAddressPoolRangeSpec{}
+				ipAddressPoolRangeMap := ipAddressPoolRangeEntry.(map[string]interface{})
+				start := ipAddressPoolRangeMap["start"].(string)
+				end := ipAddressPoolRangeMap["end"].(string)
+				ipAddressPoolSubnetSpec.Start = start
+				ipAddressPoolSubnetSpec.End = end
+				result.IpAddressPoolRanges = append(result.IpAddressPoolRanges, ipAddressPoolSubnetSpec)
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func getInstallerIpAddressPoolSubnetSpecFromSchema(object map[string]interface{}) (*installer.IpAddressPoolSubnetSpec, error) {
+	result := &installer.IpAddressPoolSubnetSpec{}
+	if object == nil {
+		return nil, fmt.Errorf("cannot convert to IPAddressPoolSubnetSpec, object is nil")
+	}
+	cidr := object["cidr"].(string)
+	if len(cidr) == 0 {
+		return nil, fmt.Errorf("cannot convert to IPAddressPoolSubnetSpec, cidr is required")
+	}
+	gateway := object["gateway"].(string)
+	if len(gateway) == 0 {
+		return nil, fmt.Errorf("cannot convert to IPAddressPoolSubnetSpec, gateway is required")
+	}
+	result.Cidr = cidr
+	result.Gateway = gateway
+	if ipAddressPoolRangeRaw, ok := object["ip_address_pool_range"]; ok {
+		ipAddressPoolRangeList := ipAddressPoolRangeRaw.([]interface{})
+		if len(ipAddressPoolRangeList) > 0 {
+			result.IpAddressPoolRanges = []installer.IpAddressPoolRangeSpec{}
+			for _, ipAddressPoolRangeEntry := range ipAddressPoolRangeList {
+				ipAddressPoolSubnetSpec := installer.IpAddressPoolRangeSpec{}
 				ipAddressPoolRangeMap := ipAddressPoolRangeEntry.(map[string]interface{})
 				start := ipAddressPoolRangeMap["start"].(string)
 				end := ipAddressPoolRangeMap["end"].(string)
