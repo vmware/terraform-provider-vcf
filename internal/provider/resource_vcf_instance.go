@@ -309,7 +309,8 @@ func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient
 			api_client.LogError(vcfErr)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
-		if validationResult != nil && validationutils.HaveValidationChecksFinished(*vcfValidationResult.ValidationChecks) {
+		vcfValidationResult = api_client.ConvertToVcfValidation(*validationResult)
+		if validationutils.HaveValidationChecksFinished(*vcfValidationResult.ValidationChecks) {
 			break
 		}
 		time.Sleep(10 * time.Second)
