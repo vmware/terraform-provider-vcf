@@ -33,13 +33,13 @@ func GetSddcManagerSchema() *schema.Schema {
 				},
 				"root_user_password": {
 					Type:         schema.TypeString,
-					Description:  "TODO",
+					Description:  "The password for the root user",
 					Required:     true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
 				"ssh_password": {
 					Type:         schema.TypeString,
-					Description:  "TODO",
+					Description:  "The password for the vcf user (ssh connections only)",
 					Required:     true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
