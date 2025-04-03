@@ -22,8 +22,6 @@ import (
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
 
-var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3", "8.0.0", "8.0.3"}
-
 func ResourceVcfInstance() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceVcfInstanceCreate,
@@ -92,8 +90,12 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Description: "Skip ESXi thumbprint validation",
 			Required:    true,
 		},
-		"vcenter": sddc.GetVcenterSchema(),
-		"vsan":    sddc.GetVsanSchema(),
+		"vcenter":                     sddc.GetVcenterSchema(),
+		"vsan":                        sddc.GetVsanSchema(),
+		"automation":                  sddc.GetVcfAutomationSchema(),
+		"operations":                  sddc.GetVcfOperationsSchema(),
+		"operations_collector":        sddc.GetVcfOperationsCollectorSchema(),
+		"operations_fleet_management": sddc.GetVcfOperationsFleetManagementSchema(),
 	}
 }
 
@@ -104,6 +106,11 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 	}
 	if clusterSpec, ok := data.GetOk("cluster"); ok {
 		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
+	}
+	if vsanSpec, ok := data.GetOk("vsan"); ok {
+		// TODO support NFS & VMFS if necessary
+		sddcSpec.DatastoreSpec = &installer.SddcDatastoreSpec{}
+		sddcSpec.DatastoreSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
 	}
 	if dnsSpec, ok := data.GetOk("dns"); ok {
 		spec := sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
@@ -145,9 +152,25 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 			sddcSpec.VcenterSpec = *spec
 		}
 	}
-	if vsanSpec, ok := data.GetOk("vsan"); ok {
-		sddcSpec.DatastoreSpec = &installer.SddcDatastoreSpec{}
-		sddcSpec.DatastoreSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+	if automationSpec, ok := data.GetOk("automation"); ok {
+		if spec := sddc.GetVcfAutomationSpecFromSchema(automationSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfAutomationSpec = spec
+		}
+	}
+	if operationsSpec, ok := data.GetOk("operations"); ok {
+		if spec := sddc.GetVcfOperationsSpecFromSchema(operationsSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfOperationsSpec = spec
+		}
+	}
+	if operationsCollectorSpec, ok := data.GetOk("operations_collector"); ok {
+		if spec := sddc.GetVcfOperationsCollectorSpecFromSchema(operationsCollectorSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfOperationsCollectorSpec = spec
+		}
+	}
+	if operationsFleetManagementSpec, ok := data.GetOk("operations_fleet_management"); ok {
+		if spec := sddc.GetVcfOperationsFleetManagementSpecFromSchema(operationsFleetManagementSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfOperationsFleetManagementSpec = spec
+		}
 	}
 	return sddcSpec
 }
