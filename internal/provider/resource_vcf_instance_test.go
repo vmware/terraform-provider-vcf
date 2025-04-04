@@ -251,6 +251,27 @@ func testAccCheckVcfSddcConfigBasic() string {
 		}
 		hostname = "esxi-4"
 	  }
+	  automation {
+		hostname = "automation-appl"
+		admin_user_password = "MnogoSl0jn@P@rol@!"
+		internal_cluster_cidr = "198.18.0.0/15"
+		ip_pool = [
+			"10.0.0.80",
+			"10.0.0.81"
+		]
+	  }
+	  operations {
+		node {
+			hostname = "ops-node-1"
+			type = "master"
+		}
+	  }
+	  operations_collector {
+		hostname = "collector"
+	  }
+	  operations_fleet_management {
+		hostname = "fleet-mgmt"
+	  }
 	}`,
 		os.Getenv(constants.VcfTestHost1Pass),
 		os.Getenv(constants.VcfTestHost2Pass),
@@ -399,7 +420,7 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"credentials": []interface{}{
 					map[string]interface{}{
 						"username": "root",
-						"password": "TestTest123!",
+						"password": "MnogoSl0jn@P@rol@!",
 					},
 				},
 				"ip_address_private": []interface{}{
@@ -412,6 +433,43 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"hostname":    "esxi-1",
 				"vswitch":     "vSwitch0",
 				"association": "SDDC-Datacenter",
+			},
+		},
+		"automation": []interface{}{
+			map[string]interface{}{
+				"hostname":              "automation-1",
+				"internal_cluster_cidr": "240.0.0.0/15",
+				"ip_pool":               []interface{}{"10.0.0.81", "10.0.0.91"},
+				"admin_user_password":   "MnogoSl0jn@P@rol@!",
+				"node_prefix":           "automation-node",
+			},
+		},
+		"operations": []interface{}{
+			map[string]interface{}{
+				"admin_user_password": "MnogoSl0jn@P@rol@!",
+				"appliance_size":      "medium",
+				"load_balancer_fqdn":  "load-balancer-fqdn",
+				"node": []interface{}{
+					map[string]interface{}{
+						"hostname":           "operations-1",
+						"type":               "master",
+						"root_user_password": "MnogoSl0jn@P@rol@!",
+					},
+				},
+			},
+		},
+		"operations_fleet_management": []interface{}{
+			map[string]interface{}{
+				"hostname":            "operations-1",
+				"admin_user_password": "MnogoSl0jn@P@rol@!",
+				"root_user_password":  "MnogoSl0jn@P@rol@!",
+			},
+		},
+		"operations_collector": []interface{}{
+			map[string]interface{}{
+				"hostname":           "operations-1",
+				"appliance_size":     "medium",
+				"root_user_password": "MnogoSl0jn@P@rol@!",
 			},
 		},
 	}
@@ -468,6 +526,23 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, "TestTest1!", sddcSpec.VcenterSpec.RootVcenterPassword)
 	assert.Equal(t, utils.ToPointer[string]("tiny"), sddcSpec.VcenterSpec.VmSize)
 	assert.Equal(t, "esxi-1", (*sddcSpec.HostSpecs)[0].Hostname)
-	assert.Equal(t, "TestTest123!", (*sddcSpec.HostSpecs)[0].Credentials.Password)
+	assert.Equal(t, "MnogoSl0jn@P@rol@!", (*sddcSpec.HostSpecs)[0].Credentials.Password)
 	assert.Equal(t, utils.ToPointer[string]("root"), (*sddcSpec.HostSpecs)[0].Credentials.Username)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfAutomationSpec).AdminUserPassword)
+	assert.Equal(t, "automation-1", (*sddcSpec.VcfAutomationSpec).Hostname)
+	assert.Equal(t, utils.ToPointer[string]("automation-node"), (*sddcSpec.VcfAutomationSpec).NodePrefix)
+	assert.Equal(t, "10.0.0.81", (*sddcSpec.VcfAutomationSpec.IpPool)[0])
+	assert.Equal(t, "10.0.0.91", (*sddcSpec.VcfAutomationSpec.IpPool)[1])
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsSpec).AdminUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("medium"), (*sddcSpec.VcfOperationsSpec).ApplianceSize)
+	assert.Equal(t, utils.ToPointer[string]("load-balancer-fqdn"), (*sddcSpec.VcfOperationsSpec).LoadBalancerFqdn)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.VcfOperationsSpec.Nodes[0].RootUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("master"), sddcSpec.VcfOperationsSpec.Nodes[0].Type)
+	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsSpec.Nodes[0].Hostname)
+	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsCollectorSpec.Hostname)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsCollectorSpec).RootUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("medium"), (*sddcSpec.VcfOperationsCollectorSpec).ApplianceSize)
+	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsFleetManagementSpec.Hostname)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).RootUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).AdminUserPassword)
 }

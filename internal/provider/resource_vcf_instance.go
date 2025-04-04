@@ -282,6 +282,7 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 
 		if *task.Status == "COMPLETED_WITH_FAILURE" {
 			err := fmt.Errorf("task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
+			logFailedTask(ctx, task)
 			return diag.FromErr(err)
 		}
 
@@ -359,4 +360,14 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.Instal
 		return nil, errors.New(*vcfErr.Message)
 	}
 	return sddcTask, nil
+}
+
+func logFailedTask(ctx context.Context, task *installer.SddcTask) {
+	tflog.Error(ctx, fmt.Sprintf("task with ID = %s, Name: %q is in state %s", *task.Id, *task.Name, *task.Status))
+
+	if task.SddcSubTasks != nil {
+		for _, subtask := range *task.SddcSubTasks {
+			tflog.Error(ctx, fmt.Sprintf("subtask %q is in state %s", *subtask.Name, *subtask.Status))
+		}
+	}
 }
