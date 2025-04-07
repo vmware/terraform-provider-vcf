@@ -251,27 +251,6 @@ func testAccCheckVcfSddcConfigBasic() string {
 		}
 		hostname = "esxi-4"
 	  }
-	  automation {
-		hostname = "automation-appl"
-		admin_user_password = "MnogoSl0jn@P@rol@!"
-		internal_cluster_cidr = "198.18.0.0/15"
-		ip_pool = [
-			"10.0.0.80",
-			"10.0.0.81"
-		]
-	  }
-	  operations {
-		node {
-			hostname = "ops-node-1"
-			type = "master"
-		}
-	  }
-	  operations_collector {
-		hostname = "collector"
-	  }
-	  operations_fleet_management {
-		hostname = "fleet-mgmt"
-	  }
 	}`,
 		os.Getenv(constants.VcfTestHost1Pass),
 		os.Getenv(constants.VcfTestHost2Pass),
