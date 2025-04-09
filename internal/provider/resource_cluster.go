@@ -264,7 +264,7 @@ func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta in
 	}
 	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterResult)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -319,7 +319,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if validationUtils.HasValidationFailed(validationResult) {
@@ -332,7 +332,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
@@ -360,7 +360,7 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec vcf.
 
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -393,7 +393,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -432,7 +432,7 @@ func getDomain(name string, client *vcf.ClientWithResponses) (*vcf.Domain, error
 	}
 	domainsList, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](ok)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, context.Background())
 		return nil, errors.New(*vcfErr.Message)
 	}
 

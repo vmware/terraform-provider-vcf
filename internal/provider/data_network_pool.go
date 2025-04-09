@@ -116,7 +116,7 @@ func getNetworkPoolByName(ctx context.Context, apiClient *vcf.ClientWithResponse
 	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](networkPoolsRes)
 
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

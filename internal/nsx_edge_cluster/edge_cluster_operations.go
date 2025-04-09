@@ -315,7 +315,7 @@ func getComputeCluster(name string, client *vcf.ClientWithResponses) (*vcf.Clust
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](ok)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, context.Background())
 		return nil, errors.New(*vcfErr.Message)
 	}
 

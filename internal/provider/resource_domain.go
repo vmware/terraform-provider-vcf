@@ -127,7 +127,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if validationUtils.HasValidationFailed(validationResult) {
@@ -140,7 +140,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
@@ -191,7 +191,7 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		}
 		task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
@@ -297,7 +297,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	_, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -307,7 +307,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {

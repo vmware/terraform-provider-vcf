@@ -67,7 +67,7 @@ func ReadCredentials(ctx context.Context, data *schema.ResourceData, apiClient *
 	}
 	pageOfCredential, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 
@@ -203,7 +203,7 @@ func executeCredentialsUpdate(ctx context.Context, updateSpec *vcf.CredentialsUp
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return errors.New(*vcfErr.Message)
 	}
 	return api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask()

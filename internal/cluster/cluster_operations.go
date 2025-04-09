@@ -148,7 +148,7 @@ func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -394,7 +394,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	}
 	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 
@@ -426,7 +426,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	allDomains := *page.Elements
@@ -459,7 +459,7 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostRefere
 		}
 		hostObj, vcfErr := api_client.GetResponseAs[vcf.Host](res)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return nil, errors.New(*vcfErr.Message)
 		}
 		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(*hostObj))

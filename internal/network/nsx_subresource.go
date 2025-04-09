@@ -157,7 +157,7 @@ func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef vcf.NsxTClusterRef
 	}
 	nsxtCluster, vcfErr := api_client.GetResponseAs[vcf.NsxTCluster](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	if nsxtCluster.Nodes != nil {

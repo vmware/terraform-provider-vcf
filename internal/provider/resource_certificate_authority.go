@@ -169,7 +169,7 @@ func resourceCertificateAuthorityRead(ctx context.Context, data *schema.Resource
 
 	certificateAuthority, vcfErr := api_client.GetResponseAs[vcf.CertificateAuthority](authorityResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 

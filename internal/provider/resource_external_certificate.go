@@ -122,7 +122,7 @@ func resourceResourceExternalCertificateCreate(ctx context.Context, data *schema
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](responseAcc)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {

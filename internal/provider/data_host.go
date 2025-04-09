@@ -434,7 +434,7 @@ func getHostByFqdn(ctx context.Context, apiClient *vcf.ClientWithResponses, fqdn
 
 	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfHost](hostsResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

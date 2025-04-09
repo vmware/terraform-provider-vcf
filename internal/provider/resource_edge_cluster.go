@@ -174,7 +174,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -190,7 +190,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -233,7 +233,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 
 	resp, vcfErr := api_client.GetResponseAs[vcf.EdgeCluster](edgeClusterOk)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -275,7 +275,7 @@ func resourceNsxEdgeClusterUpdate(ctx context.Context, data *schema.ResourceData
 		}
 		task, vcfErr := api_client.GetResponseAs[vcf.Task](taskRes)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
@@ -295,7 +295,7 @@ func validateClusterCreationSpec(client *vcf.ClientWithResponses, ctx context.Co
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -310,7 +310,7 @@ func validateClusterCreationSpec(client *vcf.ClientWithResponses, ctx context.Co
 		}
 		validationStatus, vcfErr := api_client.GetResponseAs[vcf.Validation](getValidationResponse)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 

@@ -87,7 +87,7 @@ func (installerClient *InstallerClient) Connect() error {
 
 	tokenPair, vcfErr := GetResponseAs[installer.TokenPair](res)
 	if vcfErr != nil {
-		LogError(vcfErr)
+		LogError(vcfErr, context.Background())
 		return errors.New(*vcfErr.Message)
 	}
 	installerClient.accessToken = tokenPair.AccessToken

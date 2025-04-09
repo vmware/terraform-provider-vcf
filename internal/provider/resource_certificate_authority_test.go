@@ -96,7 +96,7 @@ func testVerifyVcfCertificateAuthority(caType string) error {
 	}
 	if getCertificateAuthorityResponse.StatusCode() != 200 {
 		vcfError := api_client.GetError(getCertificateAuthorityResponse.Body)
-		api_client.LogError(vcfError)
+		api_client.LogError(vcfError, context.Background())
 		return errors.New(*vcfError.Message)
 	}
 	if *getCertificateAuthorityResponse.JSON200.Id == caType {

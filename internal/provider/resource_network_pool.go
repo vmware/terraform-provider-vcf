@@ -198,7 +198,7 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 	}
 	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](created)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return
 	}
 
@@ -215,7 +215,7 @@ func (r *ResourceNetworkPool) Read(ctx context.Context, req resource.ReadRequest
 	networkPoolPayload, _ := r.client.GetNetworkPoolByIDWithResponse(ctx, data.Id.ValueString())
 	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return
 	}
 
@@ -234,7 +234,7 @@ func (r *ResourceNetworkPool) Delete(ctx context.Context, req resource.DeleteReq
 	networkPoolPayload, _ := r.client.DeleteNetworkPoolWithResponse(ctx, data.Id.ValueString(), nil)
 	_, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return
 	}
 

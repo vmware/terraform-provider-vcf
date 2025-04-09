@@ -67,7 +67,7 @@ func ReadAndSetClustersDataToDomainResource(domainClusterRefs []vcf.ClusterRefer
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](clustersResult)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return errors.New(*vcfErr.Message)
 	}
 	domainClusterData := data.Get("cluster")
@@ -105,7 +105,7 @@ func SetBasicDomainAttributes(ctx context.Context, domainId string, data *schema
 	}
 	domain, vcfErr := api_client.GetResponseAs[vcf.Domain](domainRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 
@@ -204,7 +204,7 @@ func setClustersDataToDomainDataSource(domainClusterRefs []vcf.ClusterReference,
 		}
 		clusterRef, vcfErr := api_client.GetResponseAs[vcf.Cluster](res)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return errors.New(*vcfErr.Message)
 		}
 		flattenedCluster, err := cluster.FlattenCluster(ctx, clusterRef, apiClient)

@@ -239,7 +239,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClie
 		}
 		sddcTask, vcfErr := api_client.GetResponseAs[installer.SddcTask](res)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 		} else {
 			bringUpId = *sddcTask.Id
 		}
@@ -258,7 +258,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClie
 			return "", diag.FromErr(err)
 		}
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 		} else {
 			bringUpId = *sddcTask.Id
 		}
@@ -297,7 +297,7 @@ func getLastBringUp(ctx context.Context, client *api_client.InstallerClient) (*i
 	}
 	page, vcfErr := api_client.GetResponseAs[installer.PageOfSddcTask](retrieveAllSddcsResp)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	if page != nil && len(*page.Elements) > 0 {
@@ -314,7 +314,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[installer.Validation](validateSpecRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -330,7 +330,7 @@ func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient
 		}
 		validationResult, vcfErr = api_client.GetResponseAs[installer.Validation](getValidationResponse)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 		vcfValidationResult = api_client.ConvertToVcfValidation(*validationResult)
@@ -356,7 +356,7 @@ func getBringUp(ctx context.Context, bringupId string, client *api_client.Instal
 	}
 	sddcTask, vcfErr := api_client.GetResponseAs[installer.SddcTask](retrieveSddcResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	return sddcTask, nil
