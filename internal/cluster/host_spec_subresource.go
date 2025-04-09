@@ -44,14 +44,6 @@ func HostSpecSchema() *schema.Resource {
 				Description:  "IPv4 address of the ESXi host",
 				ValidateFunc: validationutils.ValidateIPv4AddressSchema,
 			},
-			"license_key": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
-				Description: "License key for an ESXi host in the free pool. This is required except in cases where the " +
-					"ESXi host has already been licensed outside of the VMware Cloud Foundation system",
-				ValidateFunc: validation.NoZeroValues,
-			},
 			"username": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -118,9 +110,6 @@ func TryConvertToHostSpec(object map[string]interface{}) (*vcf.HostSpec, error) 
 	}
 	if ipAddress, ok := object["ip_address"]; ok && !validationutils.IsEmpty(ipAddress) {
 		result.IpAddress = utils.ToStringPointer(ipAddress)
-	}
-	if licenseKey, ok := object["license_key"]; ok && !validationutils.IsEmpty(licenseKey) {
-		result.LicenseKey = utils.ToStringPointer(licenseKey)
 	}
 	if userName, ok := object["username"]; ok && !validationutils.IsEmpty(userName) {
 		result.Username = utils.ToStringPointer(userName)

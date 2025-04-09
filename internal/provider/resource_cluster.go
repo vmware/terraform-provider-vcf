@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
@@ -310,7 +311,8 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 		ComputeSpec: vcf.ComputeSpec{
 			ClusterSpecs: []vcf.ClusterSpec{clusterSpec},
 		},
-		DomainId: domainId,
+		DomainId:                 domainId,
+		DeployWithoutLicenseKeys: utils.ToPointer[bool](true),
 	}
 
 	validateResponse, err := apiClient.ValidateClusterCreationSpecWithResponse(ctx, nil, clusterCreationSpec)

@@ -65,7 +65,8 @@ func SetExpansionOrContractionSpec(updateSpec *vcf.ClusterUpdateSpec,
 			hostSpecs = append(hostSpecs, *hostSpec)
 		}
 		clusterExpansionSpec := &vcf.ClusterExpansionSpec{
-			HostSpecs: hostSpecs,
+			DeployWithoutLicenseKeys: utils.ToPointer[bool](true),
+			HostSpecs:                hostSpecs,
 		}
 		updateSpec.ClusterExpansionSpec = clusterExpansionSpec
 		return updateSpec, nil
@@ -127,6 +128,7 @@ func SetStretchOrUnstretchSpec(updateSpec *vcf.ClusterUpdateSpec, data *schema.R
 		var secondaryAzOverlayVlanId int32 = 0
 
 		stretchSpec := &vcf.ClusterStretchSpec{
+			DeployWithoutLicenseKeys:          utils.ToPointer[bool](true),
 			HostSpecs:                         hostSpecs,
 			SecondaryAzOverlayVlanId:          &secondaryAzOverlayVlanId,
 			WitnessSpec:                       witnessSpec,

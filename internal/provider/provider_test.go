@@ -67,16 +67,6 @@ func muxedFactories() map[string]func() (tfprotov6.ProviderServer, error) {
 func testAccPreCheck(t *testing.T) {
 	testAccSDDCManagerOrCloudBuilderPreCheck(t)
 	testAccHostsPreCheck(t, 8)
-
-	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestEsxiLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestEsxiLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestVsanLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestVsanLicenseKey + " must be set for acceptance tests")
-	}
 	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
 		t.Fatal(constants.VcfTestDomainDataSourceId + " must be set for acceptance tests")
 	}
