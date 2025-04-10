@@ -102,7 +102,7 @@ func ResourceEdgeCluster() *schema.Resource {
 			},
 			"high_availability": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Description:  "One among: ACTIVE_ACTIVE, ACTIVE_STANDBY",
 				ValidateFunc: validation.StringInSlice([]string{"ACTIVE_ACTIVE", "ACTIVE_STANDBY"}, false),
 			},
@@ -195,7 +195,7 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	}
 
 	for _, cluster := range *page.Elements {
-		if cluster.Name == data.Get("name") {
+		if cluster.Name != nil && *cluster.Name == data.Get("name") {
 			data.SetId(*cluster.Id)
 			tflog.Info(ctx, "Edge cluster created successfully.")
 			return nil

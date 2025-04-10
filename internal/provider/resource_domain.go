@@ -83,6 +83,27 @@ func ResourceDomain() *schema.Resource {
 				MinItems:    1,
 				Elem:        clusterSubresourceSchema(),
 			},
+			"sso": {
+				Type:        schema.TypeList,
+				Required:    true,
+				Description: "SSO configuration for the workload domain",
+				MinItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"domain_name": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Name of the SSO domain",
+						},
+						"domain_password": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Sensitive:   true,
+							Description: "Password of the SSO domain",
+						},
+					},
+				},
+			},
 			"status": {
 				Type:        schema.TypeString,
 				Computed:    true,

@@ -58,16 +58,12 @@ func getEdgeClusterConfigFullInitial() string {
 		edgeNode1Name,
 		"10.0.0.52/24",
 		"192.168.52.12/24",
-		"192.168.52.13/24",
-		"192.168.18.2/24",
-		"192.168.19.2/24")
+		"192.168.52.13/24")
 	edgeNode2 := getEdgeNodeConfigFull(
 		edgeNode2Name,
 		"10.0.0.53/24",
 		"192.168.52.14/24",
-		"192.168.52.15/24",
-		"192.168.18.3/24",
-		"192.168.19.3/24")
+		"192.168.52.15/24")
 
 	return fmt.Sprintf(`
 		resource "vcf_edge_cluster" "testCluster1" {
@@ -77,7 +73,6 @@ func getEdgeClusterConfigFullInitial() string {
 			audit_password = %q
 			form_factor = "MEDIUM"
 			profile_type = "DEFAULT"
-			high_availability = "ACTIVE_ACTIVE"
 			mtu = 8940
 			%s
 			%s
@@ -96,23 +91,17 @@ func getEdgeClusterConfigFullExpansion() string {
 		edgeNode1Name,
 		"10.0.0.52/24",
 		"192.168.52.12/24",
-		"192.168.52.13/24",
-		"192.168.18.2/24",
-		"192.168.19.2/24")
+		"192.168.52.13/24")
 	edgeNode2 := getEdgeNodeConfigFull(
 		edgeNode2Name,
 		"10.0.0.53/24",
 		"192.168.52.14/24",
-		"192.168.52.15/24",
-		"192.168.18.3/24",
-		"192.168.19.3/24")
+		"192.168.52.15/24")
 	edgeNode3 := getEdgeNodeConfigFull(
 		edgeNode3Name,
 		"10.0.0.54/24",
 		"192.168.52.16/24",
-		"192.168.52.17/24",
-		"192.168.18.6/24",
-		"192.168.19.6/24")
+		"192.168.52.17/24")
 
 	return fmt.Sprintf(`
 		resource "vcf_edge_cluster" "testCluster1" {
@@ -122,7 +111,6 @@ func getEdgeClusterConfigFullExpansion() string {
 			audit_password = %q
 			form_factor = "MEDIUM"
 			profile_type = "DEFAULT"
-			high_availability = "ACTIVE_ACTIVE"
 			mtu = 8940
 			%s
 			%s
@@ -138,7 +126,7 @@ func getEdgeClusterConfigFullExpansion() string {
 		edgeNode3)
 }
 
-func getEdgeNodeConfigFull(name, ip, tep1, tep2, uplink1, uplink2 string) string {
+func getEdgeNodeConfigFull(name, ip, tep1, tep2 string) string {
 	return fmt.Sprintf(`
 		edge_node {
 			name = %q
@@ -153,26 +141,6 @@ func getEdgeNodeConfigFull(name, ip, tep1, tep2, uplink1, uplink2 string) string
 			tep2_ip = %q
 			tep_vlan = 1252
 			inter_rack_cluster = false
-
-			uplink {
-				vlan = 2083
-				interface_ip = %q
-				bgp_peer {
-					ip = "192.168.18.10/24"
-					password = "VMware1!"
-					asn = "65001"
-				}
-			}
-
-			uplink {
-				vlan = 2084
-				interface_ip = %q
-				bgp_peer {
-					ip = "192.168.19.10/24"
-					password = "VMware1!"
-					asn = "65001"
-				}
-			}
 		}
 		`,
 		name,
@@ -182,9 +150,7 @@ func getEdgeNodeConfigFull(name, ip, tep1, tep2, uplink1, uplink2 string) string
 		os.Getenv(constants.VcfTestEdgeNodeAuditPass),
 		ip,
 		tep1,
-		tep2,
-		uplink1,
-		uplink2)
+		tep2)
 }
 
 func getEdgeClusterChecks(numNodes int) []resource.TestCheckFunc {
@@ -194,12 +160,10 @@ func getEdgeClusterChecks(numNodes int) []resource.TestCheckFunc {
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "root_password"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "admin_password"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "audit_password"),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "tier0_name"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "tier1_name"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "form_factor"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "profile_type"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "routing_type"),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "high_availability"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "mtu"),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", "asn"),
 	}
@@ -225,17 +189,5 @@ func getEdgeNodeChecks(i int) []resource.TestCheckFunc {
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.tep2_ip", i)),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.tep_vlan", i)),
 		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.inter_rack_cluster", i)),
-
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.0.interface_ip", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.0.vlan", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.0.bgp_peer.0.ip", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.0.bgp_peer.0.password", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.0.bgp_peer.0.asn", i)),
-
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.1.interface_ip", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.1.vlan", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.1.bgp_peer.0.ip", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.1.bgp_peer.0.password", i)),
-		resource.TestCheckResourceAttrSet("vcf_edge_cluster.testCluster1", fmt.Sprintf("edge_node.%d.uplink.1.bgp_peer.0.asn", i)),
 	}
 }

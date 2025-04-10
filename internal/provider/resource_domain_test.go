@@ -368,40 +368,44 @@ func testAccVcfDomainConfig(commissionHostConfig,
 
 	resource "vcf_domain" "domain1" {
 		name                    = "sfo-w01-vc01"
+		sso {
+			domain_name = "acc-test.vrack.vsphere.local"
+			domain_password = "S@mpleL0ngP@ss123!"
+		}
 		vcenter_configuration {
 			name            = "test-vcenter"
 			datacenter_name = "test-datacenter"
-			root_password   = "S@mpleP@ss123!"
+			root_password   = "S@mpleL0ngP@ss123!"
 			vm_size         = "small"
 			storage_size    = "lstorage"
-			ip_address      = "10.0.0.43"
+			ip_address      = "10.0.0.143"
 			subnet_mask     = "255.255.255.0"
 			gateway         = "10.0.0.250"
-			fqdn            = "sfo-w01-vc01.sfo.rainpole.io"
+			fqdn            = "sfo-w01-vc01.vrack.vsphere.local"
 		}
 		nsx_configuration {
-			vip        					= "10.0.0.66"
-			vip_fqdn   					= "sfo-w01-nsx01.sfo.rainpole.io"
-			nsx_manager_admin_password	= "Nqkva_parola1"
+			vip        					= "10.0.0.166"
+			vip_fqdn   					= "sfo-w01-nsx01.vrack.vsphere.local"
+			nsx_manager_admin_password	= "S@mpleL0ngP@ss123!"
 			form_factor                 = "small"
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01a"
-				ip_address  = "10.0.0.62"
-				fqdn    = "sfo-w01-nsx01a.sfo.rainpole.io"
+				ip_address  = "10.0.0.162"
+				fqdn    = "sfo-w01-nsx01a.vrack.vsphere.local"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01b"
-				ip_address  = "10.0.0.63"
-				fqdn    = "sfo-w01-nsx01b.sfo.rainpole.io"
+				ip_address  = "10.0.0.163"
+				fqdn    = "sfo-w01-nsx01b.vrack.vsphere.local"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01c"
-				ip_address  = "10.0.0.64"
-				fqdn    = "sfo-w01-nsx01c.sfo.rainpole.io"
+				ip_address  = "10.0.0.164"
+				fqdn    = "sfo-w01-nsx01c.vrack.vsphere.local"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
@@ -418,6 +422,7 @@ func testAccVcfClusterInDomainConfig(clusterName, hostConfig string) string {
 		cluster {
 			name = %q
 			high_availability_enabled = true
+			cluster_image_id = %q
 			// hosts config
 			%s
 			vds {
@@ -440,7 +445,7 @@ func testAccVcfClusterInDomainConfig(clusterName, hostConfig string) string {
 				failures_to_tolerate = 1
 			}
 			geneve_vlan_id = 3
-		}`, clusterName, hostConfig, clusterName, clusterName, clusterName,
+		}`, clusterName, os.Getenv(constants.VcfTestClusterImageId), hostConfig, clusterName, clusterName, clusterName,
 		clusterName, clusterName)
 }
 
@@ -505,7 +510,7 @@ func domainImportStateCheck(states []*terraform.InstanceState) error {
 		if state.Attributes["name"] != "sfo-w01-vc01" {
 			return fmt.Errorf("domain has wrong name attribute set")
 		}
-		if state.Attributes["vcenter_configuration.0.fqdn"] != "sfo-w01-vc01.sfo.rainpole.io" {
+		if state.Attributes["vcenter_configuration.0.fqdn"] != "sfo-w01-vc01.vrack.vsphere.local" {
 			return fmt.Errorf("domain has wrong name attribute set")
 		}
 		if state.Attributes["cluster.0.name"] != "sfo-w01-cl01" {
