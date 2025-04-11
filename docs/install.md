@@ -27,7 +27,7 @@ Providers listed on the Terraform Registry can be automatically downloaded when 
 terraform {
   required_providers {
     vcf = {
-      source  = "vmware/vcf"
+      source = "vmware/vcf"
     }
   }
   required_version = ">= 1.4.0"
