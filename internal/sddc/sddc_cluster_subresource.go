@@ -5,10 +5,15 @@
 package sddc
 
 import (
+	"context"
+	"errors"
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -27,6 +32,11 @@ func GetSddcClusterSchema() *schema.Schema {
 					Type:        schema.TypeString,
 					Description: "vCenter Cluster Name",
 					Required:    true,
+				},
+				"cluster_id": {
+					Type:        schema.TypeString,
+					Description: "The ID of the cluster",
+					Computed:    true,
 				},
 				"cluster_evc_mode": {
 					Type:        schema.TypeString,
@@ -159,7 +169,7 @@ func getResourcePoolSchema() *schema.Schema {
 	}
 }
 
-func GetSddcClusterSpecFromSchema(rawData []interface{}) *vcf.SddcClusterSpec {
+func GetSddcClusterSpecFromSchema(rawData []interface{}, apiClient *vcf.ClientWithResponses) *vcf.SddcClusterSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -171,6 +181,16 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *vcf.SddcClusterSpec {
 	var vmFolder map[string]string
 	if !validation_utils.IsEmpty(data["vm_folder"]) {
 		vmFolder = data["vm_folder"].(map[string]string)
+	}
+
+	var clusterID *string
+	if clusterName != nil && *clusterName != "" {
+		cluster, err := getClusterByName(context.Background(), apiClient, *clusterName)
+		if err != nil {
+			fmt.Printf("failed to fetch cluster_id for cluster_name '%s': %v\n", *clusterName, err)
+			return &vcf.SddcClusterSpec{}
+		}
+		clusterID = utils.ToStringPointer(cluster.Id)
 	}
 
 	clusterSpecBinding := &vcf.SddcClusterSpec{
@@ -186,7 +206,36 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *vcf.SddcClusterSpec {
 		clusterSpecBinding.ResourcePoolSpecs = &resourcePoolSpecs
 	}
 
+	if clusterID != nil {
+		data["cluster_id"] = *clusterID
+	}
+
 	return clusterSpecBinding
+}
+
+func getClusterByName(ctx context.Context, apiClient *vcf.ClientWithResponses, name string) (*vcf.Cluster, error) {
+	clustersRes, err := apiClient.GetClusterWithResponse(ctx, "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](clustersRes)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+
+	if resp == nil || resp.Elements == nil {
+		return nil, errors.New("cluster not found")
+	}
+
+	for _, cluster := range *resp.Elements {
+		if cluster.Name != nil && *cluster.Name == name {
+			return &cluster, nil
+		}
+	}
+
+	return nil, errors.New("cluster not found")
 }
 
 func getResourcePoolSpecsFromSchema(rawData []interface{}) []vcf.ResourcePoolSpec {
