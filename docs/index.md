@@ -36,7 +36,7 @@ individual build numbers.
 terraform {
   required_providers {
     vcf = {
-      source = "vmware/vcf"
+      source  = "vmware/vcf"
       version = "x.y.z"
     }
   }
