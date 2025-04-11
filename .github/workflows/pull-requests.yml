@@ -12,12 +12,13 @@ on:
       - edited
       - ready_for_review
 
+permissions:
+  contents: read
+
 jobs:
-  labeler:
-    name: Labeler
+  label-pull-requests:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       pull-requests: write
     steps:
       - name: Apply Labels
