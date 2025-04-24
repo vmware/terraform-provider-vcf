@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
@@ -23,6 +24,7 @@ type SddcManagerClient struct {
 	username           string
 	password           string
 	sddcManagerUrl     string
+	providerVersion    string
 	accessToken        *string
 	ApiClient          *vcf.ClientWithResponses
 	allowUnverifiedTls bool
@@ -31,11 +33,12 @@ type SddcManagerClient struct {
 }
 
 // NewSddcManagerClient constructs new Client instance with vcf credentials.
-func NewSddcManagerClient(username, password, url string, allowUnverifiedTls bool) *SddcManagerClient {
+func NewSddcManagerClient(username, password, url, providerVersion string, allowUnverifiedTls bool) *SddcManagerClient {
 	return &SddcManagerClient{
 		username:           username,
 		password:           password,
 		sddcManagerUrl:     url,
+		providerVersion:    providerVersion,
 		allowUnverifiedTls: allowUnverifiedTls,
 		lastRefreshTime:    time.Now(),
 		isRefreshing:       false,
@@ -54,10 +57,11 @@ func (sddcManagerClient *SddcManagerClient) authEditor(ctx context.Context, req 
 	}
 
 	if sddcManagerClient.accessToken != nil {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *sddcManagerClient.accessToken))
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *sddcManagerClient.accessToken))
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", constants.ProviderName, sddcManagerClient.providerVersion))
+	req.Header.Set("Content-Type", "application/json")
 
 	return nil
 }

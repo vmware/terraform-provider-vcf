@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/vmware/terraform-provider-vcf/internal/version"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -121,7 +122,7 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 			return nil, diag.Errorf("SDDC Manager username, password, and host must be provided.")
 		}
 		var sddcManagerClient = api_client.NewSddcManagerClient(sddcManagerUsername.(string), password.(string),
-			hostName.(string), allowUnverifiedTLS.(bool))
+			hostName.(string), version.ProviderVersion, allowUnverifiedTLS.(bool))
 		err := sddcManagerClient.Connect()
 		if err != nil {
 			return nil, diag.FromErr(err)
@@ -136,7 +137,7 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 			return nil, diag.Errorf("Cloud Builder username, password, and host must be provided.")
 		}
 		var cloudBuilderClient = api_client.NewCloudBuilderClient(cbUsername.(string), password.(string),
-			hostName.(string), allowUnverifiedTLS.(bool))
+			hostName.(string), version.ProviderVersion, allowUnverifiedTLS.(bool))
 		return cloudBuilderClient, nil
 	}
 
