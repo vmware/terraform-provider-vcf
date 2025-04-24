@@ -55,6 +55,7 @@ func (installerClient *InstallerClient) authEditor(ctx context.Context, req *htt
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *installerClient.accessToken))
 	}
 
+	req.Header.Add("User-Agent", "terraform-provider-vcf")
 	req.Header.Add("Content-Type", "application/json")
 
 	return nil
