@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 )
@@ -47,16 +47,16 @@ func testAccVcfDomainDataSourceSteps(config string) []resource.TestStep {
 }
 
 func testAccVcfDomainDataSourceConfigById(domainId string) string {
-	return fmt.Sprintf(`  
-    data "vcf_domain" "domain1" {  
-        domain_id = %q  
+	return fmt.Sprintf(`
+    data "vcf_domain" "domain1" {
+        domain_id = %q
     }`, domainId)
 }
 
 func testAccVcfDomainDataSourceConfigByName(name string) string {
-	return fmt.Sprintf(`  
-    data "vcf_domain" "domain1" {  
-        name = %q  
+	return fmt.Sprintf(`
+    data "vcf_domain" "domain1" {
+        name = %q
     }`, name)
 }
 
