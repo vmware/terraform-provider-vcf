@@ -9,6 +9,8 @@ import "time"
 const (
 	DefaultVcfApiCallTimeout = 2 * time.Minute
 
+	ProviderName = "terraform-provider-vcf"
+
 	// VcfTestUrl URL of a VCF instance, used for acceptance tests.
 	VcfTestUrl = "VCF_TEST_URL"
 	// VcfTestUsername username of SSO user, used for acceptance tests.

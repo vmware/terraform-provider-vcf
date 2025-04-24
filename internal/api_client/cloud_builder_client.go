@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
@@ -51,7 +52,7 @@ func (cloudBuilderClient *CloudBuilderClient) init() {
 func (cloudBuilderClient *CloudBuilderClient) authEditor(ctx context.Context, req *http.Request) error {
 	req.SetBasicAuth(cloudBuilderClient.username, cloudBuilderClient.password)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("terraform-provider-vcf/%s", cloudBuilderClient.providerVersion))
+	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", constants.ProviderName, cloudBuilderClient.providerVersion))
 
 	return nil
 }

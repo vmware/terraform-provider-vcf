@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	"github.com/vmware/vcf-sdk-go/vcf"
 )
 
@@ -59,7 +60,7 @@ func (sddcManagerClient *SddcManagerClient) authEditor(ctx context.Context, req 
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", *sddcManagerClient.accessToken))
 	}
 
-	req.Header.Set("User-Agent", fmt.Sprintf("terraform-provider-vcf/%s", sddcManagerClient.providerVersion))
+	req.Header.Set("User-Agent", fmt.Sprintf("%s/%s", constants.ProviderName, sddcManagerClient.providerVersion))
 	req.Header.Set("Content-Type", "application/json")
 
 	return nil
