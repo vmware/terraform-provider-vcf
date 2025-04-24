@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/vmware/terraform-provider-vcf/internal/version"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
@@ -159,6 +160,7 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 			sddcManagerUsername,
 			getAttributeValue(data.SddcManagerPassword.ValueString(), constants.VcfTestPassword).(string),
 			getAttributeValue(data.SddcManagerHost.ValueString(), constants.VcfTestUrl).(string),
+			version.ProviderVersion,
 			getAttributeValue(data.AllowUnverifiedTls.ValueBool(), constants.VcfTestAllowUnverifiedTls).(bool),
 		)
 
@@ -174,6 +176,7 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 			getAttributeValue(data.CloudBuilderUsername.ValueString(), constants.CloudBuilderTestUsername).(string),
 			getAttributeValue(data.CloudBuilderPassword.ValueString(), constants.CloudBuilderTestPassword).(string),
 			getAttributeValue(data.CloudBuilderHost.ValueString(), constants.CloudBuilderTestUrl).(string),
+			version.ProviderVersion,
 			getAttributeValue(data.AllowUnverifiedTls.ValueBool(), constants.VcfTestAllowUnverifiedTls).(bool),
 		)
 
