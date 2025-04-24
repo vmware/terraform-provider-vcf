@@ -19,15 +19,17 @@ type CloudBuilderClient struct {
 	username           string
 	password           string
 	cloudBuilderUrl    string
+	providerVersion    string
 	ApiClient          *vcf.ClientWithResponses
 	allowUnverifiedTls bool
 }
 
-func NewCloudBuilderClient(username, password, url string, allowUnverifiedTls bool) *CloudBuilderClient {
+func NewCloudBuilderClient(username, password, url, providerVersion string, allowUnverifiedTls bool) *CloudBuilderClient {
 	result := &CloudBuilderClient{
 		username:           username,
 		password:           password,
 		cloudBuilderUrl:    url,
+		providerVersion:    providerVersion,
 		allowUnverifiedTls: allowUnverifiedTls,
 	}
 	result.init()
@@ -49,6 +51,7 @@ func (cloudBuilderClient *CloudBuilderClient) init() {
 func (cloudBuilderClient *CloudBuilderClient) authEditor(ctx context.Context, req *http.Request) error {
 	req.SetBasicAuth(cloudBuilderClient.username, cloudBuilderClient.password)
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("terraform-provider-vcf/%s", cloudBuilderClient.providerVersion))
 
 	return nil
 }
