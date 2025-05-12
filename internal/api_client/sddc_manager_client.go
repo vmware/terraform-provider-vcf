@@ -57,7 +57,6 @@ func (sddcManagerClient *SddcManagerClient) authEditor(ctx context.Context, req 
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", *sddcManagerClient.accessToken))
 	}
 
-	req.Header.Add("User-Agent", "terraform-provider-vcf")
 	req.Header.Add("Content-Type", "application/json")
 
 	return nil
@@ -90,7 +89,7 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 
 	tokenPair, vcfErr := GetResponseAs[vcf.TokenPair](res)
 	if vcfErr != nil {
-		LogError(vcfErr)
+		LogError(vcfErr, context.Background())
 		return errors.New(*vcfErr.Message)
 	}
 	sddcManagerClient.accessToken = tokenPair.AccessToken
@@ -164,14 +163,14 @@ func GetError(body []byte) *vcf.Error {
 
 // LogError traverses a vcf.Error structure and logs its error message as well as
 // the messages of any nested errors.
-func LogError(err *vcf.Error) {
+func LogError(err *vcf.Error, ctx context.Context) {
 	if err != nil {
 		if err.Message != nil {
-			tflog.Error(context.Background(), *err.Message)
+			tflog.Error(ctx, *err.Message)
 		}
 		if err.NestedErrors != nil {
 			for _, nestedErr := range *err.NestedErrors {
-				LogError(&nestedErr)
+				LogError(&nestedErr, ctx)
 			}
 		}
 	}
