@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [v0.16.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.16.0)
+
+> Release Date: 2025-05-14
+
+FEATURES:
+
+- `provider`: Added a User-Agent header to all API requests. The header is in the following format `terraform-provider-vcf/<version>`. [#309](https://github.com/vmware/terraform-provider-vcf/pull/306/)
+
+FIXES:
+
+- `r/vcf_instance`: Resolved empty host subnet values. [#314](https://github.com/vmware/terraform-provider-vcf/pull/314/)
+- `r/vcf_credentials_rotate`: Removed `once_only` option. [#299](https://github.com/vmware/terraform-provider-vcf/pull/299/)
+
+CHORES:
+
+- Updated `golang.org/x/net` to v0.38.0. [#298](https://github.com/vmware/terraform-provider-vcf/pull/298/), [#306](https://github.com/vmware/terraform-provider-vcf/pull/306/)
+- Updated `hashicorp/terraform-plugin-framework-validators` to v0.18.0. [#313](https://github.com/vmware/terraform-provider-vcf/pull/313/)
+- Migrated provider testing from `hashicorp/terraform-plugin-sdk` to `hashicorp/terraform-plugin-testing`. [#308](https://github.com/vmware/terraform-provider-vcf/pull/308/)
+
 ## [v0.15.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.15.0)
 
 > Release Date: 2025-03-10
