@@ -123,13 +123,17 @@ func getIPAllocationBindingFromSchema(rawData []interface{}) *vcf.IpAllocation {
 	cidr := data["cidr"].(string)
 	gateway := data["gateway"].(string)
 	ipAddress := data["ip_address"].(string)
-	subnet := data["subnet"].(string)
+
+	var subnet *string
+	if data["subnet"].(string) != "" {
+		subnet = utils.ToStringPointer(data["subnet"])
+	}
 
 	ipAllocationBinding := &vcf.IpAllocation{
 		Cidr:      &cidr,
 		Gateway:   &gateway,
 		IpAddress: ipAddress,
-		Subnet:    &subnet,
+		Subnet:    subnet,
 	}
 	return ipAllocationBinding
 }
