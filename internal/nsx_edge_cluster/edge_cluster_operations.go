@@ -41,7 +41,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 
 	var tier1Name *string
 	if data.Get("tier1_name").(string) != "" {
-		tier1Name = resource_utils.ToStringPointer(data.Get("tier1Name"))
+		tier1Name = resource_utils.ToStringPointer(data.Get("tier1_name"))
 	}
 
 	transitSubnets := resource_utils.ToStringSlice(data.Get("transit_subnets").([]interface{}))
