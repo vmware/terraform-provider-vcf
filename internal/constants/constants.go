@@ -103,7 +103,7 @@ const (
 	// VcfTestClusterId the identifier of the cluster within its vCenter server.
 	VcfTestClusterId = "VCF_TEST_CLUSTER_ID"
 
-	// VcfTestClusterImageId the identifier of the lifecycle image for the cluster
+	// VcfTestClusterImageId the identifier of the lifecycle image for the cluster.
 	VcfTestClusterImageId = "VCF_TEST_CLUSTER_IMAGE_ID"
 
 	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.

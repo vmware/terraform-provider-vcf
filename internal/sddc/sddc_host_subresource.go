@@ -39,42 +39,6 @@ func GetSddcHostSchema() *schema.Schema {
 	}
 }
 
-func getIPAllocationSchema() *schema.Schema {
-	return &schema.Schema{
-		Type:        schema.TypeList,
-		Description: "Host Private Management IP",
-		MaxItems:    1,
-		Required:    true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"cidr": {
-					Type:        schema.TypeString,
-					Description: "Classless Inter-Domain Routing (CIDR), Example: 172.0.0.0/24",
-					Optional:    true,
-				},
-				"gateway": {
-					Type:         schema.TypeString,
-					Description:  "Gateway",
-					Required:     true,
-					ValidateFunc: validation.IsIPAddress,
-				},
-				"ip_address": {
-					Type:         schema.TypeString,
-					Description:  "IP Address",
-					Required:     true,
-					ValidateFunc: validation.IsIPAddress,
-				},
-				"subnet": {
-					Type:         schema.TypeString,
-					Description:  "Subnet",
-					Optional:     true,
-					ValidateFunc: validation.IsIPAddress,
-				},
-			},
-		},
-	}
-}
-
 func GetSddcHostSpecsFromSchema(rawData []interface{}) *[]installer.SddcHostSpec {
 	var hostSpecs []installer.SddcHostSpec
 	for _, rawListEntity := range rawData {

@@ -17,7 +17,6 @@ import (
 
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -54,7 +53,7 @@ func SetExpansionOrContractionSpec(updateSpec *vcf.ClusterUpdateSpec,
 		return nil, fmt.Errorf("adding and removing hosts is not supported in a single configuration change. Apply each change separately")
 	}
 
-	addedHosts, removedHosts := resource_utils.CalculateAddedRemovedResources(newHostsList, oldHostsList)
+	addedHosts, removedHosts := utils.CalculateAddedRemovedResources(newHostsList, oldHostsList)
 	if len(removedHosts) == 0 {
 		var hostSpecs []vcf.HostSpec
 		for _, addedHostRaw := range addedHosts {

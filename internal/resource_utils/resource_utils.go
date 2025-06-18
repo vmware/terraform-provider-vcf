@@ -4,7 +4,7 @@
 
 package resource_utils
 
-// ToPointer - Utility to obtain a pointer to any rvalue without having to declare a local variable
+// ToPointer - Utility to obtain a pointer to any rvalue without having to declare a local variable.
 func ToPointer[T interface{}](object interface{}) *T {
 	if object == nil {
 		return nil

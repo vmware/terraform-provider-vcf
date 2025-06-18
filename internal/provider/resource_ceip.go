@@ -86,9 +86,10 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	if status, ok := d.GetOk("status"); ok {
 		statusVal := status.(string)
 		// the VCF PATCH API requires the params "ENABLE/DISABLE" while the resource states are "ENABLED/DISABLED"
-		if statusVal == EnabledState {
+		switch statusVal {
+		case EnabledState:
 			enableApiParam = EnableApiParam
-		} else if statusVal == DisabledState {
+		case DisabledState:
 			enableApiParam = DisableApiParam
 		}
 	}
