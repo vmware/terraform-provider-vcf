@@ -7,9 +7,8 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 var trafficTypeValues = []string{"VSAN", "VMOTION", "VIRTUALMACHINE", "MANAGEMENT", "NFS", "VDP", "HBR", "FAULTTOLERANCE", "ISCSI"}
@@ -24,11 +23,6 @@ func GetDvsSchema() *schema.Schema {
 					Type:        schema.TypeString,
 					Description: "DVS Name",
 					Required:    true,
-				},
-				"is_used_by_nsxt": {
-					Type:        schema.TypeBool,
-					Description: "Flag indicating whether the DVS is used by NSX",
-					Optional:    true,
 				},
 				"mtu": {
 					Type:         schema.TypeInt,
@@ -46,11 +40,24 @@ func GetDvsSchema() *schema.Schema {
 					},
 				},
 				"nioc": getNiocSchema(),
-				"vmnics": {
+				"vmnic_mapping": {
 					Type:        schema.TypeList,
-					Description: "Vmnics to be attached to the DVS",
+					Description: "Vmnic to uplink mappings",
 					Required:    true,
-					Elem:        &schema.Schema{Type: schema.TypeString},
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"vmnic": {
+								Description: "Vmnic identifier",
+								Type:        schema.TypeString,
+								Required:    true,
+							},
+							"uplink": {
+								Description: "Uplink identifier",
+								Type:        schema.TypeString,
+								Required:    true,
+							},
+						},
+					},
 				},
 			},
 		},
@@ -81,47 +88,37 @@ func getNiocSchema() *schema.Schema {
 	}
 }
 
-func GetDvsSpecsFromSchema(rawData []interface{}) *[]vcf.DvsSpec {
-	var dvsSpecs []vcf.DvsSpec
+func GetDvsSpecsFromSchema(rawData []interface{}) *[]installer.DvsSpec {
+	var dvsSpecs []installer.DvsSpec
 	for _, dvsSpecListEntry := range rawData {
 		dvsSpecRaw := dvsSpecListEntry.(map[string]interface{})
 		dvsName := utils.ToStringPointer(dvsSpecRaw["dvs_name"])
-		isUsedByNsxt := dvsSpecRaw["is_used_by_nsxt"].(bool)
 		mtu := int32(dvsSpecRaw["mtu"].(int))
 
-		dvsSpec := vcf.DvsSpec{
-			DvsName:      dvsName,
-			IsUsedByNsxt: &isUsedByNsxt,
-			Mtu:          &mtu,
+		dvsSpec := installer.DvsSpec{
+			DvsName: dvsName,
+			Mtu:     &mtu,
 		}
 		if networksData, ok := dvsSpecRaw["networks"].([]interface{}); ok {
 			networks := utils.ToStringSlice(networksData)
 			dvsSpec.Networks = &networks
 		}
-		if niocSpecsData := getNiocSpecsFromSchema(dvsSpecRaw["nioc"].([]interface{})); len(niocSpecsData) > 0 {
-			dvsSpec.NiocSpecs = &niocSpecsData
+
+		if vmnicMappings, ok := dvsSpecRaw["vmnic_mapping"].([]interface{}); ok {
+			dvsSpec.VmnicsToUplinks = make([]installer.VmnicToUplink, len(vmnicMappings))
+			for i, vmnicMapping := range vmnicMappings {
+				dvsSpec.VmnicsToUplinks[i] = getVmnicToUplink(vmnicMapping.(map[string]interface{}))
+			}
 		}
-		if vmnicsData, ok := dvsSpecRaw["vmnics"].([]interface{}); ok {
-			vmnics := utils.ToStringSlice(vmnicsData)
-			dvsSpec.Vmnics = &vmnics
-		}
+
 		dvsSpecs = append(dvsSpecs, dvsSpec)
 	}
 	return &dvsSpecs
 }
 
-func getNiocSpecsFromSchema(rawData []interface{}) []vcf.NiocSpec {
-	var niocSpecBindingsList []vcf.NiocSpec
-	for _, niocSpecListEntry := range rawData {
-		niocSpecRaw := niocSpecListEntry.(map[string]interface{})
-		trafficType := niocSpecRaw["traffic_type"].(string)
-		value := niocSpecRaw["value"].(string)
-
-		niocSpecsBinding := vcf.NiocSpec{
-			TrafficType: trafficType,
-			Value:       value,
-		}
-		niocSpecBindingsList = append(niocSpecBindingsList, niocSpecsBinding)
+func getVmnicToUplink(rawData map[string]interface{}) installer.VmnicToUplink {
+	return installer.VmnicToUplink{
+		Uplink: rawData["uplink"].(string),
+		Id:     rawData["vmnic"].(string),
 	}
-	return niocSpecBindingsList
 }

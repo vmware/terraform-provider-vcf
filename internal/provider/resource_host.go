@@ -126,7 +126,7 @@ func resourceHostCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -156,7 +156,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	host, vcfErr := api_client.GetResponseAs[vcf.Host](hostResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -174,7 +174,7 @@ func resourceHostRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCredential](getCredentialsResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	for _, credential := range *page.Elements {
@@ -211,7 +211,7 @@ func resourceHostDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -232,7 +232,7 @@ func getNetworkPool(name string, client *vcf.ClientWithResponses, ctx context.Co
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfNetworkPool](ok)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

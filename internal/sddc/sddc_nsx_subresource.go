@@ -7,10 +7,9 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 func GetNsxSpecSchema() *schema.Schema {
@@ -20,11 +19,6 @@ func GetNsxSpecSchema() *schema.Schema {
 		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"vip": {
-					Type:        schema.TypeString,
-					Description: "Virtual IP address which would act as proxy/alias for NSX Managers",
-					Required:    true,
-				},
 				"vip_fqdn": {
 					Type:        schema.TypeString,
 					Description: "FQDN for VIP so that common SSL certificates can be installed across all managers",
@@ -58,20 +52,13 @@ func GetNsxSpecSchema() *schema.Schema {
 					Sensitive:    true,
 					ValidateFunc: validation_utils.ValidatePassword,
 				},
-				"license": {
-					Type:        schema.TypeString,
-					Description: "NSX Manager license",
-					Optional:    true,
-					Sensitive:   true,
-				},
 				"nsx_manager_size": {
 					Type:         schema.TypeString,
 					Description:  "NSX-T Manager size. One among: medium, large",
 					Required:     true,
 					ValidateFunc: validation.StringInSlice([]string{"medium", "large"}, true),
 				},
-				"nsx_manager":            getNsxManagerSpecSchema(),
-				"overlay_transport_zone": getTransportZoneSchema(),
+				"nsx_manager": getNsxManagerSpecSchema(),
 				"transport_vlan_id": {
 					Type:         schema.TypeInt,
 					Description:  "Transport VLAN ID",
@@ -95,108 +82,55 @@ func getNsxManagerSpecSchema() *schema.Schema {
 					Description: "NSX Manager hostname. If just the short hostname is provided, then FQDN will be generated using the \"domain\" from dns configuration",
 					Optional:    true,
 				},
-				"ip": {
-					Type:         schema.TypeString,
-					Description:  "NSX Manager IPv4 Address",
-					Optional:     true,
-					ValidateFunc: validation.IsIPAddress,
-				},
 			},
 		},
 	}
 }
 
-func getTransportZoneSchema() *schema.Schema {
-	return &schema.Schema{
-		Type:        schema.TypeList,
-		Description: "NSX OverLay Transport zone",
-		Optional:    true,
-		MaxItems:    1,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"network_name": {
-					Type:        schema.TypeString,
-					Description: "Transport zone network name",
-					Required:    true,
-				},
-				"zone_name": {
-					Type:        schema.TypeString,
-					Description: "Transport zone name",
-					Required:    true,
-				},
-			},
-		},
-	}
-}
-
-func GetNsxSpecFromSchema(rawData []interface{}) *vcf.SddcNsxtSpec {
+func GetNsxSpecFromSchema(rawData []interface{}) *installer.SddcNsxtSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
 	data := rawData[0].(map[string]interface{})
 	nsxAdminPassword := data["nsx_admin_password"].(string)
 	nsxAuditPassword := data["nsx_audit_password"].(string)
-	nsxLicense := data["license"].(string)
 	nsxManagerSize := data["nsx_manager_size"].(string)
 	rootNsxManagerPassword := data["root_nsx_manager_password"].(string)
 	transportVlanID := int32(data["transport_vlan_id"].(int))
-	vip := data["vip"].(string)
 	vipFqdn := data["vip_fqdn"].(string)
 
-	nsxtSpecBinding := &vcf.SddcNsxtSpec{
+	nsxtSpecBinding := &installer.SddcNsxtSpec{
 		NsxtAdminPassword:       &nsxAdminPassword,
 		NsxtAuditPassword:       &nsxAuditPassword,
-		NsxtLicense:             &nsxLicense,
 		NsxtManagerSize:         &nsxManagerSize,
 		RootNsxtManagerPassword: &rootNsxManagerPassword,
 		TransportVlanId:         &transportVlanID,
-		Vip:                     &vip,
 		VipFqdn:                 vipFqdn,
 	}
 	if nsxtManagersData := getNsxManagerSpecFromSchema(data["nsx_manager"].([]interface{})); len(nsxtManagersData) > 0 {
 		nsxtSpecBinding.NsxtManagers = nsxtManagersData
 	}
-	if overLayTransportZoneData := getTransportZoneFromSchema(data["overlay_transport_zone"].([]interface{})); overLayTransportZoneData != nil {
-		nsxtSpecBinding.OverLayTransportZone = overLayTransportZoneData
-	}
 
 	if ipAddressPoolRaw, ok := data["ip_address_pool"]; ok && !validation_utils.IsEmpty(ipAddressPoolRaw) {
 		ipAddressPoolList := ipAddressPoolRaw.([]interface{})
 		// Only one IP Address pool spec is allowed in the resource
-		if ipAddressPoolSpec, err := network.GetIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{})); err == nil {
+		if ipAddressPoolSpec, err := network.GetInstallerIpAddressPoolSpecFromSchema(ipAddressPoolList[0].(map[string]interface{})); err == nil {
 			nsxtSpecBinding.IpAddressPoolSpec = ipAddressPoolSpec
 		}
 	}
 	return nsxtSpecBinding
 }
 
-func getNsxManagerSpecFromSchema(rawData []interface{}) []vcf.NsxtManagerSpec {
-	var nsxtManagerSpecBindingsList []vcf.NsxtManagerSpec
+func getNsxManagerSpecFromSchema(rawData []interface{}) []installer.NsxtManagerSpec {
+	var nsxtManagerSpecBindingsList []installer.NsxtManagerSpec
 	for _, nsxtManager := range rawData {
 		data := nsxtManager.(map[string]interface{})
 		hostname := data["hostname"].(string)
-		ip := data["ip"].(string)
 
-		nsxManagerSpec := vcf.NsxtManagerSpec{
+		nsxManagerSpec := installer.NsxtManagerSpec{
 			Hostname: &hostname,
-			Ip:       &ip,
 		}
 		nsxtManagerSpecBindingsList = append(nsxtManagerSpecBindingsList, nsxManagerSpec)
 	}
 	return nsxtManagerSpecBindingsList
-}
-
-func getTransportZoneFromSchema(rawData []interface{}) *vcf.NsxtTransportZone {
-	if len(rawData) <= 0 {
-		return nil
-	}
-	data := rawData[0].(map[string]interface{})
-	networkName := data["network_name"].(string)
-	zoneName := data["zone_name"].(string)
-
-	transportZoneBinding := &vcf.NsxtTransportZone{
-		NetworkName: networkName,
-		ZoneName:    zoneName,
-	}
-	return transportZoneBinding
 }

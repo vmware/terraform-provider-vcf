@@ -14,15 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
+	"github.com/vmware/vcf-sdk-go/installer"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/terraform-provider-vcf/internal/sddc"
 	validationutils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
-
-var dvSwitchVersions = []string{"7.0.0", "7.0.2", "7.0.3", "8.0.0", "8.0.3"}
 
 func ResourceVcfInstance() *schema.Resource {
 	return &schema.Resource{
@@ -31,7 +29,7 @@ func ResourceVcfInstance() *schema.Resource {
 		UpdateContext: resourceVcfInstanceUpdate,
 		DeleteContext: resourceVcfInstanceDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(5 * time.Hour),
+			Create: schema.DefaultTimeout(10 * time.Hour), // it takes a while
 		},
 		Schema: resourceVcfInstanceSchema(),
 	}
@@ -55,21 +53,6 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Description: "SDDC Task creation timestamp",
 			Computed:    true,
 		},
-		"sddc_manager_fqdn": {
-			Type:        schema.TypeString,
-			Description: "FQDN of the resulting SDDC Manager",
-			Computed:    true,
-		},
-		"sddc_manager_id": {
-			Type:        schema.TypeString,
-			Description: "ID of the resulting SDDC Manager",
-			Computed:    true,
-		},
-		"sddc_manager_version": {
-			Type:        schema.TypeString,
-			Description: "Version of the resulting SDDC Manager",
-			Computed:    true,
-		},
 		"ceip_enabled": {
 			Type:        schema.TypeBool,
 			Description: "Enable VCF Customer Experience Improvement Program",
@@ -83,18 +66,7 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 		"cluster": sddc.GetSddcClusterSchema(),
 		"dns":     sddc.GetDnsSchema(),
 		"dvs":     sddc.GetDvsSchema(),
-		"dv_switch_version": {
-			Type:         schema.TypeString,
-			Description:  "The version of the distributed virtual switches to be used. One among: 7.0.0, 7.0.2, 7.0.3, 8.0.0, 8.0.3",
-			Required:     true,
-			ValidateFunc: validation.StringInSlice(dvSwitchVersions, false),
-		},
-		"esx_license": {
-			Type:      schema.TypeString,
-			Sensitive: true,
-			Optional:  true,
-		},
-		"host": sddc.GetSddcHostSchema(),
+		"host":    sddc.GetSddcHostSchema(),
 		"management_pool_name": {
 			Type:        schema.TypeString,
 			Description: "A string identifying the network pool associated with the management domain",
@@ -111,7 +83,6 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
-		"psc":          sddc.GetPscSchema(),
 		"sddc_manager": sddc.GetSddcManagerSchema(),
 		"security":     sddc.GetSecuritySchema(),
 		"skip_esx_thumbprint_validation": {
@@ -119,41 +90,34 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Description: "Skip ESXi thumbprint validation",
 			Required:    true,
 		},
-		"task_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "workflowconfig/workflowspec-ems.json",
-		},
-		"vcenter":    sddc.GetVcenterSchema(),
-		"vsan":       sddc.GetVsanSchema(),
-		"vx_manager": sddc.GetVxManagerSchema(),
+		"vcenter":                     sddc.GetVcenterSchema(),
+		"vsan":                        sddc.GetVsanSchema(),
+		"automation":                  sddc.GetVcfAutomationSchema(),
+		"operations":                  sddc.GetVcfOperationsSchema(),
+		"operations_collector":        sddc.GetVcfOperationsCollectorSchema(),
+		"operations_fleet_management": sddc.GetVcfOperationsFleetManagementSchema(),
 	}
 }
 
-func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
-	sddcSpec := &vcf.SddcSpec{}
+func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
+	sddcSpec := &installer.SddcSpec{}
 	if rawCeipEnabled, ok := data.GetOk("ceip_enabled"); ok {
 		sddcSpec.CeipEnabled = utils.ToBoolPointer(rawCeipEnabled)
 	}
 	if clusterSpec, ok := data.GetOk("cluster"); ok {
 		sddcSpec.ClusterSpec = sddc.GetSddcClusterSpecFromSchema(clusterSpec.([]interface{}))
 	}
+	if vsanSpec, ok := data.GetOk("vsan"); ok {
+		// TODO support NFS & VMFS if necessary
+		sddcSpec.DatastoreSpec = &installer.SddcDatastoreSpec{}
+		sddcSpec.DatastoreSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+	}
 	if dnsSpec, ok := data.GetOk("dns"); ok {
 		spec := sddc.GetDnsSpecFromSchema(dnsSpec.([]interface{}))
-		// TODO throw error and make dns mandatory
 		sddcSpec.DnsSpec = *spec
 	}
 	if dvsSpecs, ok := data.GetOk("dvs"); ok {
 		sddcSpec.DvsSpecs = sddc.GetDvsSpecsFromSchema(dvsSpecs.([]interface{}))
-	}
-	if dvSwitchVersion, ok := data.GetOk("dv_switch_version"); ok {
-		sddcSpec.DvSwitchVersion = utils.ToStringPointer(dvSwitchVersion)
-	}
-	if esxLicense, ok := data.GetOk("esx_license"); ok {
-		sddcSpec.EsxLicense = utils.ToStringPointer(esxLicense)
-	}
-	if fipsEnabled, ok := data.GetOk("fips_enabled"); ok {
-		sddcSpec.FipsEnabled = utils.ToBoolPointer(fipsEnabled)
 	}
 	if hostSpecs, ok := data.GetOk("host"); ok {
 		sddcSpec.HostSpecs = sddc.GetSddcHostSpecsFromSchema(hostSpecs.([]interface{}))
@@ -168,10 +132,8 @@ func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
 		sddcSpec.NsxtSpec = sddc.GetNsxSpecFromSchema(nsxSpec.([]interface{}))
 	}
 	if ntpServers, ok := data.GetOk("ntp_servers"); ok {
-		sddcSpec.NtpServers = utils.ToStringSlice(ntpServers.([]interface{}))
-	}
-	if pscSpecs, ok := data.GetOk("psc"); ok {
-		sddcSpec.PscSpecs = sddc.GetPscSpecsFromSchema(pscSpecs.([]interface{}))
+		ntpServersValue := utils.ToStringSlice(ntpServers.([]interface{}))
+		sddcSpec.NtpServers = &ntpServersValue
 	}
 	if sddcID, ok := data.GetOk("instance_id"); ok {
 		sddcSpec.SddcId = sddcID.(string)
@@ -185,25 +147,36 @@ func buildSddcSpec(data *schema.ResourceData) *vcf.SddcSpec {
 	if skipEsxThumbPrintValidation, ok := data.GetOk("skip_esx_thumbprint_validation"); ok {
 		sddcSpec.SkipEsxThumbprintValidation = utils.ToBoolPointer(skipEsxThumbPrintValidation)
 	}
-	if taskName, ok := data.GetOk("task_name"); ok {
-		sddcSpec.TaskName = utils.ToStringPointer(taskName)
-	}
 	if vcenterSpec, ok := data.GetOk("vcenter"); ok {
 		if spec := sddc.GetVcenterSpecFromSchema(vcenterSpec.([]interface{})); spec != nil {
 			sddcSpec.VcenterSpec = *spec
 		}
 	}
-	if vsanSpec, ok := data.GetOk("vsan"); ok {
-		sddcSpec.VsanSpec = sddc.GetVsanSpecFromSchema(vsanSpec.([]interface{}))
+	if automationSpec, ok := data.GetOk("automation"); ok {
+		if spec := sddc.GetVcfAutomationSpecFromSchema(automationSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfAutomationSpec = spec
+		}
 	}
-	if vxManagerSpec, ok := data.GetOk("vx_manager"); ok {
-		sddcSpec.VxManagerSpec = sddc.GetVxManagerSpecFromSchema(vxManagerSpec.([]interface{}))
+	if operationsSpec, ok := data.GetOk("operations"); ok {
+		if spec := sddc.GetVcfOperationsSpecFromSchema(operationsSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfOperationsSpec = spec
+		}
+	}
+	if operationsCollectorSpec, ok := data.GetOk("operations_collector"); ok {
+		if spec := sddc.GetVcfOperationsCollectorSpecFromSchema(operationsCollectorSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfOperationsCollectorSpec = spec
+		}
+	}
+	if operationsFleetManagementSpec, ok := data.GetOk("operations_fleet_management"); ok {
+		if spec := sddc.GetVcfOperationsFleetManagementSpecFromSchema(operationsFleetManagementSpec.([]interface{})); spec != nil {
+			sddcSpec.VcfOperationsFleetManagementSpec = spec
+		}
 	}
 	return sddcSpec
 }
 
 func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*api_client.CloudBuilderClient)
+	client := meta.(*api_client.InstallerClient)
 
 	sddcSpec := buildSddcSpec(data)
 
@@ -227,7 +200,7 @@ func resourceVcfInstanceCreate(ctx context.Context, data *schema.ResourceData, m
 }
 
 func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*api_client.CloudBuilderClient)
+	client := meta.(*api_client.InstallerClient)
 
 	bringUpInfo, err := getLastBringUp(ctx, client)
 	if err != nil {
@@ -240,16 +213,6 @@ func resourceVcfInstanceRead(ctx context.Context, data *schema.ResourceData, met
 	_ = data.Set("status", bringUpInfo.Status)
 	_ = data.Set("creation_timestamp", bringUpInfo.CreationTimestamp)
 
-	sddcManagerInfo, err := getSddcManagerInfo(ctx, *bringupId, client)
-	if err != nil {
-		tflog.Error(ctx, err.Error())
-		return diag.FromErr(err)
-	}
-
-	_ = data.Set("sddc_manager_fqdn", sddcManagerInfo.Fqdn)
-	_ = data.Set("sddc_manager_id", sddcManagerInfo.Id)
-	_ = data.Set("sddc_manager_version", sddcManagerInfo.Version)
-
 	return nil
 }
 func resourceVcfInstanceUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -261,7 +224,7 @@ func resourceVcfInstanceDelete(_ context.Context, _ *schema.ResourceData, _ inte
 	return nil
 }
 
-func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec, lastBringup *vcf.SddcTask) (string, diag.Diagnostics) {
+func invokeBringupWorkflow(ctx context.Context, client *api_client.InstallerClient, sddcSpec *installer.SddcSpec, lastBringup *installer.SddcTask) (string, diag.Diagnostics) {
 	var bringUpId string
 	if lastBringup != nil && *lastBringup.Status != "COMPLETED_WITH_SUCCESS" {
 		bringUpId = *lastBringup.Id
@@ -270,14 +233,13 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 			return bringUpId, diags
 		}
 
-		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, *sddcSpec)
-
-		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res)
+		res, err := client.ApiClient.RetrySddcWithResponse(ctx, bringUpId, nil, *sddcSpec)
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
+		sddcTask, vcfErr := api_client.GetResponseAs[installer.SddcTask](res)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 		} else {
 			bringUpId = *sddcTask.Id
 		}
@@ -287,16 +249,16 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 			return bringUpId, diags
 		}
 
-		res, err := client.ApiClient.StartBringupWithResponse(ctx, *sddcSpec)
+		res, err := client.ApiClient.DeploySddcWithResponse(ctx, nil, *sddcSpec)
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
-		sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](res)
+		sddcTask, vcfErr := api_client.GetResponseAs[installer.SddcTask](res)
 		if err != nil {
 			return "", diag.FromErr(err)
 		}
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 		} else {
 			bringUpId = *sddcTask.Id
 		}
@@ -306,7 +268,7 @@ func invokeBringupWorkflow(ctx context.Context, client *api_client.CloudBuilderC
 	return bringUpId, nil
 }
 
-func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.CloudBuilderClient) diag.Diagnostics {
+func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_client.InstallerClient) diag.Diagnostics {
 	for {
 		task, err := getBringUp(ctx, bringUpID, client)
 		if err != nil {
@@ -320,6 +282,7 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 
 		if *task.Status == "COMPLETED_WITH_FAILURE" {
 			err := fmt.Errorf("task with ID = %s , Name: %q is in state %s", bringUpID, *task.Name, *task.Status)
+			logFailedTask(ctx, task)
 			return diag.FromErr(err)
 		}
 
@@ -327,14 +290,14 @@ func waitForBringupProcess(ctx context.Context, bringUpID string, client *api_cl
 	}
 }
 
-func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) (*vcf.SddcTask, error) {
-	retrieveAllSddcsResp, err := client.ApiClient.GetBringupTasksWithResponse(ctx)
+func getLastBringUp(ctx context.Context, client *api_client.InstallerClient) (*installer.SddcTask, error) {
+	retrieveAllSddcsResp, err := client.ApiClient.GetSddcTasksWithResponse(ctx)
 	if err != nil {
 		return nil, err
 	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfSddcTask](retrieveAllSddcsResp)
+	page, vcfErr := api_client.GetResponseAs[installer.PageOfSddcTask](retrieveAllSddcsResp)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	if page != nil && len(*page.Elements) > 0 {
@@ -344,37 +307,34 @@ func getLastBringUp(ctx context.Context, client *api_client.CloudBuilderClient) 
 	return nil, nil
 }
 
-func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderClient, sddcSpec *vcf.SddcSpec) diag.Diagnostics {
-	bringupParams := &vcf.ValidateBringupSpecParams{
-		Redo: utils.ToBoolPointer(true),
-	}
-	validateSpecRes, err := client.ApiClient.ValidateBringupSpecWithResponse(ctx, bringupParams, *sddcSpec)
+func validateBringupSpec(ctx context.Context, client *api_client.InstallerClient, sddcSpec *installer.SddcSpec) diag.Diagnostics {
+	validateSpecRes, err := client.ApiClient.ValidateSddcSpecWithResponse(ctx, *sddcSpec)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateSpecRes)
+	validationResult, vcfErr := api_client.GetResponseAs[installer.Validation](validateSpecRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
-	if err != nil {
-		return validationutils.ConvertVcfErrorToDiag(err)
-	}
-	if validationutils.HasValidationFailed(validationResult) {
-		return validationutils.ConvertValidationResultToDiag(validationResult)
+	vcfValidationResult := api_client.ConvertToVcfValidation(*validationResult)
+
+	if validationutils.HasValidationFailed(&vcfValidationResult) {
+		return validationutils.ConvertValidationResultToDiag(&vcfValidationResult)
 	}
 	for {
-		getValidationResponse, err := client.ApiClient.GetBringupValidationWithResponse(ctx, *validationResult.Id)
+		getValidationResponse, err := client.ApiClient.GetSddcSpecValidationWithResponse(ctx, *validationResult.Id)
 		if err != nil {
 			return validationutils.ConvertVcfErrorToDiag(err)
 		}
-		validationResult, vcfErr = api_client.GetResponseAs[vcf.Validation](getValidationResponse)
+		validationResult, vcfErr = api_client.GetResponseAs[installer.Validation](getValidationResponse)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
-		if validationResult != nil && validationutils.HaveValidationChecksFinished(*validationResult.ValidationChecks) {
+		vcfValidationResult = api_client.ConvertToVcfValidation(*validationResult)
+		if validationutils.HaveValidationChecksFinished(*vcfValidationResult.ValidationChecks) {
 			break
 		}
 		time.Sleep(10 * time.Second)
@@ -382,36 +342,32 @@ func validateBringupSpec(ctx context.Context, client *api_client.CloudBuilderCli
 	if err != nil {
 		return validationutils.ConvertVcfErrorToDiag(err)
 	}
-	if validationutils.HasValidationFailed(validationResult) {
-		return validationutils.ConvertValidationResultToDiag(validationResult)
+	if validationutils.HasValidationFailed(&vcfValidationResult) {
+		return validationutils.ConvertValidationResultToDiag(&vcfValidationResult)
 	}
 
 	return nil
 }
 
-func getBringUp(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcTask, error) {
-	retrieveSddcResponse, err := client.ApiClient.GetBringupTaskByIDWithResponse(ctx, bringupId)
+func getBringUp(ctx context.Context, bringupId string, client *api_client.InstallerClient) (*installer.SddcTask, error) {
+	retrieveSddcResponse, err := client.ApiClient.GetSddcTaskByIDWithResponse(ctx, bringupId)
 	if err != nil {
 		return nil, err
 	}
-	sddcTask, vcfErr := api_client.GetResponseAs[vcf.SddcTask](retrieveSddcResponse)
+	sddcTask, vcfErr := api_client.GetResponseAs[installer.SddcTask](retrieveSddcResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	return sddcTask, nil
 }
 
-func getSddcManagerInfo(ctx context.Context, bringupId string, client *api_client.CloudBuilderClient) (*vcf.SddcManagerInfo, error) {
-	getSddcManagerInfoResponse, err := client.ApiClient.GetSddcManagerInfoWithResponse(ctx, bringupId)
-	if err != nil {
-		return nil, err
-	}
-	info, vcfErr := api_client.GetResponseAs[vcf.SddcManagerInfo](getSddcManagerInfoResponse)
-	if vcfErr != nil {
-		api_client.LogError(vcfErr)
-		return nil, errors.New(*vcfErr.Message)
-	}
+func logFailedTask(ctx context.Context, task *installer.SddcTask) {
+	tflog.Error(ctx, fmt.Sprintf("task with ID = %s, Name: %q is in state %s", *task.Id, *task.Name, *task.Status))
 
-	return info, nil
+	if task.SddcSubTasks != nil {
+		for _, subtask := range *task.SddcSubTasks {
+			tflog.Error(ctx, fmt.Sprintf("subtask %q is in state %s", *subtask.Name, *subtask.Status))
+		}
+	}
 }

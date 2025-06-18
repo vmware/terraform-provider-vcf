@@ -3,7 +3,7 @@
 page_title: "vcf_credentials_rotate Resource - terraform-provider-vcf"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # vcf_credentials_rotate (Resource)

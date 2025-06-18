@@ -35,8 +35,7 @@ func TestAccResourceVcfClusterCreate(t *testing.T) {
 					os.Getenv(constants.VcfTestHost6Pass),
 					os.Getenv(constants.VcfTestHost7Fqdn),
 					os.Getenv(constants.VcfTestHost7Pass),
-					os.Getenv(constants.VcfTestEsxiLicenseKey),
-					os.Getenv(constants.VcfTestVsanLicenseKey),
+					os.Getenv(constants.VcfTestClusterImageId),
 					"",
 					""),
 				Check: resource.ComposeTestCheckFunc(
@@ -106,8 +105,7 @@ func TestAccResourceVcfClusterFull(t *testing.T) {
 					os.Getenv(constants.VcfTestHost6Pass),
 					os.Getenv(constants.VcfTestHost7Fqdn),
 					os.Getenv(constants.VcfTestHost7Pass),
-					os.Getenv(constants.VcfTestEsxiLicenseKey),
-					os.Getenv(constants.VcfTestVsanLicenseKey),
+					os.Getenv(constants.VcfTestClusterImageId),
 					"",
 					""),
 				Check: resource.ComposeTestCheckFunc(
@@ -136,14 +134,12 @@ func TestAccResourceVcfClusterFull(t *testing.T) {
 					os.Getenv(constants.VcfTestHost6Pass),
 					os.Getenv(constants.VcfTestHost7Fqdn),
 					os.Getenv(constants.VcfTestHost7Pass),
-					os.Getenv(constants.VcfTestEsxiLicenseKey),
-					os.Getenv(constants.VcfTestVsanLicenseKey),
 					testAccVcfHostCommissionConfig(
 						"host4",
 						os.Getenv(constants.VcfTestHost8Fqdn),
 						os.Getenv(constants.VcfTestHost8Pass)),
+					os.Getenv(constants.VcfTestClusterImageId),
 					testAccVcfHostInClusterConfig("host4",
-						os.Getenv(constants.VcfTestEsxiLicenseKey),
 						"sfo-m01-cl01")),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
@@ -167,12 +163,11 @@ func TestAccResourceVcfClusterFull(t *testing.T) {
 					os.Getenv(constants.VcfTestHost6Pass),
 					os.Getenv(constants.VcfTestHost7Fqdn),
 					os.Getenv(constants.VcfTestHost7Pass),
-					os.Getenv(constants.VcfTestEsxiLicenseKey),
-					os.Getenv(constants.VcfTestVsanLicenseKey),
 					testAccVcfHostCommissionConfig(
 						"host4",
 						os.Getenv(constants.VcfTestHost8Fqdn),
 						os.Getenv(constants.VcfTestHost8Pass)),
+					os.Getenv(constants.VcfTestClusterImageId),
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_cluster.cluster1", "name"),
@@ -189,11 +184,10 @@ func TestAccResourceVcfClusterFull(t *testing.T) {
 	})
 }
 
-func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey, clusterName string) string {
+func testAccVcfHostInClusterConfig(hostResourceId, clusterName string) string {
 	return fmt.Sprintf(
 		`host {
 		id = vcf_host.%s.id
-		license_key = %q
 		vmnic {
 			id = "vmnic0"
 			vds_name = "%s-vds01"
@@ -203,7 +197,7 @@ func testAccVcfHostInClusterConfig(hostResourceId, esxLicenseKey, clusterName st
 			vds_name = "%s-vds01"
 		}
 	}
-	`, hostResourceId, esxLicenseKey, clusterName, clusterName)
+	`, hostResourceId, clusterName, clusterName)
 }
 
 func testAccVcfHostCommissionConfig(hostResourceId, hostFqdn, hostPass string) string {
@@ -303,15 +297,12 @@ func testAccVcfClusterResourcеStretchTestConfig(name, stretchConfig string) str
 		%s
 		host {
 			id = vcf_host.host1.id
-			license_key = %q
 		}
 		host {
 			id = vcf_host.host2.id
-			license_key = %q
 		}
 		host {
 			id = vcf_host.host3.id
-			license_key = %q
 		}
 		vds {
 			name = "new-vi-vcenter-2-vi-cluster1-vds01"
@@ -330,7 +321,6 @@ func testAccVcfClusterResourcеStretchTestConfig(name, stretchConfig string) str
 		}
 		vsan_datastore {
 			datastore_name = "vi-cluster1-vSanDatastore"
-			license_key = %q
 		}
 	}
 	`,
@@ -349,15 +339,11 @@ func testAccVcfClusterResourcеStretchTestConfig(name, stretchConfig string) str
 		os.Getenv(constants.VcfTestDomainDataSourceId),
 		name,
 		stretchConfig,
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
-		os.Getenv(constants.VcfTestVsanLicenseKey),
 	)
 }
 
 func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn, host2Pass,
-	host3Fqdn, host3Pass, esxLicenseKey, vsanLicenseKey,
+	host3Fqdn, host3Pass, imageId,
 	additionalCommissionHostConfig, additionalHostInClusterConfig string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "domain_pool" {
@@ -414,9 +400,9 @@ func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn
 		domain_name = %q
 		name = "sfo-m01-cl01"
 		high_availability_enabled = true
+		cluster_image_id = %q
 		host {
 			id = vcf_host.host1.id
-			license_key = %q
 			vmnic {
 				id = "vmnic0"
 				vds_name = "sfo-m01-cl01-vds01"
@@ -428,7 +414,6 @@ func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn
 		}
 		host {
 			id = vcf_host.host2.id
-			license_key = %q
 			vmnic {
 				id = "vmnic0"
 				vds_name = "sfo-m01-cl01-vds01"
@@ -440,7 +425,6 @@ func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn
 		}
 		host {
 			id = vcf_host.host3.id
-			license_key = %q
 			vmnic {
 				id = "vmnic0"
 				vds_name = "sfo-m01-cl01-vds01"
@@ -484,12 +468,10 @@ func testAccVcfClusterResourceConfig(domainName, host1Fqdn, host1Pass, host2Fqdn
 		vsan_datastore {
 			datastore_name = "sfo-m01-cl01-ds-vsan01"
 			failures_to_tolerate = 1
-			license_key = %q
 		}
 		geneve_vlan_id = 3
 	}
-	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, additionalCommissionHostConfig, domainName,
-		esxLicenseKey, esxLicenseKey, esxLicenseKey, additionalHostInClusterConfig, vsanLicenseKey)
+	`, host1Fqdn, host1Pass, host2Fqdn, host2Pass, host3Fqdn, host3Pass, additionalCommissionHostConfig, domainName, imageId, additionalHostInClusterConfig)
 }
 
 func getStretchConfig() string {
@@ -503,26 +485,20 @@ func getStretchConfig() string {
 
 		secondary_fd_host {
 			id = vcf_host.host4.id
-			license_key = %q
 		}
 
 		secondary_fd_host {
 			id = vcf_host.host5.id
-			license_key = %q
 		}
 
 		secondary_fd_host {
 			id = vcf_host.host6.id
-			license_key = %q
 		}
 	}
 	`,
 		os.Getenv(constants.VcfTestWitnessHostIp),
 		os.Getenv(constants.VcfTestWitnessHostCidr),
 		os.Getenv(constants.VcfTestWitnessHostFqdn),
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
 	)
 }
 

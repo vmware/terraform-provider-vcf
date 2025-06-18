@@ -7,9 +7,8 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 func GetDnsSchema() *schema.Schema {
@@ -41,7 +40,7 @@ func GetDnsSchema() *schema.Schema {
 	}
 }
 
-func GetDnsSpecFromSchema(rawData []interface{}) *vcf.DnsSpec {
+func GetDnsSpecFromSchema(rawData []interface{}) *installer.DnsSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -50,11 +49,18 @@ func GetDnsSpecFromSchema(rawData []interface{}) *vcf.DnsSpec {
 	nameServer := data["name_server"].(string)
 	secondaryNameserver := data["secondary_name_server"].(string)
 
-	dnsSpecBinding := &vcf.DnsSpec{
-		Nameserver:          &nameServer,
-		SecondaryNameserver: &secondaryNameserver,
-		Domain:              domain,
-		Subdomain:           *domain,
+	nameservers := make([]string, 0)
+	if len(nameServer) > 0 {
+		nameservers = append(nameservers, nameServer)
+	}
+
+	if len(secondaryNameserver) > 0 {
+		nameservers = append(nameservers, secondaryNameserver)
+	}
+
+	dnsSpecBinding := &installer.DnsSpec{
+		Nameservers: &nameservers,
+		Subdomain:   *domain,
 	}
 	return dnsSpecBinding
 }

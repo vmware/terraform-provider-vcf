@@ -29,9 +29,9 @@ type FrameworkProviderModel struct {
 	SddcManagerPassword types.String `tfsdk:"sddc_manager_password"`
 	SddcManagerHost     types.String `tfsdk:"sddc_manager_host"`
 
-	CloudBuilderUsername types.String `tfsdk:"cloud_builder_username"`
-	CloudBuilderPassword types.String `tfsdk:"cloud_builder_password"`
-	CloudBuilderHost     types.String `tfsdk:"cloud_builder_host"`
+	InstallerUsername types.String `tfsdk:"installer_username"`
+	InstallerPassword types.String `tfsdk:"installer_password"`
+	InstallerHost     types.String `tfsdk:"installer_host"`
 
 	AllowUnverifiedTls types.Bool `tfsdk:"allow_unverified_tls"`
 }
@@ -40,8 +40,8 @@ type FrameworkProvider struct {
 	// The clients are exposed for the purpose of running the existing tests
 	// Individual resources should obtain access to these in their Configure methods
 	// via the ConfigureRequest
-	SddcManagerClient  *api_client.SddcManagerClient
-	CloudBuilderClient *api_client.CloudBuilderClient
+	SddcManagerClient *api_client.SddcManagerClient
+	InstallerClient   *api_client.InstallerClient
 }
 
 func New() provider.Provider {
@@ -87,39 +87,39 @@ func (frameworkProvider *FrameworkProvider) Schema(ctx context.Context, req prov
 						}...),
 				},
 			},
-			"cloud_builder_username": schema.StringAttribute{
+			"installer_username": schema.StringAttribute{
 				Optional:    true,
-				Description: "The username to authenticate to the Cloud Builder instance.",
+				Description: "The username to authenticate to the installer.",
 				Validators: []validator.String{
 					getCloudBuilderConflictsValidator(),
 					stringvalidator.AlsoRequires(
 						path.Expressions{
-							path.MatchRoot("cloud_builder_password"),
-							path.MatchRoot("cloud_builder_host"),
+							path.MatchRoot("installer_password"),
+							path.MatchRoot("installer_host"),
 						}...),
 				},
 			},
-			"cloud_builder_password": schema.StringAttribute{
+			"installer_password": schema.StringAttribute{
 				Optional:    true,
-				Description: "The password to authenticate to the Cloud Builder instance.",
+				Description: "The password to authenticate to the installer.",
 				Validators: []validator.String{
 					getCloudBuilderConflictsValidator(),
 					stringvalidator.AlsoRequires(
 						path.Expressions{
-							path.MatchRoot("cloud_builder_username"),
-							path.MatchRoot("cloud_builder_host"),
+							path.MatchRoot("installer_username"),
+							path.MatchRoot("installer_host"),
 						}...),
 				},
 			},
-			"cloud_builder_host": schema.StringAttribute{
+			"installer_host": schema.StringAttribute{
 				Optional:    true,
-				Description: "The fully qualified domain name or IP address of the Cloud Builder instance.",
+				Description: "The fully qualified domain name or IP address of the installer.",
 				Validators: []validator.String{
 					getCloudBuilderConflictsValidator(),
 					stringvalidator.AlsoRequires(
 						path.Expressions{
-							path.MatchRoot("cloud_builder_username"),
-							path.MatchRoot("cloud_builder_password"),
+							path.MatchRoot("installer_username"),
+							path.MatchRoot("installer_password"),
 						}...),
 				},
 			},
@@ -171,16 +171,19 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 		frameworkProvider.SddcManagerClient = client
 		res.ResourceData = client
 	} else {
-		// Connect to Cloud Builder
-		client := api_client.NewCloudBuilderClient(
-			getAttributeValue(data.CloudBuilderUsername.ValueString(), constants.CloudBuilderTestUsername).(string),
-			getAttributeValue(data.CloudBuilderPassword.ValueString(), constants.CloudBuilderTestPassword).(string),
-			getAttributeValue(data.CloudBuilderHost.ValueString(), constants.CloudBuilderTestUrl).(string),
-			version.ProviderVersion,
+		// Connect to installer
+		client := api_client.NewInstallerClient(
+			getAttributeValue(data.InstallerUsername.ValueString(), constants.InstallerTestUsername).(string),
+			getAttributeValue(data.InstallerPassword.ValueString(), constants.InstallerTestPassword).(string),
+			getAttributeValue(data.InstallerHost.ValueString(), constants.InstallerTestUrl).(string),
 			getAttributeValue(data.AllowUnverifiedTls.ValueBool(), constants.VcfTestAllowUnverifiedTls).(bool),
 		)
 
-		frameworkProvider.CloudBuilderClient = client
+		if err := client.Connect(); err != nil {
+			res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to connect to the VCF Installer", err.Error()))
+		}
+
+		frameworkProvider.InstallerClient = client
 		res.ResourceData = client
 	}
 }
@@ -200,9 +203,9 @@ func getAttributeValue[T string | bool](data T, envVar string) interface{} {
 func getSddcManagerConflictsValidator() validator.String {
 	return stringvalidator.ConflictsWith(
 		path.Expressions{
-			path.MatchRoot("cloud_builder_username"),
-			path.MatchRoot("cloud_builder_password"),
-			path.MatchRoot("cloud_builder_host"),
+			path.MatchRoot("installer_username"),
+			path.MatchRoot("installer_password"),
+			path.MatchRoot("installer_host"),
 		}...)
 }
 

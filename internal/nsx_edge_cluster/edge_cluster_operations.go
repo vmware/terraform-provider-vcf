@@ -30,10 +30,7 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 	name := data.Get("name").(string)
 	profileType := data.Get("profile_type").(string)
 	profileSpec := getClusterProfileSpec(data)
-	routingType := data.Get("routing_type").(string)
 	formFactor := data.Get("form_factor").(string)
-	highAvailability := data.Get("high_availability").(string)
-	tier0Name := data.Get("tier0_name").(string)
 	mtu := int32(data.Get("mtu").(int))
 	asn := data.Get("asn").(string)
 	tier1Unhosted := data.Get("tier1_unhosted").(bool)
@@ -47,6 +44,31 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 	transitSubnets := resource_utils.ToStringSlice(data.Get("transit_subnets").([]interface{}))
 	internalTransitSubnets := resource_utils.ToStringSlice(data.Get("internal_transit_subnets").([]interface{}))
 
+	var asnInt *int64
+	if asn != "" {
+		// Convert asn to int64 to match vcf spec
+		val, err := strconv.ParseInt(asn, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		asnInt = &val
+	}
+
+	var tier0Name *string
+	if data.Get("tier0_name").(string) != "" {
+		tier0Name = resource_utils.ToPointer[string](data.Get("tier0_name").(string))
+	}
+	var routingType *string
+	if data.Get("routing_type").(string) != "" {
+		routingType = resource_utils.ToPointer[string](data.Get("routing_type").(string))
+	}
+
+	var highAvailability *string
+	if data.Get("high_availability").(string) != "" {
+		highAvailability = resource_utils.ToPointer[string](data.Get("high_availability").(string))
+	}
+
 	nodes := data.Get("edge_node").([]interface{})
 	nodeSpecs := make([]vcf.NsxTEdgeNodeSpec, 0, len(nodes))
 
@@ -57,12 +79,6 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 			return nil, err
 		}
 		nodeSpecs = append(nodeSpecs, *nodeSpec)
-	}
-
-	// Convert asn to int64 to match vcf spec
-	asnInt, err := strconv.ParseInt(asn, 10, 64)
-	if err != nil {
-		return nil, err
 	}
 
 	spec := &vcf.EdgeClusterCreationSpec{
@@ -77,10 +93,10 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 		EdgeRootPassword:              rootPassword,
 		InternalTransitSubnets:        &internalTransitSubnets,
 		Mtu:                           mtu,
-		Asn:                           &asnInt,
-		Tier0Name:                     &tier0Name,
-		Tier0RoutingType:              &routingType,
-		Tier0ServicesHighAvailability: &highAvailability,
+		Asn:                           asnInt,
+		Tier0Name:                     tier0Name,
+		Tier0RoutingType:              routingType,
+		Tier0ServicesHighAvailability: highAvailability,
 		Tier1Name:                     tier1Name,
 		Tier1Unhosted:                 &tier1Unhosted,
 		TransitSubnets:                &transitSubnets,
@@ -315,7 +331,6 @@ func getComputeCluster(name string, client *vcf.ClientWithResponses) (*vcf.Clust
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](ok)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

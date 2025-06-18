@@ -76,6 +76,12 @@ Read-Only:
 - `signature_algorithm` (String) Algorithm used to sign the certificate
 - `subject` (String) Complete distinguished name to which the certificate is issued
 - `subject_alternative_name` (List of String) The alternative names to which the certificate is issued
+- `subject_cn` (String) The subject_cn(common name) of the certificate
+- `subject_country` (String) The subject_country of the certificate
+- `subject_locality` (String) The subject_locality of the certificate
+- `subject_org` (String) The subject_org of the certificate.
+- `subject_ou` (String) The subject_ou(org unit) of the certificate
+- `subject_st` (String) The subject_st(state) of the certificate
 - `thumbprint` (String) Thumbprint generated using certificate content
 - `thumbprint_algorithm` (String) Algorithm used to generate thumbprint
 - `version` (String) The X.509 version of the certificate

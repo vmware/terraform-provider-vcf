@@ -67,16 +67,6 @@ func muxedFactories() map[string]func() (tfprotov6.ProviderServer, error) {
 func testAccPreCheck(t *testing.T) {
 	testAccSDDCManagerOrCloudBuilderPreCheck(t)
 	testAccHostsPreCheck(t, 8)
-
-	if v := os.Getenv(constants.VcfTestNsxLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestNsxLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestEsxiLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestEsxiLicenseKey + " must be set for acceptance tests")
-	}
-	if v := os.Getenv(constants.VcfTestVsanLicenseKey); v == "" {
-		t.Fatal(constants.VcfTestVsanLicenseKey + " must be set for acceptance tests")
-	}
 	if v := os.Getenv(constants.VcfTestDomainDataSourceId); v == "" {
 		t.Fatal(constants.VcfTestDomainDataSourceId + " must be set for acceptance tests")
 	}
@@ -87,21 +77,21 @@ func testAccPreCheck(t *testing.T) {
 
 func testAccSDDCManagerOrCloudBuilderPreCheck(t *testing.T) {
 	testSddcManagerUrl := os.Getenv(constants.VcfTestUrl)
-	testCloudBuilderUrl := os.Getenv(constants.CloudBuilderTestUrl)
+	testCloudBuilderUrl := os.Getenv(constants.InstallerTestUrl)
 	if validationUtils.IsEmpty(testSddcManagerUrl) && validationUtils.IsEmpty(testCloudBuilderUrl) {
-		t.Fatal(constants.VcfTestUrl + " or " + constants.CloudBuilderTestUrl +
+		t.Fatal(constants.VcfTestUrl + " or " + constants.InstallerTestUrl +
 			" must be set for acceptance tests")
 	}
 	testSddcManagerUsername := os.Getenv(constants.VcfTestUsername)
-	testCloudBuilderUsername := os.Getenv(constants.CloudBuilderTestUsername)
+	testCloudBuilderUsername := os.Getenv(constants.InstallerTestUsername)
 	if validationUtils.IsEmpty(testSddcManagerUsername) && validationUtils.IsEmpty(testCloudBuilderUsername) {
-		t.Fatal(constants.VcfTestUsername + " or " + constants.CloudBuilderTestUsername +
+		t.Fatal(constants.VcfTestUsername + " or " + constants.InstallerTestUsername +
 			" must be set for acceptance tests")
 	}
 	testSddcManagerPassword := os.Getenv(constants.VcfTestPassword)
-	testCloudBuilderPassword := os.Getenv(constants.CloudBuilderTestPassword)
+	testCloudBuilderPassword := os.Getenv(constants.InstallerTestPassword)
 	if validationUtils.IsEmpty(testSddcManagerPassword) && validationUtils.IsEmpty(testCloudBuilderPassword) {
-		t.Fatal(constants.VcfTestPassword + " or " + constants.CloudBuilderTestPassword +
+		t.Fatal(constants.VcfTestPassword + " or " + constants.InstallerTestPassword +
 			" must be set for acceptance tests")
 	}
 }

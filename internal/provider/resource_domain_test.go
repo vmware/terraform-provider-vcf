@@ -36,14 +36,11 @@ func TestAccResourceVcfDomainCreate(t *testing.T) {
 						os.Getenv(constants.VcfTestHost3Pass),
 						os.Getenv(constants.VcfTestHost4Fqdn),
 						os.Getenv(constants.VcfTestHost4Pass)),
-					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl01",
-							"host1", "host2", "host3"),
-						os.Getenv(constants.VcfTestVsanLicenseKey)),
+							"host1", "host2", "host3")),
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
@@ -90,14 +87,11 @@ func TestAccResourceVcfDomainFull(t *testing.T) {
 						os.Getenv(constants.VcfTestHost3Pass),
 						os.Getenv(constants.VcfTestHost4Fqdn),
 						os.Getenv(constants.VcfTestHost4Pass)),
-					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl01",
-							"host1", "host2", "host3"),
-						os.Getenv(constants.VcfTestVsanLicenseKey)),
+							"host1", "host2", "host3")),
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
@@ -135,21 +129,16 @@ func TestAccResourceVcfDomainFull(t *testing.T) {
 						os.Getenv(constants.VcfTestHost6Pass),
 						os.Getenv(constants.VcfTestHost7Fqdn),
 						os.Getenv(constants.VcfTestHost7Pass)),
-					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl01",
-							"host1", "host2", "host3"),
-						os.Getenv(constants.VcfTestVsanLicenseKey)),
+							"host1", "host2", "host3")),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl02",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl02",
-							"host4", "host5", "host6"),
-						os.Getenv(constants.VcfTestVsanLicenseKey))),
+							"host4", "host5", "host6"))),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
@@ -197,21 +186,16 @@ func TestAccResourceVcfDomainFull(t *testing.T) {
 						os.Getenv(constants.VcfTestHost7Pass),
 						os.Getenv(constants.VcfTestHost8Fqdn),
 						os.Getenv(constants.VcfTestHost8Pass)),
-					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl01",
-							"host1", "host2", "host3"),
-						os.Getenv(constants.VcfTestVsanLicenseKey)),
+							"host1", "host2", "host3")),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl02",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl02",
-							"host4", "host5", "host6", "host7"),
-						os.Getenv(constants.VcfTestVsanLicenseKey))),
+							"host4", "host5", "host6", "host7"))),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
@@ -260,21 +244,16 @@ func TestAccResourceVcfDomainFull(t *testing.T) {
 						os.Getenv(constants.VcfTestHost7Pass),
 						os.Getenv(constants.VcfTestHost8Fqdn),
 						os.Getenv(constants.VcfTestHost8Pass)),
-					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl01",
-							"host1", "host2", "host3"),
-						os.Getenv(constants.VcfTestVsanLicenseKey)),
+							"host1", "host2", "host3")),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl02",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl02",
-							"host4", "host5", "host6"),
-						os.Getenv(constants.VcfTestVsanLicenseKey))),
+							"host4", "host5", "host6"))),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "vcenter_configuration.0.id"),
@@ -323,14 +302,11 @@ func TestAccResourceVcfDomainFull(t *testing.T) {
 						os.Getenv(constants.VcfTestHost7Pass),
 						os.Getenv(constants.VcfTestHost8Fqdn),
 						os.Getenv(constants.VcfTestHost8Pass)),
-					os.Getenv(constants.VcfTestNsxLicenseKey),
 					testAccVcfClusterInDomainConfig(
 						"sfo-w01-cl01",
 						testGenerateHostsInClusterInDomainConfig(
-							os.Getenv(constants.VcfTestEsxiLicenseKey),
 							"sfo-w01-cl01",
-							"host1", "host2", "host3"),
-						os.Getenv(constants.VcfTestVsanLicenseKey)),
+							"host1", "host2", "host3")),
 					""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("vcf_domain.domain1", "id"),
@@ -356,7 +332,7 @@ func TestAccResourceVcfDomainFull(t *testing.T) {
 	})
 }
 
-func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
+func testAccVcfDomainConfig(commissionHostConfig,
 	clusterConfig, additionalClusterConfig string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "domain_pool" {
@@ -392,41 +368,44 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 
 	resource "vcf_domain" "domain1" {
 		name                    = "sfo-w01-vc01"
+		sso {
+			domain_name = "acc-test.vrack.vsphere.local"
+			domain_password = "S@mpleL0ngP@ss123!"
+		}
 		vcenter_configuration {
 			name            = "test-vcenter"
 			datacenter_name = "test-datacenter"
-			root_password   = "S@mpleP@ss123!"
+			root_password   = "S@mpleL0ngP@ss123!"
 			vm_size         = "small"
 			storage_size    = "lstorage"
-			ip_address      = "10.0.0.43"
+			ip_address      = "10.0.0.143"
 			subnet_mask     = "255.255.255.0"
 			gateway         = "10.0.0.250"
-			fqdn            = "sfo-w01-vc01.sfo.rainpole.io"
+			fqdn            = "sfo-w01-vc01.vrack.vsphere.local"
 		}
 		nsx_configuration {
-			vip        					= "10.0.0.66"
-			vip_fqdn   					= "sfo-w01-nsx01.sfo.rainpole.io"
-			nsx_manager_admin_password	= "Nqkva_parola1"
+			vip        					= "10.0.0.166"
+			vip_fqdn   					= "sfo-w01-nsx01.vrack.vsphere.local"
+			nsx_manager_admin_password	= "S@mpleL0ngP@ss123!"
 			form_factor                 = "small"
-			license_key                 = %q
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01a"
-				ip_address  = "10.0.0.62"
-				fqdn    = "sfo-w01-nsx01a.sfo.rainpole.io"
+				ip_address  = "10.0.0.162"
+				fqdn    = "sfo-w01-nsx01a.vrack.vsphere.local"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01b"
-				ip_address  = "10.0.0.63"
-				fqdn    = "sfo-w01-nsx01b.sfo.rainpole.io"
+				ip_address  = "10.0.0.163"
+				fqdn    = "sfo-w01-nsx01b.vrack.vsphere.local"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01c"
-				ip_address  = "10.0.0.64"
-				fqdn    = "sfo-w01-nsx01c.sfo.rainpole.io"
+				ip_address  = "10.0.0.164"
+				fqdn    = "sfo-w01-nsx01c.vrack.vsphere.local"
 				subnet_mask = "255.255.255.0"
 				gateway     = "10.0.0.250"
 			}
@@ -435,14 +414,15 @@ func testAccVcfDomainConfig(commissionHostConfig, nsxLicenseKey,
 		%s
 		// cluster 2 config
 		%s
-	}`, commissionHostConfig, nsxLicenseKey, clusterConfig, additionalClusterConfig)
+	}`, commissionHostConfig, clusterConfig, additionalClusterConfig)
 }
 
-func testAccVcfClusterInDomainConfig(clusterName, hostConfig, vsanLicenseKey string) string {
+func testAccVcfClusterInDomainConfig(clusterName, hostConfig string) string {
 	return fmt.Sprintf(`
 		cluster {
 			name = %q
 			high_availability_enabled = true
+			cluster_image_id = %q
 			// hosts config
 			%s
 			vds {
@@ -463,17 +443,16 @@ func testAccVcfClusterInDomainConfig(clusterName, hostConfig, vsanLicenseKey str
 			vsan_datastore {
 				datastore_name = "%s-ds-vsan01"
 				failures_to_tolerate = 1
-				license_key = %q
 			}
 			geneve_vlan_id = 3
-		}`, clusterName, hostConfig, clusterName, clusterName, clusterName,
-		clusterName, clusterName, vsanLicenseKey)
+		}`, clusterName, os.Getenv(constants.VcfTestClusterImageId), hostConfig, clusterName, clusterName, clusterName,
+		clusterName, clusterName)
 }
 
-func testGenerateHostsInClusterInDomainConfig(esxLicenseKey, clusterName string, hostsRefs ...string) string {
+func testGenerateHostsInClusterInDomainConfig(clusterName string, hostsRefs ...string) string {
 	var result string
 	for _, hostRef := range hostsRefs {
-		result += "\t" + testAccVcfHostInClusterConfig(hostRef, esxLicenseKey, clusterName)
+		result += "\t" + testAccVcfHostInClusterConfig(hostRef, clusterName)
 		result += "\n"
 	}
 	return result
@@ -531,7 +510,7 @@ func domainImportStateCheck(states []*terraform.InstanceState) error {
 		if state.Attributes["name"] != "sfo-w01-vc01" {
 			return fmt.Errorf("domain has wrong name attribute set")
 		}
-		if state.Attributes["vcenter_configuration.0.fqdn"] != "sfo-w01-vc01.sfo.rainpole.io" {
+		if state.Attributes["vcenter_configuration.0.fqdn"] != "sfo-w01-vc01.vrack.vsphere.local" {
 			return fmt.Errorf("domain has wrong name attribute set")
 		}
 		if state.Attributes["cluster.0.name"] != "sfo-w01-cl01" {

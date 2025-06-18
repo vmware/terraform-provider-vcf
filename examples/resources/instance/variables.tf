@@ -1,15 +1,15 @@
-variable "cloud_builder_username" {
-  description = "Username to authenticate to CloudBuilder"
+variable "installer_username" {
+  description = "Username to authenticate to the VCF Installer"
   default     = ""
 }
 
-variable "cloud_builder_password" {
-  description = "Password to authenticate to CloudBuilder"
+variable "installer_password" {
+  description = "Password to authenticate to the VCF Installer"
   default     = ""
 }
 
-variable "cloud_builder_host" {
-  description = "Fully qualified domain name or IP address of the CloudBuilder"
+variable "installer_host" {
+  description = "Fully qualified domain name or IP address of the the VCF Installer"
   default     = ""
 }
 
@@ -60,20 +60,5 @@ variable "esx_host3_pass" {
 
 variable "esx_host4_pass" {
   description = "Password to authenticate to the ESXi host 4"
-  default     = ""
-}
-
-variable "nsx_license_key" {
-  description = "NSX license to be used"
-  default     = ""
-}
-
-variable "vcenter_license_key" {
-  description = "vCenter license to be used"
-  default     = ""
-}
-
-variable "vsan_license_key" {
-  description = "vSAN license key to be used"
   default     = ""
 }

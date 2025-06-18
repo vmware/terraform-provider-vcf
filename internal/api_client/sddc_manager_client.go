@@ -93,7 +93,6 @@ func (sddcManagerClient *SddcManagerClient) Connect() error {
 
 	tokenPair, vcfErr := GetResponseAs[vcf.TokenPair](res)
 	if vcfErr != nil {
-		LogError(vcfErr)
 		return errors.New(*vcfErr.Message)
 	}
 	sddcManagerClient.accessToken = tokenPair.AccessToken
@@ -165,16 +164,23 @@ func GetError(body []byte) *vcf.Error {
 	return &dest
 }
 
-// LogError traverses a vcf.Error structure and logs its error message as well as
+// LogError traverses a vcf.Error structure and logs its error message and or causes as well as
 // the messages of any nested errors.
-func LogError(err *vcf.Error) {
+func LogError(err *vcf.Error, ctx context.Context) {
 	if err != nil {
 		if err.Message != nil {
-			tflog.Error(context.Background(), *err.Message)
+			tflog.Error(ctx, *err.Message)
+		}
+		if err.Causes != nil {
+			for _, cause := range *err.Causes {
+				if cause.Message != nil {
+					tflog.Error(ctx, *cause.Message)
+				}
+			}
 		}
 		if err.NestedErrors != nil {
 			for _, nestedErr := range *err.NestedErrors {
-				LogError(&nestedErr)
+				LogError(&nestedErr, ctx)
 			}
 		}
 	}

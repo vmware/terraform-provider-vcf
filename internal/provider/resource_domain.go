@@ -83,6 +83,27 @@ func ResourceDomain() *schema.Resource {
 				MinItems:    1,
 				Elem:        clusterSubresourceSchema(),
 			},
+			"sso": {
+				Type:        schema.TypeList,
+				Required:    true,
+				Description: "SSO configuration for the workload domain",
+				MinItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"domain_name": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Name of the SSO domain",
+						},
+						"domain_password": {
+							Type:        schema.TypeString,
+							Required:    true,
+							Sensitive:   true,
+							Description: "Password of the SSO domain",
+						},
+					},
+				},
+			},
 			"status": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -127,7 +148,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if validationUtils.HasValidationFailed(validationResult) {
@@ -140,7 +161,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
@@ -191,7 +212,7 @@ func resourceDomainUpdate(ctx context.Context, data *schema.ResourceData, meta i
 		}
 		task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
@@ -297,7 +318,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	_, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -307,7 +328,7 @@ func resourceDomainDelete(ctx context.Context, data *schema.ResourceData, meta i
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {

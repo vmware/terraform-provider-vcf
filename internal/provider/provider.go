@@ -23,7 +23,7 @@ func Provider() *schema.Provider {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Description:   "The username to authenticate to the SDDC Manager instance.",
-				ConflictsWith: []string{"cloud_builder_username", "cloud_builder_password", "cloud_builder_host"},
+				ConflictsWith: []string{"installer_username", "installer_password", "installer_host"},
 				RequiredWith:  []string{"sddc_manager_password", "sddc_manager_host"},
 				DefaultFunc:   schema.EnvDefaultFunc(constants.VcfTestUsername, nil),
 			},
@@ -31,7 +31,7 @@ func Provider() *schema.Provider {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Description:   "The password to authenticate to the SDDC Manager instance.",
-				ConflictsWith: []string{"cloud_builder_username", "cloud_builder_password", "cloud_builder_host"},
+				ConflictsWith: []string{"installer_username", "installer_password", "installer_host"},
 				RequiredWith:  []string{"sddc_manager_username", "sddc_manager_host"},
 				DefaultFunc:   schema.EnvDefaultFunc(constants.VcfTestPassword, nil),
 			},
@@ -39,33 +39,33 @@ func Provider() *schema.Provider {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Description:   "The fully qualified domain name or IP address of the SDDC Manager instance.",
-				ConflictsWith: []string{"cloud_builder_username", "cloud_builder_password", "cloud_builder_host"},
+				ConflictsWith: []string{"installer_username", "installer_password", "installer_host"},
 				RequiredWith:  []string{"sddc_manager_username", "sddc_manager_password"},
 				DefaultFunc:   schema.EnvDefaultFunc(constants.VcfTestUrl, nil),
 			},
-			"cloud_builder_username": {
+			"installer_username": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				Description:   "The username to authenticate to the Cloud Builder instance.",
+				Description:   "The username to authenticate to the installer.",
 				ConflictsWith: []string{"sddc_manager_username", "sddc_manager_password", "sddc_manager_host"},
-				RequiredWith:  []string{"cloud_builder_password", "cloud_builder_host"},
-				DefaultFunc:   schema.EnvDefaultFunc(constants.CloudBuilderTestUsername, nil),
+				RequiredWith:  []string{"installer_password", "installer_host"},
+				DefaultFunc:   schema.EnvDefaultFunc(constants.InstallerTestUsername, nil),
 			},
-			"cloud_builder_password": {
+			"installer_password": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				Description:   "The password to authenticate to the Cloud Builder instance.",
+				Description:   "The password to authenticate to the installer.",
 				ConflictsWith: []string{"sddc_manager_username", "sddc_manager_password", "sddc_manager_host"},
-				RequiredWith:  []string{"cloud_builder_username", "cloud_builder_host"},
-				DefaultFunc:   schema.EnvDefaultFunc(constants.CloudBuilderTestPassword, nil),
+				RequiredWith:  []string{"installer_username", "installer_host"},
+				DefaultFunc:   schema.EnvDefaultFunc(constants.InstallerTestPassword, nil),
 			},
-			"cloud_builder_host": {
+			"installer_host": {
 				Type:          schema.TypeString,
 				Optional:      true,
-				Description:   "The fully qualified domain name or IP address of the Cloud Builder instance.",
+				Description:   "The fully qualified domain name or IP address of the installer.",
 				ConflictsWith: []string{"sddc_manager_username", "sddc_manager_password", "sddc_manager_host"},
-				RequiredWith:  []string{"cloud_builder_username", "cloud_builder_password"},
-				DefaultFunc:   schema.EnvDefaultFunc(constants.CloudBuilderTestUrl, nil),
+				RequiredWith:  []string{"installer_username", "installer_password"},
+				DefaultFunc:   schema.EnvDefaultFunc(constants.InstallerTestUrl, nil),
 			},
 			"allow_unverified_tls": {
 				Type:        schema.TypeBool,
@@ -108,11 +108,11 @@ func Provider() *schema.Provider {
 
 func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	sddcManagerUsername, isVcfUsernameSet := data.GetOk("sddc_manager_username")
-	cbUsername, isCbUsernameSet := data.GetOk("cloud_builder_username")
+	installerUsername, isInstallerUsernameSet := data.GetOk("installer_username")
 	allowUnverifiedTLS := data.Get("allow_unverified_tls")
 
-	if !isVcfUsernameSet && !isCbUsernameSet {
-		return nil, diag.Errorf("Either SDDC Manager or Cloud Builder configuration must be provided.")
+	if !isVcfUsernameSet && !isInstallerUsernameSet {
+		return nil, diag.Errorf("Either SDDC Manager or Installer configuration must be provided.")
 	}
 
 	if isVcfUsernameSet {
@@ -121,8 +121,12 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		if !isSetPassword || !isSetHost {
 			return nil, diag.Errorf("SDDC Manager username, password, and host must be provided.")
 		}
-		var sddcManagerClient = api_client.NewSddcManagerClient(sddcManagerUsername.(string), password.(string),
-			hostName.(string), version.ProviderVersion, allowUnverifiedTLS.(bool))
+		sddcManagerClient := api_client.NewSddcManagerClient(
+			sddcManagerUsername.(string),
+			password.(string),
+			hostName.(string),
+			version.ProviderVersion,
+			allowUnverifiedTLS.(bool))
 		err := sddcManagerClient.Connect()
 		if err != nil {
 			return nil, diag.FromErr(err)
@@ -130,15 +134,19 @@ func providerConfigure(_ context.Context, data *schema.ResourceData) (interface{
 		return sddcManagerClient, nil
 	}
 
-	if isCbUsernameSet {
-		password, isSetPassword := data.GetOk("cloud_builder_password")
-		hostName, isSetHost := data.GetOk("cloud_builder_host")
+	if isInstallerUsernameSet {
+		password, isSetPassword := data.GetOk("installer_password")
+		hostName, isSetHost := data.GetOk("installer_host")
 		if !isSetPassword || !isSetHost {
-			return nil, diag.Errorf("Cloud Builder username, password, and host must be provided.")
+			return nil, diag.Errorf("Installer username, password, and host must be provided.")
 		}
-		var cloudBuilderClient = api_client.NewCloudBuilderClient(cbUsername.(string), password.(string),
-			hostName.(string), version.ProviderVersion, allowUnverifiedTLS.(bool))
-		return cloudBuilderClient, nil
+		installerClient := api_client.NewInstallerClient(installerUsername.(string), password.(string),
+			hostName.(string), allowUnverifiedTLS.(bool))
+		err := installerClient.Connect()
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		return installerClient, nil
 	}
 
 	return nil, diag.Errorf("Failed to configure the provider. Please check the provider configuration settings.")

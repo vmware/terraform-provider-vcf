@@ -17,7 +17,6 @@ import (
 
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
-	"github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validationUtils "github.com/vmware/terraform-provider-vcf/internal/validation"
 )
@@ -54,7 +53,7 @@ func SetExpansionOrContractionSpec(updateSpec *vcf.ClusterUpdateSpec,
 		return nil, fmt.Errorf("adding and removing hosts is not supported in a single configuration change. Apply each change separately")
 	}
 
-	addedHosts, removedHosts := resource_utils.CalculateAddedRemovedResources(newHostsList, oldHostsList)
+	addedHosts, removedHosts := utils.CalculateAddedRemovedResources(newHostsList, oldHostsList)
 	if len(removedHosts) == 0 {
 		var hostSpecs []vcf.HostSpec
 		for _, addedHostRaw := range addedHosts {
@@ -65,7 +64,8 @@ func SetExpansionOrContractionSpec(updateSpec *vcf.ClusterUpdateSpec,
 			hostSpecs = append(hostSpecs, *hostSpec)
 		}
 		clusterExpansionSpec := &vcf.ClusterExpansionSpec{
-			HostSpecs: hostSpecs,
+			DeployWithoutLicenseKeys: utils.ToPointer[bool](true),
+			HostSpecs:                hostSpecs,
 		}
 		updateSpec.ClusterExpansionSpec = clusterExpansionSpec
 		return updateSpec, nil
@@ -127,6 +127,7 @@ func SetStretchOrUnstretchSpec(updateSpec *vcf.ClusterUpdateSpec, data *schema.R
 		var secondaryAzOverlayVlanId int32 = 0
 
 		stretchSpec := &vcf.ClusterStretchSpec{
+			DeployWithoutLicenseKeys:          utils.ToPointer[bool](true),
 			HostSpecs:                         hostSpecs,
 			SecondaryAzOverlayVlanId:          &secondaryAzOverlayVlanId,
 			WitnessSpec:                       witnessSpec,
@@ -148,7 +149,7 @@ func ValidateClusterUpdateOperation(ctx context.Context, clusterId string,
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -394,7 +395,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	}
 	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 
@@ -426,7 +427,7 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	allDomains := *page.Elements
@@ -459,7 +460,7 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostRefere
 		}
 		hostObj, vcfErr := api_client.GetResponseAs[vcf.Host](res)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return nil, errors.New(*vcfErr.Message)
 		}
 		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(*hostObj))

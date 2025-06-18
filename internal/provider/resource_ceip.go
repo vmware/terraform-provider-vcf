@@ -70,7 +70,7 @@ func resourceCeipRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	resp, vcfErr := api_client.GetResponseAs[vcf.Ceip](ceipResult)
 
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -86,9 +86,10 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	if status, ok := d.GetOk("status"); ok {
 		statusVal := status.(string)
 		// the VCF PATCH API requires the params "ENABLE/DISABLE" while the resource states are "ENABLED/DISABLED"
-		if statusVal == EnabledState {
+		switch statusVal {
+		case EnabledState:
 			enableApiParam = EnableApiParam
-		} else if statusVal == DisabledState {
+		case DisabledState:
 			enableApiParam = DisableApiParam
 		}
 	}
@@ -101,7 +102,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -127,7 +128,7 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](ceipAccepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 

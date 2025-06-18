@@ -30,36 +30,8 @@ func TestAccDataSourceVcfNetworkPool(t *testing.T) {
 
 func testAccDataSourceVcfNetworkPoolConfig(networkPoolName string) string {
 	return fmt.Sprintf(`
-    resource "vcf_network_pool" "test_pool" {
-        name    = %q
-        network {
-            gateway   = "192.168.4.1"
-            mask      = "255.255.255.0"
-            mtu       = 8940
-            subnet    = "192.168.4.0"
-            type      = "VSAN"
-            vlan_id   = 100
-            ip_pools {
-                start = "192.168.4.5"
-                end   = "192.168.4.50"
-            }
-        }
-        network {
-            gateway   = "192.168.5.1"
-            mask      = "255.255.255.0"
-            mtu       = 8940
-            subnet    = "192.168.5.0"
-            type      = "vMotion"
-            vlan_id   = 100
-			ip_pools {
-				start = "192.168.5.5"
-				end   = "192.168.5.50"
-			}
-		}
-    }
-
     data "vcf_network_pool" "test_pool" {
-        name = vcf_network_pool.test_pool.name
+        name = %q
     }
     `, networkPoolName)
 }

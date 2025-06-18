@@ -7,10 +7,9 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	validation_utils "github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 var sharesLevelValues = []string{"custom", "high", "low", "normal"}
@@ -23,6 +22,11 @@ func GetSddcClusterSchema() *schema.Schema {
 		MaxItems: 1,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
+				"datacenter_name": {
+					Type:        schema.TypeString,
+					Description: "vCenter Datacenter Name",
+					Required:    true,
+				},
 				"cluster_name": {
 					Type:        schema.TypeString,
 					Description: "vCenter Cluster Name",
@@ -33,27 +37,7 @@ func GetSddcClusterSchema() *schema.Schema {
 					Description: "vCenter cluster EVC mode",
 					Optional:    true,
 				},
-				"host_failures_to_tolerate": {
-					Type:         schema.TypeInt,
-					Description:  "Host failures to tolerate. In between 0 and 3",
-					Optional:     true,
-					ValidateFunc: validation.IntBetween(0, 3),
-				},
-				"cluster_image_enabled": {
-					Type:        schema.TypeBool,
-					Description: "Whether to enable vSphere Lifecycle Manager images for this cluster",
-					Optional:    true,
-					Default:     true,
-				},
 				"resource_pool": getResourcePoolSchema(),
-				"vm_folder": {
-					Type:        schema.TypeMap,
-					Description: "Virtual Machine folders map. One among: MANAGEMENT, NETWORKING",
-					Optional:    true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-					},
-				},
 			},
 		},
 	}
@@ -159,26 +143,19 @@ func getResourcePoolSchema() *schema.Schema {
 	}
 }
 
-func GetSddcClusterSpecFromSchema(rawData []interface{}) *vcf.SddcClusterSpec {
+func GetSddcClusterSpecFromSchema(rawData []interface{}) *installer.SddcClusterSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
 	data := rawData[0].(map[string]interface{})
 	clusterName := utils.ToStringPointer(data["cluster_name"])
+	datacenterName := utils.ToStringPointer(data["datacenter_name"])
 	clusterEvcMode := data["cluster_evc_mode"].(string)
-	hostFailuresToTolerate := utils.ToInt32Pointer(data["host_failures_to_tolerate"])
-	clusterImageEnabled := data["cluster_image_enabled"].(bool)
-	var vmFolder map[string]string
-	if !validation_utils.IsEmpty(data["vm_folder"]) {
-		vmFolder = data["vm_folder"].(map[string]string)
-	}
 
-	clusterSpecBinding := &vcf.SddcClusterSpec{
-		ClusterEvcMode:         &clusterEvcMode,
-		ClusterName:            clusterName,
-		HostFailuresToTolerate: hostFailuresToTolerate,
-		VmFolders:              &vmFolder,
-		ClusterImageEnabled:    &clusterImageEnabled,
+	clusterSpecBinding := &installer.SddcClusterSpec{
+		ClusterEvcMode: &clusterEvcMode,
+		ClusterName:    clusterName,
+		DatacenterName: datacenterName,
 	}
 
 	if resourcePoolSpecs := getResourcePoolSpecsFromSchema(
@@ -189,26 +166,26 @@ func GetSddcClusterSpecFromSchema(rawData []interface{}) *vcf.SddcClusterSpec {
 	return clusterSpecBinding
 }
 
-func getResourcePoolSpecsFromSchema(rawData []interface{}) []vcf.ResourcePoolSpec {
-	var resourcePoolSpecs []vcf.ResourcePoolSpec
+func getResourcePoolSpecsFromSchema(rawData []interface{}) []installer.ResourcePoolSpec {
+	var resourcePoolSpecs []installer.ResourcePoolSpec
 	for _, resourcePool := range rawData {
 		data := resourcePool.(map[string]interface{})
 		cpuLimit := int64(data["cpu_limit"].(float64))
 		cpuReservationExpandable := data["cpu_reservation_expandable"].(bool)
 		cpuReservationMhz := int64(data["cpu_reservation_mhz"].(float64))
 		cpuReservationPercentage := utils.ToInt32Pointer(data["cpu_reservation_percentage"])
-		cpuSharesLevel := vcf.ResourcePoolSpecCpuSharesLevel(data["cpu_shares_level"].(string))
+		cpuSharesLevel := installer.ResourcePoolSpecCpuSharesLevel(data["cpu_shares_level"].(string))
 		cpuSharesValue := int32(data["cpu_shares_value"].(int))
 		memoryLimit := int64(data["memory_limit"].(float64))
 		memoryReservationPercentage := utils.ToInt32Pointer(data["memory_reservation_percentage"])
 		memoryReservationExpandable := utils.ToBoolPointer(data["memory_reservation_expandable"])
 		memoryReservationMB := int64(data["memory_reservation_mb"].(float64))
-		memorySharesLevel := vcf.ResourcePoolSpecMemorySharesLevel(data["memory_shares_level"].(string))
+		memorySharesLevel := installer.ResourcePoolSpecMemorySharesLevel(data["memory_shares_level"].(string))
 		memorySharesValue := int32(data["memory_shares_value"].(int))
 		name := utils.ToStringPointer(data["name"])
-		resourcePoolType := vcf.ResourcePoolSpecType(data["type"].(string))
+		resourcePoolType := installer.ResourcePoolSpecType(data["type"].(string))
 
-		resourcePoolSpec := &vcf.ResourcePoolSpec{
+		resourcePoolSpec := &installer.ResourcePoolSpec{
 			CpuLimit:                    &cpuLimit,
 			CpuReservationExpandable:    &cpuReservationExpandable,
 			CpuReservationMhz:           &cpuReservationMhz,

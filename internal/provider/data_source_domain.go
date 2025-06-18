@@ -120,7 +120,7 @@ func getDomainByName(ctx context.Context, apiClient *vcf.ClientWithResponses, na
 
 	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](domainsResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

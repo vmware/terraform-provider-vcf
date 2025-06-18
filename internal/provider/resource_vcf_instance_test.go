@@ -14,13 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/constants"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
-func TestAccResourceVcfSddcBasic(t *testing.T) {
+func TestAccResourceVcfInstanceBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
@@ -28,20 +28,17 @@ func TestAccResourceVcfSddcBasic(t *testing.T) {
 			{
 				Config: testAccCheckVcfSddcConfigBasic(),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSddcResourceExists(),
+					testAccCheckInstanceResourceExists(),
 					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "instance_id"),
 					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "creation_timestamp"),
 					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "status"),
-					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "sddc_manager_fqdn"),
-					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "sddc_manager_id"),
-					resource.TestCheckResourceAttrSet("vcf_instance.sddc_1", "sddc_manager_version"),
 				),
 			},
 		},
 	})
 }
 
-func testAccCheckSddcResourceExists() resource.TestCheckFunc {
+func testAccCheckInstanceResourceExists() resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		for _, rs := range state.RootModule().Resources {
 			if rs.Type != "vcf_instance" {
@@ -49,7 +46,7 @@ func testAccCheckSddcResourceExists() resource.TestCheckFunc {
 			}
 
 			instanceId := rs.Primary.Attributes["id"]
-			client := testAccProvider.Meta().(*api_client.CloudBuilderClient)
+			client := testAccProvider.Meta().(*api_client.InstallerClient)
 			response, err := getLastBringUp(context.Background(), client)
 			if err != nil {
 				return fmt.Errorf("error occurred while retrieving all sddcs")
@@ -69,23 +66,14 @@ func testAccCheckVcfSddcConfigBasic() string {
 	return fmt.Sprintf(
 		`resource "vcf_instance" "sddc_1" {
 	  instance_id = "sddcId-1001"
-	  dv_switch_version = "7.0.0"
 	  skip_esx_thumbprint_validation = true
 	  management_pool_name = "bringup-networkpool"
 	  ceip_enabled = false
-	  esx_license = %q
-	  task_name = "workflowconfig/workflowspec-ems.json"
 	  sddc_manager {
-		second_user_credentials {
-		  username = "vcf"
-		  password = "MnogoSl0jn@P@rol@!"
-		}
-		ip_address = "10.0.0.4"
 		hostname = "sddc-manager"
-		root_user_credentials {
-		  username = "root"
-		  password = "MnogoSl0jn@P@rol@!"
-		}
+		ssh_password = "MnogoSl0jn@P@rol@!"
+		root_user_password = "MnogoSl0jn@P@rol@!"
+		local_user_password = "MnogoSl0jn@P@rol@!"
 	  }
 	  ntp_servers = [
 		"10.0.0.250"
@@ -100,8 +88,16 @@ func testAccCheckVcfSddcConfigBasic() string {
 		mtu = "1500"
 		network_type = "MANAGEMENT"
 		gateway = "10.0.0.250"
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 	  }
 	  network {
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 		subnet = "10.0.4.0/24"
 		include_ip_address_ranges {
 		  start_ip_address = "10.0.4.7"
@@ -120,6 +116,10 @@ func testAccCheckVcfSddcConfigBasic() string {
 		gateway = "10.0.4.253"
 	  }
 	  network {
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 		subnet = "10.0.8.0/24"
 		include_ip_address_ranges {
 		  start_ip_address = "10.0.8.3"
@@ -134,22 +134,14 @@ func testAccCheckVcfSddcConfigBasic() string {
 		nsx_manager_size = "medium"
 		nsx_manager {
 		  hostname = "nsx-mgmt-1"
-		  ip = "10.0.0.31"
 		}
 		root_nsx_manager_password = "MnogoSl0jn@P@rol@!"
 		nsx_admin_password = "MnogoSl0jn@P@rol@!"
 		nsx_audit_password = "MnogoSl0jn@P@rol@!"
-		overlay_transport_zone {
-		  zone_name = "overlay-tz"
-		  network_name = "net-overlay"
-		}
-		vip = "10.0.0.30"
 		vip_fqdn = "vip-nsx-mgmt"
-		license = %q
 		transport_vlan_id = 0
 	  }
 	  vsan {
-		license = %q
 		datastore_name = "sfo01-m01-vsan"
 	  }
 	  dvs {
@@ -191,10 +183,14 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  value = "LOW"
 		}
 		dvs_name = "SDDC-Dswitch-Private"
-		vmnics = [
-		  "vmnic0",
-		  "vmnic1"
-		]
+		vmnic_mapping {
+			vmnic = "vmnic0"
+			uplink = "uplink1"
+		}
+		vmnic_mapping {
+			vmnic = "vmnic1"
+			uplink = "uplink2"
+		}
 		networks = [
 		  "MANAGEMENT",
 		  "VSAN",
@@ -202,6 +198,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 		]
 	  }
 	  cluster {
+		datacenter_name = "SDDC-Datacenter"
 		cluster_name = "SDDC-Cluster1"
 		cluster_evc_mode = ""
 		resource_pool {
@@ -221,15 +218,9 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  type = "compute"
 		}
 	  }
-	  psc {
-		psc_sso_domain = "vsphere.local"
-		admin_user_sso_password = "MnogoSl0jn@P@rol@!"
-	  }
 	  vcenter {
-		vcenter_ip = "10.0.0.6"
 		vcenter_hostname = "vcenter-1"
-		license = %q
-		root_vcenter_password = "TestTest1!"
+		root_vcenter_password = "MnogoSl0jn@P@rol@!"
 		vm_size = "tiny"
 	  }
 	  host {
@@ -237,66 +228,30 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  username = "root"
 		  password = %q
 		}
-		ip_address_private {
-		  subnet = "255.255.252.0"
-		  cidr = ""
-		  ip_address = "10.0.0.100"
-		  gateway = "10.0.0.250"
-		}
 		hostname = "esxi-1"
-		vswitch = "vSwitch0"
-		association = "SDDC-Datacenter"
 	  }
 	  host {
 		credentials {
 		  username = "root"
 		  password = %q
-		}
-		ip_address_private {
-		  subnet = "255.255.252.0"
-		  cidr = ""
-		  ip_address = "10.0.0.101"
-		  gateway = "10.0.0.250"
 		}
 		hostname = "esxi-2"
-		vswitch = "vSwitch0"
-		association = "SDDC-Datacenter"
 	  }
 	  host {
 		credentials {
 		  username = "root"
 		  password = %q
-		}
-		ip_address_private {
-		  subnet = "255.255.255.0"
-		  cidr = ""
-		  ip_address = "10.0.0.102"
-		  gateway = "10.0.0.250"
 		}
 		hostname = "esxi-3"
-		vswitch = "vSwitch0"
-		association = "SDDC-Datacenter"
 	  }
 	  host {
 		credentials {
 		  username = "root"
 		  password = %q
 		}
-		ip_address_private {
-		  subnet = "255.255.255.0"
-		  cidr = ""
-		  ip_address = "10.0.0.103"
-		  gateway = "10.0.0.250"
-		}
 		hostname = "esxi-4"
-		vswitch = "vSwitch0"
-		association = "SDDC-Datacenter"
 	  }
 	}`,
-		os.Getenv(constants.VcfTestEsxiLicenseKey),
-		os.Getenv(constants.VcfTestNsxLicenseKey),
-		os.Getenv(constants.VcfTestVsanLicenseKey),
-		os.Getenv(constants.VcfTestVcenterLicenseKey),
 		os.Getenv(constants.VcfTestHost1Pass),
 		os.Getenv(constants.VcfTestHost2Pass),
 		os.Getenv(constants.VcfTestHost3Pass),
@@ -306,26 +261,14 @@ func testAccCheckVcfSddcConfigBasic() string {
 func TestVcfInstanceSchemaParse(t *testing.T) {
 	input := map[string]interface{}{
 		"instance_id":                    "sddcId-1001",
-		"dv_switch_version":              "7.0.0",
 		"skip_esx_thumbprint_validation": true,
 		"ceip_enabled":                   false,
-		"task_name":                      "NewStarWarsСЪКС",
 		"sddc_manager": []interface{}{
 			map[string]interface{}{
-				"ip_address": "10.0.0.4",
-				"hostname":   "sddc-manager",
-				"root_user_credentials": []interface{}{
-					map[string]interface{}{
-						"username": "root",
-						"password": "MnogoSl0jn@P@rol@!",
-					},
-				},
-				"second_user_credentials": []interface{}{
-					map[string]interface{}{
-						"username": "vcf",
-						"password": "MnogoSl0jn@P@rol@!",
-					},
-				},
+				"hostname":            "sddc-manager",
+				"root_user_password":  "MnogoSl0jn@P@rol@!",
+				"local_user_password": "MnogoSl0jn@P@rol@!",
+				"ssh_password":        "MnogoSl0jn@P@rol@!",
 			},
 		},
 		"ntp_servers": []interface{}{"10.0.0.250"},
@@ -364,15 +307,12 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"nsx_manager": []interface{}{
 					map[string]interface{}{
 						"hostname": "nsx-mgmt-1",
-						"ip":       "10.0.0.31",
 					},
 				},
 				"root_nsx_manager_password": "MnogoSl0jn@P@rol@!",
 				"nsx_admin_password":        "MnogoSl0jn@P@rol@!",
 				"nsx_audit_password":        "MnogoSl0jn@P@rol@!",
-				"vip":                       "10.0.0.30",
 				"vip_fqdn":                  "vip-nsx-mgmt",
-				"license":                   "XXX",
 				"transport_vlan_id":         0,
 				"overlay_transport_zone": []interface{}{
 					map[string]interface{}{
@@ -384,7 +324,6 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 		},
 		"vsan": []interface{}{
 			map[string]interface{}{
-				"license":        "XXX",
 				"datastore_name": "sfo01-m01-vsan",
 			},
 		},
@@ -406,9 +345,15 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 						"value":        "HIGH",
 					},
 				},
-				"vmnics": []interface{}{
-					"vmnic0",
-					"vmnic1",
+				"vmnic_mapping": []interface{}{
+					map[string]interface{}{
+						"vmnic":  "vmnic0",
+						"uplink": "uplink1",
+					},
+					map[string]interface{}{
+						"vmnic":  "vmnic1",
+						"uplink": "uplink2",
+					},
 				},
 				"networks": []interface{}{
 					"MANAGEMENT",
@@ -442,17 +387,9 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				},
 			},
 		},
-		"psc": []interface{}{
-			map[string]interface{}{
-				"psc_sso_domain":          "vsphere.local",
-				"admin_user_sso_password": "TestTest123!",
-			},
-		},
 		"vcenter": []interface{}{
 			map[string]interface{}{
-				"vcenter_ip":            "10.0.0.6",
 				"vcenter_hostname":      "vcenter-1",
-				"license":               "XXX",
 				"root_vcenter_password": "TestTest1!",
 				"vm_size":               "tiny",
 			},
@@ -462,7 +399,7 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"credentials": []interface{}{
 					map[string]interface{}{
 						"username": "root",
-						"password": "TestTest123!",
+						"password": "MnogoSl0jn@P@rol@!",
 					},
 				},
 				"ip_address_private": []interface{}{
@@ -477,88 +414,114 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"association": "SDDC-Datacenter",
 			},
 		},
+		"automation": []interface{}{
+			map[string]interface{}{
+				"hostname":              "automation-1",
+				"internal_cluster_cidr": "240.0.0.0/15",
+				"ip_pool":               []interface{}{"10.0.0.81", "10.0.0.91"},
+				"admin_user_password":   "MnogoSl0jn@P@rol@!",
+				"node_prefix":           "automation-node",
+			},
+		},
+		"operations": []interface{}{
+			map[string]interface{}{
+				"admin_user_password": "MnogoSl0jn@P@rol@!",
+				"appliance_size":      "medium",
+				"load_balancer_fqdn":  "load-balancer-fqdn",
+				"node": []interface{}{
+					map[string]interface{}{
+						"hostname":           "operations-1",
+						"type":               "master",
+						"root_user_password": "MnogoSl0jn@P@rol@!",
+					},
+				},
+			},
+		},
+		"operations_fleet_management": []interface{}{
+			map[string]interface{}{
+				"hostname":            "operations-1",
+				"admin_user_password": "MnogoSl0jn@P@rol@!",
+				"root_user_password":  "MnogoSl0jn@P@rol@!",
+			},
+		},
+		"operations_collector": []interface{}{
+			map[string]interface{}{
+				"hostname":           "operations-1",
+				"appliance_size":     "medium",
+				"root_user_password": "MnogoSl0jn@P@rol@!",
+			},
+		},
 	}
 	var testResourceData = schema.TestResourceDataRaw(t, resourceVcfInstanceSchema(), input)
 	sddcSpec := buildSddcSpec(testResourceData)
-	assert.Equal(t, sddcSpec.SddcId, "sddcId-1001")
-	assert.Equal(t, sddcSpec.DvSwitchVersion, "7.0.0")
-	assert.Equal(t, sddcSpec.SkipEsxThumbprintValidation, true)
-	assert.Equal(t, sddcSpec.CeipEnabled, false)
-	assert.Equal(t, *sddcSpec.TaskName, "NewStarWarsСЪКС")
-	assert.Equal(t, *sddcSpec.SddcManagerSpec.IpAddress, "10.0.0.4")
-	assert.Equal(t, sddcSpec.SddcManagerSpec.Hostname, "sddc-manager")
-	assert.Equal(t, *sddcSpec.SddcManagerSpec.RootUserCredentials.Username, "root")
-	assert.Equal(t, sddcSpec.SddcManagerSpec.RootUserCredentials.Password, "MnogoSl0jn@P@rol@!")
-	assert.Equal(t, *sddcSpec.SddcManagerSpec.SecondUserCredentials.Username, "vcf")
-	assert.Equal(t, sddcSpec.SddcManagerSpec.SecondUserCredentials.Password, "MnogoSl0jn@P@rol@!")
-	assert.Equal(t, sddcSpec.NtpServers, []string{"10.0.0.250"})
-	assert.Equal(t, *sddcSpec.DnsSpec.Domain, "vsphere.local")
-	assert.Equal(t, *sddcSpec.DnsSpec.Domain, "vsphere.local")
-	assert.Equal(t, sddcSpec.DnsSpec.Nameserver, "10.0.0.250")
-	assert.Equal(t, sddcSpec.DnsSpec.SecondaryNameserver, "10.0.0.250")
-	assert.Equal(t, sddcSpec.NetworkSpecs[0].VlanId, "0")
-	assert.Equal(t, sddcSpec.NetworkSpecs[0].Mtu, "8940")
-	assert.Equal(t, sddcSpec.NetworkSpecs[0].NetworkType, "VSAN")
-	assert.Equal(t, sddcSpec.NetworkSpecs[0].Gateway, "10.0.4.253")
-	assert.Equal(t, sddcSpec.NetworkSpecs[0].IncludeIpAddress, []string{"10.0.4.50", "10.0.4.49"})
-	assert.Equal(t, (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[0].StartIpAddress, "10.0.4.7")
-	assert.Equal(t, (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[0].EndIpAddress, "10.0.4.48")
-	assert.Equal(t, (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[1].StartIpAddress, "10.0.4.3")
-	assert.Equal(t, (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[1].EndIpAddress, "10.0.4.6")
-	assert.Equal(t, *sddcSpec.NsxtSpec.NsxtManagerSize, "medium")
-	assert.Equal(t, sddcSpec.NsxtSpec.NsxtManagers[0].Hostname, "nsx-mgmt-1")
-	assert.Equal(t, sddcSpec.NsxtSpec.NsxtManagers[0].Ip, "10.0.0.31")
-	assert.Equal(t, *sddcSpec.NsxtSpec.RootNsxtManagerPassword, "MnogoSl0jn@P@rol@!")
-	assert.Equal(t, sddcSpec.NsxtSpec.NsxtAdminPassword, "MnogoSl0jn@P@rol@!")
-	assert.Equal(t, sddcSpec.NsxtSpec.NsxtAuditPassword, "MnogoSl0jn@P@rol@!")
-	assert.Equal(t, *sddcSpec.NsxtSpec.Vip, "10.0.0.30")
-	assert.Equal(t, sddcSpec.NsxtSpec.VipFqdn, "vip-nsx-mgmt")
-	assert.Equal(t, sddcSpec.NsxtSpec.NsxtLicense, "XXX")
-	assert.Equal(t, sddcSpec.NsxtSpec.TransportVlanId, int32(0))
-	assert.Equal(t, sddcSpec.NsxtSpec.OverLayTransportZone.ZoneName, "overlay-tz")
-	assert.Equal(t, sddcSpec.NsxtSpec.OverLayTransportZone.NetworkName, "net-overlay")
-	assert.Equal(t, sddcSpec.VsanSpec.LicenseFile, "XXX")
-	assert.Equal(t, *sddcSpec.VsanSpec.DatastoreName, "sfo01-m01-vsan")
-	assert.Equal(t, (*sddcSpec.DvsSpecs)[0].Mtu, int32(8940))
-	assert.Equal(t, (*sddcSpec.DvsSpecs)[0].DvsName, "SDDC-Dswitch-Private")
-	assert.Equal(t, (*(*sddcSpec.DvsSpecs)[0].NiocSpecs)[0].TrafficType, "VDP")
-	assert.Equal(t, (*(*sddcSpec.DvsSpecs)[0].NiocSpecs)[0].Value, "LOW")
-	assert.Equal(t, (*(*sddcSpec.DvsSpecs)[0].NiocSpecs)[1].TrafficType, "VMOTION")
-	assert.Equal(t, (*(*sddcSpec.DvsSpecs)[0].NiocSpecs)[1].Value, "LOW")
-	assert.Equal(t, (*(*sddcSpec.DvsSpecs)[0].NiocSpecs)[2].TrafficType, "VSAN")
-	assert.Equal(t, (*(*sddcSpec.DvsSpecs)[0].NiocSpecs)[2].Value, "HIGH")
-	assert.Equal(t, (*sddcSpec.DvsSpecs)[0].Vmnics, []string{"vmnic0", "vmnic1"})
-	assert.Equal(t, (*sddcSpec.DvsSpecs)[0].Networks, []string{"MANAGEMENT", "VSAN", "VMOTION"})
-	assert.Equal(t, *sddcSpec.ClusterSpec.ClusterName, "SDDC-Cluster1")
-	assert.Equal(t, sddcSpec.ClusterSpec.ClusterEvcMode, "")
-	assert.Equal(t, sddcSpec.ClusterSpec.HostFailuresToTolerate, utils.ToInt32Pointer(2))
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[0].Name, "Mgmt-ResourcePool")
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[0].Type, "management")
-	assert.Equal(t, *(*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].Name, "Compute-ResourcePool")
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].Type, "compute")
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuReservationExpandable, false)
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuReservationMhz, int64(1000))
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuReservationPercentage, utils.ToInt32Pointer(10))
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuSharesLevel, "normal")
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuSharesValue, int32(10))
-	assert.Equal(t, *(*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemoryReservationExpandable, false)
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemoryReservationMb, int64(1000))
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemorySharesLevel, "normal")
-	assert.Equal(t, (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemorySharesValue, int32(10))
-	assert.Equal(t, (*sddcSpec.PscSpecs)[0].AdminUserSsoPassword, "TestTest123!")
-	assert.Equal(t, (*sddcSpec.PscSpecs)[0].PscSsoSpec.SsoDomain, "vsphere.local")
-	assert.Equal(t, sddcSpec.VcenterSpec.VcenterIp, "10.0.0.6")
-	assert.Equal(t, sddcSpec.VcenterSpec.VcenterHostname, "vcenter-1")
-	assert.Equal(t, sddcSpec.VcenterSpec.LicenseFile, "XXX")
-	assert.Equal(t, sddcSpec.VcenterSpec.RootVcenterPassword, "TestTest1!")
-	assert.Equal(t, sddcSpec.VcenterSpec.VmSize, "tiny")
-	assert.Equal(t, *sddcSpec.HostSpecs[0].Credentials.Username, "root")
-	assert.Equal(t, sddcSpec.HostSpecs[0].Credentials.Password, "TestTest123!")
-	assert.Equal(t, sddcSpec.HostSpecs[0].Hostname, "esxi-1")
-	assert.Equal(t, *sddcSpec.HostSpecs[0].VSwitch, "vSwitch0")
-	assert.Equal(t, *sddcSpec.HostSpecs[0].Association, "SDDC-Datacenter")
-	assert.Equal(t, sddcSpec.HostSpecs[0].IpAddressPrivate.IpAddress, "10.0.0.100")
-	assert.Equal(t, sddcSpec.HostSpecs[0].IpAddressPrivate.Subnet, "255.255.252.0")
-	assert.Equal(t, sddcSpec.HostSpecs[0].IpAddressPrivate.Cidr, "")
-	assert.Equal(t, sddcSpec.HostSpecs[0].IpAddressPrivate.Gateway, "10.0.0.250")
+
+	// assert.Equal determines pointer equality based on the referenced values and not by the actual memory addresses
+	assert.Equal(t, "sddcId-1001", sddcSpec.SddcId)
+	assert.Equal(t, utils.ToPointer[bool](true), sddcSpec.SkipEsxThumbprintValidation)
+	assert.Equal(t, utils.ToPointer[bool](nil), sddcSpec.CeipEnabled)
+	assert.Equal(t, "sddc-manager", sddcSpec.SddcManagerSpec.Hostname)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.SddcManagerSpec.RootPassword)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.SddcManagerSpec.LocalUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.SddcManagerSpec.SshPassword)
+	assert.Equal(t, utils.ToPointer[[]string]([]string{"10.0.0.250"}), sddcSpec.NtpServers)
+	assert.Equal(t, "vsphere.local", sddcSpec.DnsSpec.Subdomain)
+	assert.Equal(t, utils.ToPointer[[]string]([]string{"10.0.0.250", "10.0.0.250"}), sddcSpec.DnsSpec.Nameservers)
+	assert.Equal(t, int32(0), sddcSpec.NetworkSpecs[0].VlanId)
+	assert.Equal(t, utils.ToPointer[int32](int32(8940)), sddcSpec.NetworkSpecs[0].Mtu)
+	assert.Equal(t, "VSAN", sddcSpec.NetworkSpecs[0].NetworkType)
+	assert.Equal(t, utils.ToPointer[string]("10.0.4.253"), sddcSpec.NetworkSpecs[0].Gateway)
+	assert.Equal(t, utils.ToPointer[[]string]([]string{"10.0.4.50", "10.0.4.49"}), sddcSpec.NetworkSpecs[0].IncludeIpAddress)
+	assert.Equal(t, "10.0.4.7", (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[0].StartIpAddress)
+	assert.Equal(t, "10.0.4.48", (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[0].EndIpAddress)
+	assert.Equal(t, "10.0.4.3", (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[1].StartIpAddress)
+	assert.Equal(t, "10.0.4.6", (*sddcSpec.NetworkSpecs[0].IncludeIpAddressRanges)[1].EndIpAddress)
+	assert.Equal(t, "medium", *sddcSpec.NsxtSpec.NsxtManagerSize)
+	assert.Equal(t, utils.ToPointer[string]("nsx-mgmt-1"), sddcSpec.NsxtSpec.NsxtManagers[0].Hostname)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.NsxtSpec.RootNsxtManagerPassword)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.NsxtSpec.NsxtAdminPassword)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.NsxtSpec.NsxtAuditPassword)
+	assert.Equal(t, "vip-nsx-mgmt", sddcSpec.NsxtSpec.VipFqdn)
+	assert.Equal(t, utils.ToPointer[int32](int32(0)), sddcSpec.NsxtSpec.TransportVlanId)
+	assert.Equal(t, utils.ToPointer[string]("sfo01-m01-vsan"), sddcSpec.DatastoreSpec.VsanSpec.DatastoreName)
+	assert.Equal(t, utils.ToPointer[int32](int32(8940)), (*sddcSpec.DvsSpecs)[0].Mtu)
+	assert.Equal(t, utils.ToPointer[string]("SDDC-Dswitch-Private"), (*sddcSpec.DvsSpecs)[0].DvsName)
+	assert.Equal(t, utils.ToPointer[[]string]([]string{"MANAGEMENT", "VSAN", "VMOTION"}), (*sddcSpec.DvsSpecs)[0].Networks)
+	assert.Equal(t, utils.ToPointer[string]("SDDC-Cluster1"), sddcSpec.ClusterSpec.ClusterName)
+	assert.Equal(t, utils.ToPointer[string](""), sddcSpec.ClusterSpec.ClusterEvcMode)
+	assert.Equal(t, utils.ToPointer[string]("Mgmt-ResourcePool"), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[0].Name)
+	assert.Equal(t, utils.ToPointer[installer.ResourcePoolSpecType](installer.ResourcePoolSpecType("management")), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[0].Type)
+	assert.Equal(t, "Compute-ResourcePool", *(*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].Name)
+	assert.Equal(t, utils.ToPointer[installer.ResourcePoolSpecType](installer.ResourcePoolSpecType("compute")), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].Type)
+	assert.Equal(t, utils.ToPointer[bool](false), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuReservationExpandable)
+	assert.Equal(t, utils.ToPointer[int64](int64(1000)), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuReservationMhz)
+	assert.Equal(t, utils.ToPointer[int32](int32(10)), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuReservationPercentage)
+	assert.Equal(t, utils.ToPointer[installer.ResourcePoolSpecCpuSharesLevel](installer.ResourcePoolSpecCpuSharesLevel("normal")), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuSharesLevel)
+	assert.Equal(t, utils.ToPointer[int32](int32(10)), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].CpuSharesValue)
+	assert.Equal(t, false, *(*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemoryReservationExpandable)
+	assert.Equal(t, utils.ToPointer[int64](int64(1000)), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemoryReservationMb)
+	assert.Equal(t, utils.ToPointer[installer.ResourcePoolSpecMemorySharesLevel](installer.ResourcePoolSpecMemorySharesLevel("normal")), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemorySharesLevel)
+	assert.Equal(t, utils.ToPointer[int32](int32(10)), (*sddcSpec.ClusterSpec.ResourcePoolSpecs)[1].MemorySharesValue)
+	assert.Equal(t, "vcenter-1", sddcSpec.VcenterSpec.VcenterHostname)
+	assert.Equal(t, "TestTest1!", sddcSpec.VcenterSpec.RootVcenterPassword)
+	assert.Equal(t, utils.ToPointer[string]("tiny"), sddcSpec.VcenterSpec.VmSize)
+	assert.Equal(t, "esxi-1", (*sddcSpec.HostSpecs)[0].Hostname)
+	assert.Equal(t, "MnogoSl0jn@P@rol@!", (*sddcSpec.HostSpecs)[0].Credentials.Password)
+	assert.Equal(t, utils.ToPointer[string]("root"), (*sddcSpec.HostSpecs)[0].Credentials.Username)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfAutomationSpec).AdminUserPassword)
+	assert.Equal(t, "automation-1", (*sddcSpec.VcfAutomationSpec).Hostname)
+	assert.Equal(t, utils.ToPointer[string]("automation-node"), (*sddcSpec.VcfAutomationSpec).NodePrefix)
+	assert.Equal(t, "10.0.0.81", (*sddcSpec.VcfAutomationSpec.IpPool)[0])
+	assert.Equal(t, "10.0.0.91", (*sddcSpec.VcfAutomationSpec.IpPool)[1])
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsSpec).AdminUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("medium"), (*sddcSpec.VcfOperationsSpec).ApplianceSize)
+	assert.Equal(t, utils.ToPointer[string]("load-balancer-fqdn"), (*sddcSpec.VcfOperationsSpec).LoadBalancerFqdn)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), sddcSpec.VcfOperationsSpec.Nodes[0].RootUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("master"), sddcSpec.VcfOperationsSpec.Nodes[0].Type)
+	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsSpec.Nodes[0].Hostname)
+	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsCollectorSpec.Hostname)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsCollectorSpec).RootUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("medium"), (*sddcSpec.VcfOperationsCollectorSpec).ApplianceSize)
+	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsFleetManagementSpec.Hostname)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).RootUserPassword)
+	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).AdminUserPassword)
 }
