@@ -4,10 +4,6 @@ go 1.23.0
 
 toolchain go1.24.1
 
-replace (
-	github.com/vmware/vcf-sdk-go v0.5.0 => /Users/zhelyazkovs/git/vcf-sdk-go
-)
-
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.21.0
 	github.com/hashicorp/terraform-plugin-framework v1.14.1
@@ -18,7 +14,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.18.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.36.1
 	github.com/stretchr/testify v1.10.0
-	github.com/vmware/vcf-sdk-go v0.5.0
+	github.com/vmware/vcf-sdk-go v0.6.0
 )
 
 require (
