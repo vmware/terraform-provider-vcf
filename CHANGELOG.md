@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [v0.16.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.16.1)
+
+> Release Date: 2025-06-18
+
+FIXES:
+
+- `r/vcf_edge_cluster`: Send Tier 1 router name to server when creating cluster. [#327](https://github.com/vmware/terraform-provider-vcf/pull/327)
+
+CHORES:
+
+- Updated `hashicorp/terraform-plugin-framework` to v1.15.0. [#319](https://github.com/vmware/terraform-provider-vcf/pull/319)
+- Updated `hashicorp/terraform-plugin-mux` to v1.20.0. [#321](https://github.com/vmware/terraform-provider-vcf/pull/321)
+- Updated `hashicorp/terraform-plugin-testing` to v1.13.2. [#326](https://github.com/vmware/terraform-provider-vcf/pull/326)
+
 ## [v0.16.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.16.0)
 
 > Release Date: 2025-05-14
