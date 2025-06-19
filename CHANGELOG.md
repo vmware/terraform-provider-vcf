@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v0.17.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.17.0)
+
+> Release Date: 2025-06-19
+
+FEATURES:
+
+- Refactor provider to work with VCF 9.0. [#330](https://github.com/vmware/terraform-provider-vcf/pull/330)
+
 ## [v0.16.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.16.1)
 
 > Release Date: 2025-06-18
