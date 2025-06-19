@@ -35,7 +35,6 @@ Review the documentation for VMware Cloud Foundation for more information about 
 - `audit_password` (String) Audit user password for the NSX manager
 - `edge_node` (Block List, Min: 1) The nodes in the edge cluster (see [below for nested schema](#nestedblock--edge_node))
 - `form_factor` (String) One among: XLARGE, LARGE, MEDIUM, SMALL
-- `high_availability` (String) One among: ACTIVE_ACTIVE, ACTIVE_STANDBY
 - `mtu` (Number) Maximum transmission unit size for the cluster
 - `name` (String) The name of the edge cluster
 - `profile_type` (String) One among: DEFAULT, CUSTOM. If set to CUSTOM a 'profile' must be provided
@@ -44,6 +43,7 @@ Review the documentation for VMware Cloud Foundation for more information about 
 ### Optional
 
 - `asn` (String) ASN for the cluster
+- `high_availability` (String) One among: ACTIVE_ACTIVE, ACTIVE_STANDBY
 - `internal_transit_subnets` (List of String) Subnet addresses in CIDR notation that are used to assign addresses to logical links connecting service routers and distributed routers
 - `profile` (Block List, Max: 1) The specification for the edge cluster profile (see [below for nested schema](#nestedblock--profile))
 - `routing_type` (String) One among: EBGP, STATIC

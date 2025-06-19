@@ -7,9 +7,8 @@ package sddc
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 var teamingPolicies = []string{"loadbalance_loadbased", "loadbalance_ip", "loadbalance_srcmac", "loadbalance_srcid", "failover_explicit"}
@@ -31,7 +30,7 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					Required:     true,
 					ValidateFunc: validation.IntBetween(0, 4096),
 				},
-				"active_up_links": {
+				"active_uplinks": {
 					Type:        schema.TypeList,
 					Description: "Active Uplinks for teaming policy, specify uplink1 for failover_explicit VSAN Teaming Policy",
 					Optional:    true,
@@ -45,23 +44,6 @@ func GetNetworkSpecsSchema() *schema.Schema {
 					Optional:    true,
 					Elem: &schema.Schema{
 						Type: schema.TypeString,
-					},
-				},
-				"exclude_ip_address_ranges": {
-					Type:        schema.TypeList,
-					Description: "IP Address ranges to be excluded",
-					Optional:    true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-					},
-				},
-				"exclude_ip_addresses": {
-					Type:        schema.TypeList,
-					Description: "IP Addresses to be excluded",
-					Optional:    true,
-					Elem: &schema.Schema{
-						Type:         schema.TypeString,
-						ValidateFunc: validation.IsIPAddress,
 					},
 				},
 				"gateway": {
@@ -135,20 +117,20 @@ func getIncludeIPAddressRangesSchema() *schema.Schema {
 	}
 }
 
-func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []vcf.SddcNetworkSpec {
-	var networkSpecsBindingsList []vcf.SddcNetworkSpec
+func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []installer.SddcNetworkSpec {
+	var networkSpecsBindingsList []installer.SddcNetworkSpec
 	for _, networkSpec := range rawData {
 		data := networkSpec.(map[string]interface{})
 		subnet := utils.ToStringPointer(data["subnet"])
-		vlanID := data["vlan_id"].(int)
-		mtu := utils.ToIntPointer(data["mtu"])
+		vlanID := int32(data["vlan_id"].(int))
+		mtu := utils.ToInt32Pointer(data["mtu"])
 		portGroupKey := utils.ToStringPointer(data["port_group_key"])
 		networkType := data["network_type"].(string)
 		gateway := utils.ToStringPointer(data["gateway"])
 		subnetMask := utils.ToStringPointer(data["subnet_mask"])
 		teamingPolicy := utils.ToStringPointer(data["teaming_policy"])
 
-		networkSpecsBinding := vcf.SddcNetworkSpec{
+		networkSpecsBinding := installer.SddcNetworkSpec{
 			Gateway:       gateway,
 			Mtu:           mtu,
 			NetworkType:   networkType,
@@ -158,17 +140,9 @@ func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []vcf.SddcNetworkSp
 			TeamingPolicy: teamingPolicy,
 			VlanId:        vlanID,
 		}
-		if activeUpLinksData, ok := data["active_up_links"].([]interface{}); ok {
+		if activeUpLinksData, ok := data["active_uplinks"].([]interface{}); ok {
 			uplinks := utils.ToStringSlice(activeUpLinksData)
 			networkSpecsBinding.ActiveUplinks = &uplinks
-		}
-		if excludeIPAddressRangesData, ok := data["exclude_ip_address_ranges"].([]interface{}); ok {
-			rangesData := utils.ToStringSlice(excludeIPAddressRangesData)
-			networkSpecsBinding.ExcludeIpAddressRanges = &rangesData
-		}
-		if excludeIPAddressesData, ok := data["exclude_ip_addresses"].([]interface{}); ok {
-			addressesData := utils.ToStringSlice(excludeIPAddressesData)
-			networkSpecsBinding.ExcludeIpaddresses = &addressesData
 		}
 		if includeIPAddressData, ok := data["include_ip_address"].([]interface{}); ok {
 			addressesData := utils.ToStringSlice(includeIPAddressData)
@@ -186,14 +160,14 @@ func GetNetworkSpecsBindingFromSchema(rawData []interface{}) []vcf.SddcNetworkSp
 	return networkSpecsBindingsList
 }
 
-func getIncludeIPAddressRangesBindingFromSchema(rawData []interface{}) []vcf.IpRange {
-	var ipAddressRangesBindindsList []vcf.IpRange
+func getIncludeIPAddressRangesBindingFromSchema(rawData []interface{}) []installer.IpRange {
+	var ipAddressRangesBindindsList []installer.IpRange
 	for _, ipAddressRange := range rawData {
 		data := ipAddressRange.(map[string]interface{})
 		startIPAddress := data["start_ip_address"].(string)
 		endIPAddress := data["end_ip_address"].(string)
 
-		ipAddressRangesBinding := vcf.IpRange{
+		ipAddressRangesBinding := installer.IpRange{
 			StartIpAddress: startIPAddress,
 			EndIpAddress:   endIPAddress,
 		}

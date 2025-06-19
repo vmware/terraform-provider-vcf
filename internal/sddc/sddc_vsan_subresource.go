@@ -6,7 +6,7 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/vcf"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 func GetVsanSchema() *schema.Schema {
@@ -20,16 +20,6 @@ func GetVsanSchema() *schema.Schema {
 					Type:        schema.TypeString,
 					Description: "Datastore Name",
 					Required:    true,
-				},
-				"hcl_file": {
-					Type:        schema.TypeString,
-					Description: "A path (URL or local path) to an HCL file that will be uploaded to vCenter prior to configuring vSAN",
-					Optional:    true,
-				},
-				"license": {
-					Type:        schema.TypeString,
-					Description: "VSAN License",
-					Optional:    true,
 				},
 				"vsan_dedup": {
 					Type:        schema.TypeBool,
@@ -46,23 +36,19 @@ func GetVsanSchema() *schema.Schema {
 	}
 }
 
-func GetVsanSpecFromSchema(rawData []interface{}) *vcf.VsanSpec {
+func GetVsanSpecFromSchema(rawData []interface{}) *installer.VsanSpec {
 	if len(rawData) <= 0 {
 		return nil
 	}
 	data := rawData[0].(map[string]interface{})
 	datastoreName := data["datastore_name"].(string)
-	hclFile := data["hcl_file"].(string)
-	license := data["license"].(string)
 	vsanDedup := data["vsan_dedup"].(bool)
 	esaEnabled := data["esa_enabled"].(bool)
 
-	vsanSpecBinding := &vcf.VsanSpec{
+	vsanSpecBinding := &installer.VsanSpec{
 		DatastoreName: &datastoreName,
-		HclFile:       &hclFile,
-		LicenseFile:   &license,
 		VsanDedup:     &vsanDedup,
-		EsaConfig:     &vcf.VsanEsaConfig{Enabled: &esaEnabled},
+		EsaConfig:     &installer.VsanEsaConfig{Enabled: &esaEnabled},
 	}
 
 	return vsanSpecBinding

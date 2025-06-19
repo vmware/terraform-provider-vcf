@@ -1,17 +1,20 @@
----
 version: "2"
-
 linters:
   default: none
   enable:
+    - copyloopvar
+    - durationcheck
     - errcheck
-    - gosec
+    - godot
     - govet
     - ineffassign
+    - makezero
     - misspell
-    - revive
+    - nilerr
+    - predeclared
     - staticcheck
     - unconvert
+    - unparam
     - unused
   exclusions:
     generated: lax
@@ -20,56 +23,15 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
-    rules:
-      # TODO: Setting temporary exclusions.
-      - linters:
-          - gosec
-        text: G101
-      - linters:
-          - gosec
-        text: G115
-      - linters:
-          - gosec
-        text: G401
-      - linters:
-          - gosec
-        text: G402
-      - linters:
-          - gosec
-        text: G501
-      - linters:
-          - staticcheck
-        text: QF1003
-      - linters:
-          - staticcheck
-        text: ST1019
-      - linters:
-          - revive
-        text: indent-error-flow
-      - linters:
-          - revive
-        text: should be
-      - linters:
-          - revive
-        text: unused-parameter
-      - linters:
-          - revive
-        text: var-declaration
-      - linters:
-          - revive
-        text: var-naming
     paths:
       - third_party$
       - builtin$
       - examples$
-
 issues:
   max-same-issues: 0
-
 formatters:
   enable:
     - gofmt
-    - goimports
   exclusions:
     generated: lax
     paths:

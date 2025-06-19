@@ -3,7 +3,7 @@
 page_title: "vcf_host Data Source - terraform-provider-vcf"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # vcf_host (Data Source)
@@ -34,15 +34,14 @@ The `vcf_host` data source provides information about an ESXi host in a VMware C
 - `version` (String) The version of the ESXi running on the host.
 
 <a id="nestedatt--cluster"></a>
-
 ### Nested Schema for `cluster`
 
 Read-Only:
 
 - `id` (String)
 
-<a id="nestedatt--cpu"></a>
 
+<a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`
 
 Read-Only:
@@ -53,7 +52,6 @@ Read-Only:
 - `used_frequency_mhz` (Number)
 
 <a id="nestedobjatt--cpu--cpu_cores"></a>
-
 ### Nested Schema for `cpu.cpu_cores`
 
 Read-Only:
@@ -62,8 +60,9 @@ Read-Only:
 - `manufacturer` (String)
 - `model` (String)
 
-<a id="nestedatt--domain"></a>
 
+
+<a id="nestedatt--domain"></a>
 ### Nested Schema for `domain`
 
 Read-Only:
@@ -71,8 +70,8 @@ Read-Only:
 - `id` (String)
 - `name` (String)
 
-<a id="nestedatt--hardware"></a>
 
+<a id="nestedatt--hardware"></a>
 ### Nested Schema for `hardware`
 
 Read-Only:
@@ -81,8 +80,8 @@ Read-Only:
 - `model` (String)
 - `vendor` (String)
 
-<a id="nestedatt--ip_addresses"></a>
 
+<a id="nestedatt--ip_addresses"></a>
 ### Nested Schema for `ip_addresses`
 
 Read-Only:
@@ -90,8 +89,8 @@ Read-Only:
 - `ip_address` (String)
 - `type` (String)
 
-<a id="nestedatt--memory"></a>
 
+<a id="nestedatt--memory"></a>
 ### Nested Schema for `memory`
 
 Read-Only:
@@ -99,8 +98,8 @@ Read-Only:
 - `total_capacity_mb` (Number)
 - `used_capacity_mb` (Number)
 
-<a id="nestedatt--network_pool"></a>
 
+<a id="nestedatt--network_pool"></a>
 ### Nested Schema for `network_pool`
 
 Read-Only:
@@ -108,8 +107,8 @@ Read-Only:
 - `id` (String)
 - `name` (String)
 
-<a id="nestedatt--physical_nics"></a>
 
+<a id="nestedatt--physical_nics"></a>
 ### Nested Schema for `physical_nics`
 
 Read-Only:
@@ -119,8 +118,8 @@ Read-Only:
 - `speed` (Number)
 - `unit` (String)
 
-<a id="nestedatt--storage"></a>
 
+<a id="nestedatt--storage"></a>
 ### Nested Schema for `storage`
 
 Read-Only:
@@ -130,7 +129,6 @@ Read-Only:
 - `used_capacity_mb` (Number)
 
 <a id="nestedobjatt--storage--disks"></a>
-
 ### Nested Schema for `storage.disks`
 
 Read-Only:

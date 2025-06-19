@@ -26,13 +26,6 @@ func VsanDatastoreSchema() *schema.Resource {
 				Description:  "vSAN datastore name used for cluster creation",
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"license_key": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Sensitive:    true,
-				Description:  "vSAN license key to be used",
-				ValidateFunc: validation.NoZeroValues,
-			},
 			"failures_to_tolerate": {
 				Type:         schema.TypeInt,
 				Optional:     true,
@@ -63,7 +56,6 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*vcf.VsanData
 	}
 	result := &vcf.VsanDatastoreSpec{}
 	result.DatastoreName = datastoreName
-	result.LicenseKey = utils.ToStringPointer(object["license_key"])
 	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validationutils.IsEmpty(dedupAndCompressionEnabled) {
 		result.DedupAndCompressionEnabled = utils.ToBoolPointer(dedupAndCompressionEnabled)
 	}

@@ -31,7 +31,6 @@ The following data is prerequisite for creating a new Network Pool
 ### Required
 
 - `name` (String) The name of the network pool
-- `network` (Block List, Min: 1) Represents a network in a network pool (see [below for nested schema](#nestedblock--network))
 
 ### Optional
 

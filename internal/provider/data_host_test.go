@@ -6,6 +6,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -15,10 +16,10 @@ import (
 
 func TestAccDataSourceVcfHost(t *testing.T) {
 	hosts := []string{
-		constants.VcfTestHost1Fqdn,
-		constants.VcfTestHost2Fqdn,
-		constants.VcfTestHost3Fqdn,
-		constants.VcfTestHost4Fqdn,
+		os.Getenv(constants.VcfTestHost1Fqdn),
+		os.Getenv(constants.VcfTestHost2Fqdn),
+		os.Getenv(constants.VcfTestHost3Fqdn),
+		os.Getenv(constants.VcfTestHost4Fqdn),
 	}
 
 	var steps []resource.TestStep
@@ -41,16 +42,8 @@ func TestAccDataSourceVcfHost(t *testing.T) {
 
 func testAccDataSourceVcfHostConfig(hostFqdn string) string {
 	return fmt.Sprintf(`
-    resource "vcf_host" "test_host" {
-        fqdn = %q
-		username = "root"
-		password = "password"
-        network_pool_id = "test_network_pool_id"
-		storage_type = "VSAN"
-    }
-
     data "vcf_host" "test_host" {
-        fqdn = vcf_host.test_host.fqdn
+        fqdn = %q
     }
     `, hostFqdn)
 }

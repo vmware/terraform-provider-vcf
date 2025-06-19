@@ -375,9 +375,6 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	_ = d.Set("memory", memory)
 
-	// Compatible storage type information.
-	_ = d.Set("compatible_storage_type", host.CompatibleStorageType)
-
 	// Storage information.
 	disks := []map[string]interface{}{}
 	for _, disk := range *host.Storage.Disks {
@@ -434,7 +431,7 @@ func getHostByFqdn(ctx context.Context, apiClient *vcf.ClientWithResponses, fqdn
 
 	resp, vcfErr := api_client.GetResponseAs[vcf.PageOfHost](hostsResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

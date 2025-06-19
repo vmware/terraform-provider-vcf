@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -61,10 +62,11 @@ func (t *TaskTracker) WaitForTask() error {
 		case <-ticker.C:
 			task, err := t.getTask()
 			if err != nil {
+				LogError(err, t.ctx)
 				return errors.New(*err.Message)
 			}
 
-			t.logTask(task)
+			t.logTask(*task)
 
 			switch *task.Status {
 			case statusInProgress, statusInProgressUppercase, statusPending:
@@ -76,8 +78,8 @@ func (t *TaskTracker) WaitForTask() error {
 
 				return errors.New(errorMsg)
 			default:
-				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s is in state %s, completed at %s",
-					*task.Id, *task.Status, *task.CompletionTimestamp))
+				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s",
+					*task.Id, *task.Name, *task.Type, *task.Status))
 				return nil
 			}
 		}
@@ -90,37 +92,45 @@ func (t *TaskTracker) getTask() (*vcf.Task, *vcf.Error) {
 	return GetResponseAs[vcf.Task](res)
 }
 
-func (t *TaskTracker) logTask(task *vcf.Task) {
-	if task == nil {
-		return
-	}
-
+func (t *TaskTracker) logTask(task vcf.Task) {
 	if task.SubTasks == nil {
 		messagePack := task.LocalizableDescriptionPack
-		if messagePack != nil && messagePack.Message != nil && t.shouldLog(*messagePack.Message) {
+		if messagePack != nil && messagePack.Message != nil && task.Status != nil &&
+			t.shouldLog(*messagePack.Message, *task.Status) {
 			t.log(*messagePack.Message, *task.Status)
 		}
 	} else if task.SubTasks != nil {
 		for _, subtask := range *task.SubTasks {
-			t.logSubTask(&subtask)
+			if t.shouldLog(*subtask.Description, *subtask.Status) {
+				t.log(*subtask.Description, *subtask.Status)
+				if subtask.Errors != nil {
+					t.logErrors(*subtask.Errors)
+				}
+			}
 		}
 	}
 }
 
-func (t *TaskTracker) logSubTask(task *vcf.SubTask) {
-	if *task.Status != statusInProgressUppercase && *task.Status != statusPending && *task.Status != statusNotApplicable {
-		if t.shouldLog(*task.Description) {
-			t.log(*task.Description, *task.Status)
-		}
-	}
-}
-
-func (t *TaskTracker) shouldLog(message string) bool {
+func (t *TaskTracker) shouldLog(message, status string) bool {
+	running := t.statusEqual(status, statusInProgressUppercase) ||
+		t.statusEqual(status, statusInProgress) ||
+		t.statusEqual(status, statusPending) ||
+		t.statusEqual(status, statusNotApplicable)
 	val, ok := t.completedTasks[message]
-	return !val || !ok
+	return !running && (!val || !ok)
 }
 
 func (t *TaskTracker) log(message, status string) {
 	tflog.Info(t.ctx, fmt.Sprintf("[%s] %s", status, message))
 	t.completedTasks[message] = true
+}
+
+func (t *TaskTracker) logErrors(errors []vcf.Error) {
+	for _, err := range errors {
+		LogError(&err, t.ctx)
+	}
+}
+
+func (t *TaskTracker) statusEqual(a, b string) bool {
+	return strings.EqualFold(a, b)
 }

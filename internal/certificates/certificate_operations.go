@@ -29,7 +29,7 @@ func ValidateResourceCertificates(ctx context.Context, client *vcf.ClientWithRes
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.CertificateValidationTask](okResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if validationutils.HaveCertificateValidationsFailed(task) {
@@ -44,7 +44,7 @@ func ValidateResourceCertificates(ctx context.Context, client *vcf.ClientWithRes
 			}
 			task, vcfErr = api_client.GetResponseAs[vcf.CertificateValidationTask](getValidationResponse)
 			if vcfErr != nil {
-				api_client.LogError(vcfErr)
+				api_client.LogError(vcfErr, ctx)
 				return diag.FromErr(errors.New(*vcfErr.Message))
 			}
 			if validationutils.HasCertificateValidationFinished(task) {
@@ -80,7 +80,7 @@ func GenerateCertificateForResource(ctx context.Context, client *api_client.Sddc
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return errors.New(*vcfErr.Message)
 	}
 	return api_client.NewTaskTracker(ctx, client.ApiClient, *task.Id).WaitForTask()
@@ -96,7 +96,7 @@ func ReadCertificate(ctx context.Context, client *vcf.ClientWithResponses,
 
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCertificate](certificatesResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	// Check if any certificates are found

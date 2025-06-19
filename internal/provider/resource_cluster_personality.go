@@ -90,7 +90,7 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](uploadPersonalityTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -107,7 +107,7 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 
 	personalities, vcfErr := api_client.GetResponseAs[vcf.PageOfPersonality](personalitiesResp)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -155,7 +155,6 @@ func getVcenterId(data *schema.ResourceData, meta interface{}) (*string, error) 
 	} else {
 		page, vcfErr := api_client.GetResponseAs[vcf.PageOfVcenter](vcs)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
 			return nil, errors.New(*vcfErr.Message)
 		}
 		for _, vc := range *page.Elements {

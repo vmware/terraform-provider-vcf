@@ -6,10 +6,9 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/vcf-sdk-go/vcf"
-
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/terraform-provider-vcf/internal/validation"
+	"github.com/vmware/vcf-sdk-go/installer"
 )
 
 func getCredentialsSchema() *schema.Schema {
@@ -33,7 +32,7 @@ func getCredentialsSchema() *schema.Schema {
 	}
 }
 
-func getCredentialsFromSchema(rawData []interface{}) *vcf.SddcCredentials {
+func getCredentialsFromSchema(rawData []interface{}) *installer.SddcCredentials {
 	if len(rawData) <= 0 {
 		return nil
 	}
@@ -41,7 +40,7 @@ func getCredentialsFromSchema(rawData []interface{}) *vcf.SddcCredentials {
 	password := data["password"].(string)
 	username := utils.ToStringPointer(data["username"])
 
-	credentialsBinding := &vcf.SddcCredentials{
+	credentialsBinding := &installer.SddcCredentials{
 		Password: password,
 		Username: username,
 	}

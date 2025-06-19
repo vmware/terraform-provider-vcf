@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
 	"github.com/vmware/terraform-provider-vcf/internal/api_client"
@@ -264,7 +265,7 @@ func resourceClusterRead(ctx context.Context, data *schema.ResourceData, meta in
 	}
 	clusterObj, vcfErr := api_client.GetResponseAs[vcf.Cluster](clusterResult)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -310,7 +311,8 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 		ComputeSpec: vcf.ComputeSpec{
 			ClusterSpecs: []vcf.ClusterSpec{clusterSpec},
 		},
-		DomainId: domainId,
+		DomainId:                 domainId,
+		DeployWithoutLicenseKeys: utils.ToPointer[bool](true),
 	}
 
 	validateResponse, err := apiClient.ValidateClusterCreationSpecWithResponse(ctx, nil, clusterCreationSpec)
@@ -319,7 +321,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	}
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if validationUtils.HasValidationFailed(validationResult) {
@@ -332,7 +334,7 @@ func createCluster(ctx context.Context, domainId string, clusterSpec vcf.Cluster
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return "", diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
@@ -360,7 +362,7 @@ func updateCluster(ctx context.Context, clusterId string, clusterUpdateSpec vcf.
 
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedUpdateTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -393,7 +395,7 @@ func deleteCluster(ctx context.Context, clusterId string, vcfClient *api_client.
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](acceptedDeleteTask)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -432,7 +434,6 @@ func getDomain(name string, client *vcf.ClientWithResponses) (*vcf.Domain, error
 	}
 	domainsList, vcfErr := api_client.GetResponseAs[vcf.PageOfDomain](ok)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
 		return nil, errors.New(*vcfErr.Message)
 	}
 

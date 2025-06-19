@@ -100,7 +100,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 		page, vcfErr := api_client.GetResponseAs[vcf.PageOfRole](roleResult)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return diag.FromErr(errors.New(*vcfErr.Message))
 		}
 
@@ -124,7 +124,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](created)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -144,7 +144,7 @@ func resourceUserRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](ok)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
@@ -169,7 +169,7 @@ func resourceUserDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	_, vcfErr := api_client.GetResponseAs[vcf.PageOfUser](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 

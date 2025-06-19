@@ -56,6 +56,7 @@ The result is a workload-ready SDDC environment.
 
 - `cluster` (Block List, Min: 1) Specification representing the clusters to be added to the workload domain (see [below for nested schema](#nestedblock--cluster))
 - `name` (String) Name of the domain (from 3 to 20 characters)
+- `sso` (Block List, Min: 1) SSO configuration for the workload domain (see [below for nested schema](#nestedblock--sso))
 - `vcenter_configuration` (Block List, Min: 1, Max: 1) Specification describing vCenter Server instance settings (see [below for nested schema](#nestedblock--vcenter_configuration))
 
 ### Optional
@@ -93,6 +94,7 @@ Optional:
 - `vmfs_datastore` (Block List, Max: 1) Cluster storage configuration for VMFS (see [below for nested schema](#nestedblock--cluster--vmfs_datastore))
 - `vsan_datastore` (Block List, Max: 1) Cluster storage configuration for vSAN (see [below for nested schema](#nestedblock--cluster--vsan_datastore))
 - `vsan_remote_datastore_cluster` (Block List, Max: 1) Cluster storage configuration for vSAN Remote Datastore (see [below for nested schema](#nestedblock--cluster--vsan_remote_datastore_cluster))
+- `vsan_stretch_configuration` (Block List, Max: 1) Settings for stretched vSAN clusters (see [below for nested schema](#nestedblock--cluster--vsan_stretch_configuration))
 - `vvol_datastores` (Block List) Cluster storage configuration for VVOL (see [below for nested schema](#nestedblock--cluster--vvol_datastores))
 
 Read-Only:
@@ -115,7 +117,6 @@ Optional:
 - `availability_zone_name` (String) Availability Zone Name. This is required while performing a stretched cluster expand operation
 - `host_name` (String) Host name of the ESXi host
 - `ip_address` (String) IPv4 address of the ESXi host
-- `license_key` (String, Sensitive) License key for an ESXi host in the free pool. This is required except in cases where the ESXi host has already been licensed outside of the VMware Cloud Foundation system
 - `password` (String, Sensitive) Password to authenticate to the ESXi host
 - `serial_number` (String) Serial number of the ESXi host
 - `ssh_thumbprint` (String, Sensitive) SSH thumbprint of the ESXi host
@@ -247,8 +248,8 @@ Required:
 Optional:
 
 - `dedup_and_compression_enabled` (Boolean) Enable vSAN deduplication and compression
+- `esa_enabled` (Boolean) Enable vSAN ESA
 - `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2.
-- `license_key` (String, Sensitive) vSAN license key to be used
 
 
 <a id="nestedblock--cluster--vsan_remote_datastore_cluster"></a>
@@ -257,6 +258,57 @@ Optional:
 Required:
 
 - `datastore_uuids` (List of String) vSAN HCI Mesh remote datastore UUIDs
+
+
+<a id="nestedblock--cluster--vsan_stretch_configuration"></a>
+### Nested Schema for `cluster.vsan_stretch_configuration`
+
+Optional:
+
+- `secondary_fd_host` (Block List) The list of hosts that will go into the secondary fault domain (see [below for nested schema](#nestedblock--cluster--vsan_stretch_configuration--secondary_fd_host))
+- `witness_host` (Block List, Max: 1) Configuration for the witness host (see [below for nested schema](#nestedblock--cluster--vsan_stretch_configuration--witness_host))
+
+<a id="nestedblock--cluster--vsan_stretch_configuration--secondary_fd_host"></a>
+### Nested Schema for `cluster.vsan_stretch_configuration.secondary_fd_host`
+
+Required:
+
+- `id` (String) ID of the ESXi host in the free pool
+
+Optional:
+
+- `availability_zone_name` (String) Availability Zone Name. This is required while performing a stretched cluster expand operation
+- `host_name` (String) Host name of the ESXi host
+- `ip_address` (String) IPv4 address of the ESXi host
+- `password` (String, Sensitive) Password to authenticate to the ESXi host
+- `serial_number` (String) Serial number of the ESXi host
+- `ssh_thumbprint` (String, Sensitive) SSH thumbprint of the ESXi host
+- `username` (String) Username to authenticate to the ESXi host
+- `vmnic` (Block List) vmnic configuration for the ESXi host (see [below for nested schema](#nestedblock--cluster--vsan_stretch_configuration--secondary_fd_host--vmnic))
+
+<a id="nestedblock--cluster--vsan_stretch_configuration--secondary_fd_host--vmnic"></a>
+### Nested Schema for `cluster.vsan_stretch_configuration.secondary_fd_host.vmnic`
+
+Required:
+
+- `id` (String) ESXI host vmnic ID to be associated with a VDS, once added to cluster
+
+Optional:
+
+- `uplink` (String) Uplink to be associated with vmnic
+- `vds_name` (String) Name of the VDS to associate with the ESXi host
+
+
+
+<a id="nestedblock--cluster--vsan_stretch_configuration--witness_host"></a>
+### Nested Schema for `cluster.vsan_stretch_configuration.witness_host`
+
+Required:
+
+- `fqdn` (String) Fully qualified domain name of the witness host. It should be routable on the vSAN network
+- `vsan_cidr` (String) CIDR address for the witness host on the vSAN network
+- `vsan_ip` (String) IP address for the witness host on the vSAN network
+
 
 
 <a id="nestedblock--cluster--vvol_datastores"></a>
@@ -270,6 +322,15 @@ Required:
 - `user_id` (String) UUID of the VASA storage user
 - `vasa_provider_id` (String) UUID of the VASA storage provider
 
+
+
+<a id="nestedblock--sso"></a>
+### Nested Schema for `sso`
+
+Required:
+
+- `domain_name` (String) Name of the SSO domain
+- `domain_password` (String, Sensitive) Password of the SSO domain
 
 
 <a id="nestedblock--vcenter_configuration"></a>
@@ -300,7 +361,6 @@ Read-Only:
 
 Required:
 
-- `license_key` (String, Sensitive) NSX license to be used
 - `nsx_manager_admin_password` (String, Sensitive) NSX Manager admin user password
 - `nsx_manager_node` (Block List, Min: 1) Specification details of the NSX Manager virtual machines. 3 of these are required for the first workload domain (see [below for nested schema](#nestedblock--nsx_configuration--nsx_manager_node))
 - `vip` (String) Virtual IP (VIP) for the NSX Manager cluster

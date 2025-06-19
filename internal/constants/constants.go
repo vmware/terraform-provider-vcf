@@ -18,12 +18,12 @@ const (
 	// VcfTestPassword an SSO user with the ADMIN role or admin@local API user, used for acceptance tests.
 	VcfTestPassword = "VCF_TEST_PASSWORD"
 
-	// CloudBuilderTestUrl URL of a CloudBuilder instance, used for acceptance tests.
-	CloudBuilderTestUrl = "CLOUDBUILDER_TEST_URL"
-	// CloudBuilderTestUsername username of CloudBuilder user, used for acceptance tests.
-	CloudBuilderTestUsername = "CLOUDBUILDER_TEST_USERNAME"
-	// CloudBuilderTestPassword an CloudBuilder user, used for acceptance tests.
-	CloudBuilderTestPassword = "CLOUDBUILDER_TEST_PASSWORD"
+	// InstallerTestUrl URL of a CloudBuilder instance, used for acceptance tests.
+	InstallerTestUrl = "INSTALLER_TEST_URL"
+	// InstallerTestUsername username of CloudBuilder user, used for acceptance tests.
+	InstallerTestUsername = "INSTALLER_TEST_USERNAME"
+	// InstallerTestPassword an CloudBuilder user, used for acceptance tests.
+	InstallerTestPassword = "INSTALLER_TEST_PASSWORD"
 
 	// VcfTestAllowUnverifiedTls allows VCF environments with self-signed certificates
 	// to be used in acceptance tests.
@@ -102,20 +102,11 @@ const (
 	// VcfTestWitnessHostFqdn the FQDN of the witness host to be used to stretch a cluster.
 	VcfTestWitnessHostFqdn = "VCF_TEST_WITNESS_HOST_FQDN"
 
-	// VcfTestNsxLicenseKey license key for NSX required for domain and cluster acceptance tests.
-	VcfTestNsxLicenseKey = "VCF_TEST_NSX_LICENSE_KEY"
-
-	// VcfTestEsxiLicenseKey license key for vSphere required for workload domain and cluster acceptance tests.
-	VcfTestEsxiLicenseKey = "VCF_TEST_ESXI_LICENSE_KEY"
-
-	// VcfTestVsanLicenseKey license key for vSAN required for workload domain and cluster acceptance tests.
-	VcfTestVsanLicenseKey = "VCF_TEST_VSAN_LICENSE_KEY"
-
-	// VcfTestVcenterLicenseKey license key for vCenter required for bringup acceptance tests.
-	VcfTestVcenterLicenseKey = "VCF_TEST_VCENTER_LICENSE_KEY"
-
 	// VcfTestClusterId the identifier of the cluster within its vCenter server.
 	VcfTestClusterId = "VCF_TEST_CLUSTER_ID"
+
+	// VcfTestClusterImageId the identifier of the lifecycle image for the cluster.
+	VcfTestClusterImageId = "VCF_TEST_CLUSTER_IMAGE_ID"
 
 	// VcfTestDomainDataSourceId id of a workload domain used in workload domain data source acceptance test.
 	// Typically, the id of management domain is used as it is already created during bringup.
@@ -134,7 +125,7 @@ const (
 	VcfTestDomainName = "VCF_DOMAIN_NAME"
 
 	// VcfTestNetworkPoolName used in vcf_network_pool acceptance tests.
-	VcfTestNetworkPoolName = "terraform-test-pool"
+	VcfTestNetworkPoolName = "networkpool-1"
 
 	// VcfTestMsftCaServerUrl used in vcf_certificate_authority tests.
 	VcfTestMsftCaServerUrl = "VCF_TEST_MSFT_CA_SERVER_URL"

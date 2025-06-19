@@ -24,9 +24,9 @@ Provides read-only access to preexisting vSphere cluster, deployed within a Doma
 
 ### Read-Only
 
+- `domain_id` (String) The ID of a workload domain that the cluster belongs to
 - `host` (List of Object) List of ESXi host information present in the Cluster (see [below for nested schema](#nestedatt--host))
 - `id` (String) The ID of this resource.
-- `domain_id` (String) The ID of a workload domain that the cluster belongs to
 - `is_default` (Boolean) Status of the cluster if default or not
 - `is_stretched` (Boolean) Status of the cluster if stretched or not
 - `name` (String) Name of the domain
@@ -47,19 +47,36 @@ Optional:
 
 Read-Only:
 
-- `id` (String) UUID of the commissioned host, part of this cluster
+- `availability_zone_name` (String)
 - `host_name` (String) Host name of the ESXi host
+- `id` (String) UUID of the commissioned host, part of this cluster
 - `ip_address` (String) IPv4 address of the ESXi host
+- `password` (String)
+- `serial_number` (String)
+- `ssh_thumbprint` (String)
+- `username` (String)
+- `vmnic` (List of Object) (see [below for nested schema](#nestedobjatt--host--vmnic))
+
+<a id="nestedobjatt--host--vmnic"></a>
+### Nested Schema for `host.vmnic`
+
+Read-Only:
+
+- `id` (String)
+- `uplink` (String)
+- `vds_name` (String)
+
+
 
 <a id="nestedatt--vds"></a>
 ### Nested Schema for `vds`
 
 Read-Only:
 
+- `is_used_by_nsx`(Boolean)  Identifies if the vSphere distributed switch is used by NSX
 - `name` (String) vSphere Distributed Switch name
-- `is_used_by_nsx` (Boolean)  Identifies if the vSphere distributed switch is used by NSX
-- `nioc_bandwidth_allocations` (List of Object) List of Network I/O Control Bandwidth Allocations for System Traffic based on shares, reservation, and limit (see [below for nested schema](#nestedobjatt--vds--nioc_bandwidth_allocations))
-- `portgroup` (List of Object) List of portgroups associated with the vSphere Distributed Switch (see [below for nested schema](#nestedobjatt--vds--portgroup))
+- `nioc_bandwidth_allocations` (List of Object) (see [below for nested schema](#nestedobjatt--vds--nioc_bandwidth_allocations))
+- `portgroup` (List of Object) (see [below for nested schema](#nestedobjatt--vds--portgroup))
 
 <a id="nestedobjatt--vds--nioc_bandwidth_allocations"></a>
 ### Nested Schema for `vds.nioc_bandwidth_allocations`

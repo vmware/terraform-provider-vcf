@@ -23,6 +23,7 @@ import (
 
 func CreateDomainCreationSpec(data *schema.ResourceData) (*vcf.DomainCreationSpec, error) {
 	result := &vcf.DomainCreationSpec{}
+	result.DeployWithoutLicenseKeys = utils.ToPointer[bool](true)
 	domainName := data.Get("name").(string)
 	result.DomainName = &domainName
 
@@ -51,6 +52,13 @@ func CreateDomainCreationSpec(data *schema.ResourceData) (*vcf.DomainCreationSpe
 		return nil, err
 	}
 
+	ssoSpec, err := generateSsoSpecFromResourceData(data)
+	if err == nil {
+		result.SsoDomainSpec = ssoSpec
+	} else {
+		return nil, err
+	}
+
 	return result, nil
 }
 
@@ -67,7 +75,7 @@ func ReadAndSetClustersDataToDomainResource(domainClusterRefs []vcf.ClusterRefer
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCluster](clustersResult)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return errors.New(*vcfErr.Message)
 	}
 	domainClusterData := data.Get("cluster")
@@ -105,7 +113,7 @@ func SetBasicDomainAttributes(ctx context.Context, domainId string, data *schema
 	}
 	domain, vcfErr := api_client.GetResponseAs[vcf.Domain](domainRes)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 
@@ -204,7 +212,7 @@ func setClustersDataToDomainDataSource(domainClusterRefs []vcf.ClusterReference,
 		}
 		clusterRef, vcfErr := api_client.GetResponseAs[vcf.Cluster](res)
 		if vcfErr != nil {
-			api_client.LogError(vcfErr)
+			api_client.LogError(vcfErr, ctx)
 			return errors.New(*vcfErr.Message)
 		}
 		flattenedCluster, err := cluster.FlattenCluster(ctx, clusterRef, apiClient)
@@ -255,4 +263,18 @@ func generateComputeSpecFromResourceData(data *schema.ResourceData) (*vcf.Comput
 		return result, nil
 	}
 	return nil, fmt.Errorf("no cluster configuration")
+}
+
+func generateSsoSpecFromResourceData(data *schema.ResourceData) (*vcf.SsoDomainSpec, error) {
+	if ssoConfigRaw, ok := data.GetOk("sso"); ok {
+		ssoConfigList := ssoConfigRaw.([]interface{})
+		ssoConfig := ssoConfigList[0].(map[string]interface{})
+
+		return &vcf.SsoDomainSpec{
+			SsoDomainName:     utils.ToPointer[string](ssoConfig["domain_name"].(string)),
+			SsoDomainPassword: utils.ToPointer[string](ssoConfig["domain_password"].(string)),
+		}, nil
+	}
+
+	return nil, fmt.Errorf("no SSO configuration")
 }

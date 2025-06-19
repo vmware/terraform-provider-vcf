@@ -3,7 +3,7 @@
 page_title: "vcf_cluster Resource - terraform-provider-vcf"
 subcategory: ""
 description: |-
-
+  
 ---
 
 # vcf_cluster (Resource)
@@ -56,8 +56,8 @@ The following data is prerequisite for creation:
 ### Optional
 
 - `cluster_image_id` (String) ID of the cluster image to be used with the cluster
-- `domain_id` (String) The ID of a workload domain that the cluster belongs to. You cannot specify a value for `domain_name` if you set this attribute.
-- `domain_name` (String) The name of a workload domain that the cluster belongs to. You cannot specify a value for `domain_id` if you set this attribute.
+- `domain_id` (String) The ID of a workload domain that the cluster belongs to
+- `domain_name` (String) The name of a workload domain that the cluster belongs to
 - `evc_mode` (String) EVC mode for new cluster, if needed. One among: INTEL_MEROM, INTEL_PENRYN, INTEL_NEALEM, INTEL_WESTMERE, INTEL_SANDYBRIDGE, INTEL_IVYBRIDGE, INTEL_HASWELL, INTEL_BROADWELL, INTEL_SKYLAKE, INTEL_CASCADELAKE, AMD_REV_E, AMD_REV_F, AMD_GREYHOUND_NO3DNOW, AMD_GREYHOUND, AMD_BULLDOZER, AMD_PILEDRIVER, AMD_STREAMROLLER, AMD_ZEN
 - `geneve_vlan_id` (Number) VLAN ID use for NSX Geneve in the workload domain
 - `high_availability_enabled` (Boolean) vSphere High Availability settings for the cluster
@@ -90,7 +90,6 @@ Optional:
 - `availability_zone_name` (String) Availability Zone Name. This is required while performing a stretched cluster expand operation
 - `host_name` (String) Host name of the ESXi host
 - `ip_address` (String) IPv4 address of the ESXi host
-- `license_key` (String, Sensitive) License key for an ESXi host in the free pool. This is required except in cases where the ESXi host has already been licensed outside of the VMware Cloud Foundation system
 - `password` (String, Sensitive) Password to authenticate to the ESXi host
 - `serial_number` (String) Serial number of the ESXi host
 - `ssh_thumbprint` (String, Sensitive) SSH thumbprint of the ESXi host
@@ -232,10 +231,9 @@ Required:
 
 Optional:
 
-- `dedup_and_compression_enabled` (Boolean) Enable vSAN deduplication and compression. Cannot be set when `esa_enabled` is `true`.
-- `esa_enabled` (Boolean) Enable vSAN ESA. `dedup_and_compression_enabled` and `failures_to_tolerate` cannot be set when using this attribute.
-- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2. Cannot be set when `esa_enabled` is `true`.
-- `license_key` (String, Sensitive) vSAN license key to be used
+- `dedup_and_compression_enabled` (Boolean) Enable vSAN deduplication and compression
+- `esa_enabled` (Boolean) Enable vSAN ESA
+- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2.
 
 
 <a id="nestedblock--vsan_remote_datastore_cluster"></a>
@@ -266,7 +264,6 @@ Optional:
 - `availability_zone_name` (String) Availability Zone Name. This is required while performing a stretched cluster expand operation
 - `host_name` (String) Host name of the ESXi host
 - `ip_address` (String) IPv4 address of the ESXi host
-- `license_key` (String, Sensitive) License key for an ESXi host in the free pool. This is required except in cases where the ESXi host has already been licensed outside of the VMware Cloud Foundation system
 - `password` (String, Sensitive) Password to authenticate to the ESXi host
 - `serial_number` (String) Serial number of the ESXi host
 - `ssh_thumbprint` (String, Sensitive) SSH thumbprint of the ESXi host

@@ -36,5 +36,3 @@ Used to create and destroy SSO users with specified roles in an SSO domain
 Optional:
 
 - `create` (String)
-
-

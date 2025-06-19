@@ -42,13 +42,6 @@ func NsxSchema() *schema.Resource {
 				Description:  "Fully qualified domain name of the NSX Manager cluster VIP",
 				ValidateFunc: validation.NoZeroValues,
 			},
-			"license_key": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Sensitive:    true,
-				Description:  "NSX license to be used",
-				ValidateFunc: validation.NoZeroValues,
-			},
 			"form_factor": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -107,16 +100,11 @@ func TryConvertToNsxSpec(object map[string]interface{}) (*vcf.NsxTSpec, error) {
 	if len(nsxManagerAdminPassword) == 0 {
 		return nil, fmt.Errorf("cannot convert to NsxTSpec, nsx_manager_admin_password is required")
 	}
-	licenseKey := object["license_key"].(string)
-	if len(licenseKey) == 0 {
-		return nil, fmt.Errorf("cannot convert to NsxTSpec, license_key is required")
-	}
 
 	result := &vcf.NsxTSpec{}
 	result.Vip = &vip
 	result.VipFqdn = vipFqdn
 	result.NsxManagerAdminPassword = &nsxManagerAdminPassword
-	result.LicenseKey = &licenseKey
 
 	if formFactor, ok := object["form_factor"]; ok && !validationutils.IsEmpty(formFactor) {
 		result.FormFactor = resource_utils.ToStringPointer(formFactor)
@@ -157,7 +145,7 @@ func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef vcf.NsxTClusterRef
 	}
 	nsxtCluster, vcfErr := api_client.GetResponseAs[vcf.NsxTCluster](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return nil, errors.New(*vcfErr.Message)
 	}
 	if nsxtCluster.Nodes != nil {

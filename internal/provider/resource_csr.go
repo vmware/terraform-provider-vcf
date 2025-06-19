@@ -147,7 +147,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	}
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](res)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
@@ -161,7 +161,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	}
 	page, vcfErr := api_client.GetResponseAs[vcf.PageOfCsr](getCsrResponse)
 	if vcfErr != nil {
-		api_client.LogError(vcfErr)
+		api_client.LogError(vcfErr, ctx)
 		return diag.FromErr(errors.New(*vcfErr.Message))
 	}
 
