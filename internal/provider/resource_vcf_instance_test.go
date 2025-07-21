@@ -69,6 +69,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  skip_esx_thumbprint_validation = true
 	  management_pool_name = "bringup-networkpool"
 	  ceip_enabled = false
+	  version = "5.2.0"
 	  sddc_manager {
 		hostname = "sddc-manager"
 		ssh_password = "MnogoSl0jn@P@rol@!"
@@ -143,6 +144,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  }
 	  vsan {
 		datastore_name = "sfo01-m01-vsan"
+		failures_to_tolerate = 1
 	  }
 	  dvs {
 		mtu = 8940
@@ -196,6 +198,21 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  "VSAN",
 		  "VMOTION"
 		]
+		nsx_teamings {
+		  policy = "LOADBALANCE_SRCID"
+		  active_uplinks = ["uplink1", "uplink2"]
+		}
+		nsxt_switch_config {
+		  host_switch_operational_mode = "ENS_INTERRUPT"
+		  transport_zones {
+			name = "nsx-vlan-transportzone"
+			transport_type = "VLAN"
+		  }
+		  transport_zones {
+			name = "overlay-tz-sfo-m01-nsx01"
+			transport_type = "OVERLAY"
+		  }
+		}
 	  }
 	  cluster {
 		datacenter_name = "SDDC-Datacenter"
@@ -263,6 +280,7 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 		"instance_id":                    "sddcId-1001",
 		"skip_esx_thumbprint_validation": true,
 		"ceip_enabled":                   false,
+		"version":                        "5.2.0",
 		"sddc_manager": []interface{}{
 			map[string]interface{}{
 				"hostname":            "sddc-manager",
@@ -324,7 +342,8 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 		},
 		"vsan": []interface{}{
 			map[string]interface{}{
-				"datastore_name": "sfo01-m01-vsan",
+				"datastore_name":       "sfo01-m01-vsan",
+				"failures_to_tolerate": 1,
 			},
 		},
 		"dvs": []interface{}{
@@ -359,6 +378,27 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 					"MANAGEMENT",
 					"VSAN",
 					"VMOTION",
+				},
+				"nsx_teaming": []interface{}{
+					map[string]interface{}{
+						"policy":         "LOADBALANCE_SRCID",
+						"active_uplinks": []interface{}{"uplink1", "uplink2"},
+					},
+				},
+				"nsxt_switch_config": []interface{}{
+					map[string]interface{}{
+						"host_switch_operational_mode": "ENS_INTERRUPT",
+						"transport_zones": []interface{}{
+							map[string]interface{}{
+								"name":           "nsx-vlan-transportzone",
+								"transport_type": "VLAN",
+							},
+							map[string]interface{}{
+								"name":           "overlay-tz-sfo-m01-nsx01",
+								"transport_type": "OVERLAY",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -524,4 +564,8 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsFleetManagementSpec.Hostname)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).RootUserPassword)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).AdminUserPassword)
+	assert.Equal(t, utils.ToStringPointer("5.2.0"), sddcSpec.Version)
+	assert.Equal(t, utils.ToPointer[int32](int32(1)), sddcSpec.DatastoreSpec.VsanSpec.FailuresToTolerate)
+	assert.Equal(t, "LOADBALANCE_SRCID", (*(*sddcSpec.DvsSpecs)[0].NsxTeamings)[0].Policy)
+	assert.Equal(t, utils.ToStringPointer("ENS_INTERRUPT"), (*sddcSpec.DvsSpecs)[0].NsxtSwitchConfig.HostSwitchOperationalMode)
 }

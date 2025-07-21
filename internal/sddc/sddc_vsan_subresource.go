@@ -6,6 +6,7 @@ package sddc
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
 	"github.com/vmware/vcf-sdk-go/installer"
 )
 
@@ -31,6 +32,11 @@ func GetVsanSchema() *schema.Schema {
 					Optional:    true,
 					Description: "Enable vSAN ESA",
 				},
+				"failures_to_tolerate": {
+					Type:        schema.TypeInt,
+					Description: "Host failures to tolerate",
+					Optional:    true,
+				},
 			},
 		},
 	}
@@ -49,6 +55,11 @@ func GetVsanSpecFromSchema(rawData []interface{}) *installer.VsanSpec {
 		DatastoreName: &datastoreName,
 		VsanDedup:     &vsanDedup,
 		EsaConfig:     &installer.VsanEsaConfig{Enabled: &esaEnabled},
+	}
+
+	// Add failures_to_tolerate if provided
+	if failuresToTolerate, ok := data["failures_to_tolerate"].(int); ok {
+		vsanSpecBinding.FailuresToTolerate = utils.ToInt32Pointer(failuresToTolerate)
 	}
 
 	return vsanSpecBinding

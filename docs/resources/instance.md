@@ -8,12 +8,6 @@ description: |-
 
 # vcf_instance (Resource)
 
-Create an SDDC workflow (bringup) executes automatically the following:
-
-* Configures networking on each host.
-* Configures vSAN storage on the hosts.
-* Deploys and configures the management stack - vCenter and NSX
-* Deploys and configures SDDC Manager which provides the ability to perform Day 2 operations
 
 
 
@@ -46,6 +40,7 @@ Create an SDDC workflow (bringup) executes automatically the following:
 - `sddc_manager` (Block List, Max: 1) (see [below for nested schema](#nestedblock--sddc_manager))
 - `security` (Block List, Max: 1) (see [below for nested schema](#nestedblock--security))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `version` (String) VCF version
 - `vsan` (Block List, Max: 1) (see [below for nested schema](#nestedblock--vsan))
 
 ### Read-Only
@@ -118,6 +113,8 @@ Optional:
 
 - `mtu` (Number) DVS MTU (default value is 9000). In between 1500 and 9000
 - `nioc` (Block List) List of NIOC specs for networks (see [below for nested schema](#nestedblock--dvs--nioc))
+- `nsx_teaming` (Block List) NSX teaming policies for uplink profiles (see [below for nested schema](#nestedblock--dvs--nsx_teaming))
+- `nsxt_switch_config` (Block List, Max: 1) NSX-T switch configuration (see [below for nested schema](#nestedblock--dvs--nsxt_switch_config))
 
 <a id="nestedblock--dvs--vmnic_mapping"></a>
 ### Nested Schema for `dvs.vmnic_mapping`
@@ -135,6 +132,44 @@ Required:
 
 - `traffic_type` (String) Traffic Type One among:VSAN, VMOTION, VIRTUALMACHINE, MANAGEMENT, NFS, VDP, HBR, FAULTTOLERANCE, ISCSI
 - `value` (String) NIOC Value. Example: LOW, NORMAL, HIGH
+
+
+<a id="nestedblock--dvs--nsx_teaming"></a>
+### Nested Schema for `dvs.nsx_teaming`
+
+Required:
+
+- `active_uplinks` (List of String) List of active uplinks
+- `policy` (String) Teaming policy (e.g., FAILOVER_ORDER, LOADBALANCE_SRCID)
+
+Optional:
+
+- `standby_uplinks` (List of String) List of standby uplinks
+
+
+<a id="nestedblock--dvs--nsxt_switch_config"></a>
+### Nested Schema for `dvs.nsxt_switch_config`
+
+Required:
+
+- `transport_zones` (Block List, Min: 1) Transport zones for NSX switch (see [below for nested schema](#nestedblock--dvs--nsxt_switch_config--transport_zones))
+
+Optional:
+
+- `host_switch_operational_mode` (String) Host switch operational mode (e.g., STANDARD, ENS)
+- `ip_assignment_type` (String) IP assignment type for host switch
+
+<a id="nestedblock--dvs--nsxt_switch_config--transport_zones"></a>
+### Nested Schema for `dvs.nsxt_switch_config.transport_zones`
+
+Required:
+
+- `transport_type` (String) Transport type (e.g., OVERLAY, VLAN)
+
+Optional:
+
+- `name` (String) Transport zone name
+
 
 
 
@@ -387,4 +422,5 @@ Required:
 Optional:
 
 - `esa_enabled` (Boolean) Enable vSAN ESA
+- `failures_to_tolerate` (Number) Host failures to tolerate
 - `vsan_dedup` (Boolean) VSAN feature Deduplication and Compression flag, one flag for both features

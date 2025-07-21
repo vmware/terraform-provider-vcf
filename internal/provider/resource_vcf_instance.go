@@ -96,6 +96,11 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 		"operations":                  sddc.GetVcfOperationsSchema(),
 		"operations_collector":        sddc.GetVcfOperationsCollectorSchema(),
 		"operations_fleet_management": sddc.GetVcfOperationsFleetManagementSchema(),
+		"version": {
+			Type:        schema.TypeString,
+			Description: "VCF version",
+			Optional:    true,
+		},
 	}
 }
 
@@ -171,6 +176,9 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 		if spec := sddc.GetVcfOperationsFleetManagementSpecFromSchema(operationsFleetManagementSpec.([]interface{})); spec != nil {
 			sddcSpec.VcfOperationsFleetManagementSpec = spec
 		}
+	}
+	if version, ok := data.GetOk("version"); ok {
+		sddcSpec.Version = utils.ToStringPointer(version)
 	}
 	return sddcSpec
 }
