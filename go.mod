@@ -1,11 +1,11 @@
 module github.com/vmware/terraform-provider-vcf
 
-go 1.23.0
+go 1.23.7
 
 toolchain go1.24.1
 
 require (
-	github.com/hashicorp/terraform-plugin-docs v0.21.0
+	github.com/hashicorp/terraform-plugin-docs v0.22.0
 	github.com/hashicorp/terraform-plugin-framework v1.15.0
 	github.com/hashicorp/terraform-plugin-framework-timeouts v0.5.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.18.0
