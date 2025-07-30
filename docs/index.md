@@ -10,15 +10,15 @@ description: |-
 
 The following table lists the supported platforms for this provider.
 
-| Platform                      | Support     |
-|-------------------------------|-------------|
-| VMware Cloud Foundation 9.0.0 | `≥ v0.17.0` |
-| VMware Cloud Foundation 5.2.1 | `≥ v0.13.0` |
-| VMware Cloud Foundation 5.2.0 | `≥ v0.12.0` |
-| VMware Cloud Foundation 5.1+  | `≥ v0.9.0`  |
-| VMware Cloud Foundation 5.0   | `≥ v0.9.0`  |
-| VMware Cloud Foundation 4.5   | `≤ v0.8.0`  |
-| VMware Cloud Foundation 4.4   | `≤ v0.8.0`  |
+| Platform                      | Support               |
+|-------------------------------|-----------------------|
+| VMware Cloud Foundation 9.0.0 | `≥ v0.17.0`           |
+| VMware Cloud Foundation 5.2.1 | `≥ v0.13.0 < v0.17.0` |
+| VMware Cloud Foundation 5.2.0 | `≥ v0.12.0`           |
+| VMware Cloud Foundation 5.1+  | `≥ v0.9.0`            |
+| VMware Cloud Foundation 5.0   | `≥ v0.9.0`            |
+| VMware Cloud Foundation 4.5   | `≤ v0.8.0`            |
+| VMware Cloud Foundation 4.4   | `≤ v0.8.0`            |
 
 [^1]: VMware Cloud Foundation on Dell VxRAIL is **not supported** by this provider.
 
