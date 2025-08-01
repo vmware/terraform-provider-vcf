@@ -238,8 +238,8 @@ Required:
 Optional:
 
 - `ssl_thumbprint` (String) vCenter Server SSL thumbprint (SHA256)
-- `storage_size` (String) vCenter VM storage size. One among:lstorage, xlstorage
-- `vm_size` (String) vCenter Server Appliance  size. One among: tiny, small, medium, large, xlarge
+- `storage_size` (String) vCenter Server storage size. One among: lstorage, xlstorage
+- `vm_size` (String) vCenter Server instance size. One among: tiny, small, medium, large, xlarge
 
 
 <a id="nestedblock--automation"></a>
@@ -262,8 +262,8 @@ Optional:
 
 Required:
 
-- `nsx_manager` (Block List, Min: 1) Parameters for NSX manager (see [below for nested schema](#nestedblock--nsx--nsx_manager))
-- `nsx_manager_size` (String) NSX-T Manager size. One among: medium, large
+- `nsx_manager` (Block List, Min: 1) Parameters for NSX Manager (see [below for nested schema](#nestedblock--nsx--nsx_manager))
+- `nsx_manager_size` (String) NSX Manager size. One among: medium, large
 - `root_nsx_manager_password` (String, Sensitive) NSX Manager root password. Password should have 1) At least eight characters, 2) At least one lower-case letter, 3) At least one upper-case letter 4) At least one digit 5) At least one special character, 6) At least five different characters , 7) No dictionary words, 6) No palindromes
 - `transport_vlan_id` (Number) Transport VLAN ID
 - `vip_fqdn` (String) FQDN for VIP so that common SSL certificates can be installed across all managers
@@ -329,7 +329,7 @@ Required:
 Optional:
 
 - `admin_user_password` (String, Sensitive) Administrator password
-- `appliance_size` (String) Appliance size
+- `appliance_size` (String) Appliance size. One among: xsmall, small, medium, large, xlarge
 - `load_balancer_fqdn` (String) FQDN of the load balancer
 
 <a id="nestedblock--operations--node"></a>
