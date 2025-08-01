@@ -349,7 +349,7 @@ Required:
 Optional:
 
 - `storage_size` (String) vCenter Server storage size. One among: lstorage, xlstorage
-- `vm_size` (String) vCenter Server instance size. One among: xlarge, large, medium, small, tiny
+- `vm_size` (String) vCenter Server instance size. One among: tiny, small, medium, large, xlarge
 
 Read-Only:
 
