@@ -233,7 +233,7 @@ Optional:
 
 - `dedup_and_compression_enabled` (Boolean) Enable vSAN deduplication and compression
 - `esa_enabled` (Boolean) Enable vSAN ESA
-- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2.
+- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 1 or 2. Please note that the option is only supported for VCF9.
 
 
 <a id="nestedblock--vsan_remote_datastore_cluster"></a>

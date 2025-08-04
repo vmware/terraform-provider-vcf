@@ -29,8 +29,8 @@ func VsanDatastoreSchema() *schema.Resource {
 			"failures_to_tolerate": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Description:  "Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2.",
-				ValidateFunc: validation.IntBetween(0, 2),
+				Description:  "Number of ESXi host failures to tolerate in the vSAN cluster. One of 1 or 2.",
+				ValidateFunc: validation.IntBetween(1, 2),
 			},
 			"dedup_and_compression_enabled": {
 				Type:        schema.TypeBool,
@@ -64,10 +64,17 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*vcf.VsanData
 		esaConfig := vcf.EsaConfig{Enabled: value}
 		result.EsaConfig = &esaConfig
 	}
-	if failuresToTolerate, ok := object["failures_to_tolerate"]; ok && !validationutils.IsEmpty(failuresToTolerate) {
-		failuresToTolerateInt := int32(failuresToTolerate.(int))
-		result.FailuresToTolerate = &failuresToTolerateInt
+	// FIX: Only set FailuresToTolerate if explicitly provided AND > 0
+	if failuresToTolerate, exists := object["failures_to_tolerate"]; exists {
+		if !validationutils.IsEmpty(failuresToTolerate) {
+			failuresToTolerateInt := int32(failuresToTolerate.(int))
+			if failuresToTolerateInt > 0 {
+				result.FailuresToTolerate = &failuresToTolerateInt
+			}
+			// If failuresToTolerateInt == 0, don't set it (leave as nil)
+		}
 	}
+	// If key doesn't exist at all, FailuresToTolerate remains nil
 
 	return result, nil
 }
