@@ -29,7 +29,7 @@ func ResourceVcfInstance() *schema.Resource {
 		UpdateContext: resourceVcfInstanceUpdate,
 		DeleteContext: resourceVcfInstanceDelete,
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(10 * time.Hour), // it takes a while
+			Create: schema.DefaultTimeout(15 * time.Hour), // it takes a while
 		},
 		Schema: resourceVcfInstanceSchema(),
 	}

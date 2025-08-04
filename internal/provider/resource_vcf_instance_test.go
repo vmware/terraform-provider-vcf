@@ -198,7 +198,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  "VSAN",
 		  "VMOTION"
 		]
-		nsx_teamings {
+		nsx_teaming {
 		  policy = "LOADBALANCE_SRCID"
 		  active_uplinks = ["uplink1", "uplink2"]
 		}
