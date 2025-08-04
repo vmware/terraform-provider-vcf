@@ -234,7 +234,7 @@ Optional:
 
 - `dedup_and_compression_enabled` (Boolean) Enable vSAN deduplication and compression. Cannot be set when `esa_enabled` is `true`.
 - `esa_enabled` (Boolean) Enable vSAN ESA. `dedup_and_compression_enabled` and `failures_to_tolerate` cannot be set when using this attribute.
-- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2. Cannot be set when `esa_enabled` is `true`.
+- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 1 or 2. Cannot be set when `esa_enabled` is `true`.
 - `license_key` (String, Sensitive) vSAN license key to be used
 
 

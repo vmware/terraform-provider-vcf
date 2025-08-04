@@ -247,7 +247,7 @@ Required:
 Optional:
 
 - `dedup_and_compression_enabled` (Boolean) Enable vSAN deduplication and compression
-- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 0, 1, or 2.
+- `failures_to_tolerate` (Number) Number of ESXi host failures to tolerate in the vSAN cluster. One of 1 or 2.
 - `license_key` (String, Sensitive) vSAN license key to be used
 
 
