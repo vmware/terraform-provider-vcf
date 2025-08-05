@@ -355,7 +355,7 @@ Required:
 
 Optional:
 
-- `appliance_size` (String) Appliance size
+- `appliance_size` (String)  Appliance size. One among: small or standard. Defaults to small.
 - `root_user_password` (String, Sensitive) root password
 
 
