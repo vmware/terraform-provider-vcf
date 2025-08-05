@@ -33,7 +33,7 @@ func GetVcfOperationsCollectorSchema() *schema.Schema {
 					Type:         schema.TypeString,
 					Description:  "Appliance size",
 					Optional:     true,
-					ValidateFunc: validation.StringInSlice([]string{"xsmall", "small", "medium", "large", "xlarge"}, true),
+					ValidateFunc: validation.StringInSlice([]string{"small", "standard"}, true),
 				},
 			},
 		},
