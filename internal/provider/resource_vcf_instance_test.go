@@ -69,7 +69,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  skip_esx_thumbprint_validation = true
 	  management_pool_name = "bringup-networkpool"
 	  ceip_enabled = false
-	  version = "5.2.0"
+	  version = "9.0.0"
 	  sddc_manager {
 		hostname = "sddc-manager"
 		ssh_password = "MnogoSl0jn@P@rol@!"
@@ -280,7 +280,7 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 		"instance_id":                    "sddcId-1001",
 		"skip_esx_thumbprint_validation": true,
 		"ceip_enabled":                   false,
-		"version":                        "5.2.0",
+		"version":                        "9.0.0",
 		"sddc_manager": []interface{}{
 			map[string]interface{}{
 				"hostname":            "sddc-manager",
@@ -487,7 +487,7 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 		"operations_collector": []interface{}{
 			map[string]interface{}{
 				"hostname":           "operations-1",
-				"appliance_size":     "medium",
+				"appliance_size":     "small",
 				"root_user_password": "MnogoSl0jn@P@rol@!",
 			},
 		},
@@ -560,11 +560,11 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsSpec.Nodes[0].Hostname)
 	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsCollectorSpec.Hostname)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsCollectorSpec).RootUserPassword)
-	assert.Equal(t, utils.ToPointer[string]("medium"), (*sddcSpec.VcfOperationsCollectorSpec).ApplianceSize)
+	assert.Equal(t, utils.ToPointer[string]("small"), (*sddcSpec.VcfOperationsCollectorSpec).ApplianceSize)
 	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsFleetManagementSpec.Hostname)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).RootUserPassword)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).AdminUserPassword)
-	assert.Equal(t, utils.ToStringPointer("5.2.0"), sddcSpec.Version)
+	assert.Equal(t, utils.ToStringPointer("9.0.0"), sddcSpec.Version)
 	assert.Equal(t, utils.ToPointer[int32](int32(1)), sddcSpec.DatastoreSpec.VsanSpec.FailuresToTolerate)
 	assert.Equal(t, "LOADBALANCE_SRCID", (*(*sddcSpec.DvsSpecs)[0].NsxTeamings)[0].Policy)
 	assert.Equal(t, utils.ToStringPointer("ENS_INTERRUPT"), (*sddcSpec.DvsSpecs)[0].NsxtSwitchConfig.HostSwitchOperationalMode)
