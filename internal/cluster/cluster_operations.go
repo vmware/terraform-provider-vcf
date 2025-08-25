@@ -12,9 +12,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/vcf-sdk-go/vcf"
 
+	"github.com/vmware/terraform-provider-vcf/internal/api_client"
 	"github.com/vmware/terraform-provider-vcf/internal/datastores"
 	"github.com/vmware/terraform-provider-vcf/internal/network"
 	utils "github.com/vmware/terraform-provider-vcf/internal/resource_utils"
@@ -371,18 +371,18 @@ func FlattenCluster(ctx context.Context, clusterObj *vcf.Cluster, apiClient *vcf
 	result["is_default"] = clusterObj.IsDefault
 	result["is_stretched"] = clusterObj.IsStretched
 
-	if clusterObj.VdsSpecs != nil {
-		flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(*clusterObj.VdsSpecs)
-		result["vds"] = flattenedVdsSpecs
+	flattenedVdsSpecs, err := getFlattenedVdsSpecsForRefs(ctx, *clusterObj.Id, apiClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flattened VDS specs: %w", err)
+	}
+	result["vds"] = flattenedVdsSpecs
+
+	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
+	if err != nil {
+		return nil, err
 	}
 
-	if clusterObj.Hosts != nil {
-		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
-		if err != nil {
-			return nil, err
-		}
-		result["host"] = flattenedHostSpecs
-	}
+	result["host"] = flattenedHostSpecs
 
 	return &result, nil
 }
@@ -405,18 +405,17 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
 	_ = data.Set("is_default", clusterObj.IsDefault)
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
-	if clusterObj.VdsSpecs != nil {
-		flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(*clusterObj.VdsSpecs)
-		_ = data.Set("vds", flattenedVdsSpecs)
+	flattenedVdsSpecs, err := getFlattenedVdsSpecsForRefs(ctx, *clusterObj.Id, apiClient)
+	if err != nil {
+		return nil, err
 	}
+	_ = data.Set("vds", flattenedVdsSpecs)
 
-	if clusterObj.Hosts != nil {
-		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
-		if err != nil {
-			return nil, err
-		}
-		_ = data.Set("host", flattenedHostSpecs)
+	flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
+	if err != nil {
+		return nil, err
 	}
+	_ = data.Set("host", flattenedHostSpecs)
 
 	// get all domains and find our cluster to set the "domain_id" attribute, because
 	// cluster API doesn't provide parent domain ID.
@@ -463,20 +462,63 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostRefere
 			api_client.LogError(vcfErr, ctx)
 			return nil, errors.New(*vcfErr.Message)
 		}
-		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(*hostObj))
+		flattenedHostSpecs = append(flattenedHostSpecs, FlattenHost(*hostObj))
 	}
 	return flattenedHostSpecs, nil
 }
 
-func getFlattenedVdsSpecsForRefs(vdsSpecs []vcf.VdsSpec) []map[string]interface{} {
-	flattenedVdsSpecs := *new([]map[string]interface{})
-	// Since backend API returns objects in random order sort VDSSpec list to ensure
-	// import is reproducible
-	sort.SliceStable(vdsSpecs, func(i, j int) bool {
-		return vdsSpecs[i].Name < vdsSpecs[j].Name
-	})
-	for _, vdsSpec := range vdsSpecs {
-		flattenedVdsSpecs = append(flattenedVdsSpecs, network.FlattenVdsSpec(vdsSpec))
+func getFlattenedVdsSpecsForRefs(ctx context.Context, clusterId string, apiClient *vcf.ClientWithResponses) ([]map[string]interface{}, error) {
+	res, err := apiClient.GetVdsesWithResponse(ctx, clusterId)
+	if err != nil {
+		return nil, err
 	}
-	return flattenedVdsSpecs
+
+	switcheObj, vcfErr := api_client.GetResponseAs[[]vcf.Vds](res)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr)
+		return nil, errors.New(*vcfErr.Message)
+	}
+
+	flattenedVdsSpecs := make([]map[string]interface{}, len(*switcheObj))
+	for i, vds := range *switcheObj {
+		portGroups := vds.PortGroups
+		portGroupSpecs := make([]vcf.PortgroupSpec, len(*portGroups))
+		for j, pg := range *portGroups {
+			portGroupSpecs[j] = vcf.PortgroupSpec{
+				Name:          pg.Name,
+				TransportType: pg.TransportType,
+				ActiveUplinks: pg.ActiveUplinks,
+			}
+		}
+
+		niocBandwidthAllocations := vds.NiocBandwidthAllocations
+		niocSpecs := make([]vcf.NiocBandwidthAllocationSpec, len(*niocBandwidthAllocations))
+		for k, nioc := range *niocBandwidthAllocations {
+			niocType := ""
+			if nioc.Type != nil {
+				niocType = *nioc.Type
+			}
+
+			niocSpecs[k] = vcf.NiocBandwidthAllocationSpec{
+				Type: niocType,
+				NiocTrafficResourceAllocation: vcf.NiocTrafficResourceAllocation{
+					SharesInfo: &vcf.SharesInfo{
+						Shares: nioc.NiocTrafficResourceAllocation.SharesInfo.Shares,
+						Level:  nioc.NiocTrafficResourceAllocation.SharesInfo.Level,
+					},
+				},
+			}
+		}
+
+		vdsSpec := vcf.VdsSpec{
+			Name:                         vds.Name,
+			IsUsedByNsxt:                 vds.IsUsedByNsxt,
+			PortGroupSpecs:               &portGroupSpecs,
+			NiocBandwidthAllocationSpecs: &niocSpecs,
+		}
+
+		flattenedVdsSpecs[i] = network.FlattenVdsSpec(&vdsSpec)
+	}
+
+	return flattenedVdsSpecs, nil
 }
