@@ -35,8 +35,8 @@ const (
 )
 
 const (
-	AutorotateDays30  = 30
-	AutorotateDays60  = 60
+	AutorotateDays30 = 30
+
 	AutorotateDays90  = 90
 	AutorotateDaysMax = AutorotateDays90
 	AutoRotateDaysMin = 1

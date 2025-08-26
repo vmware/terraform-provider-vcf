@@ -4,11 +4,7 @@
 
 package constants
 
-import "time"
-
 const (
-	DefaultVcfApiCallTimeout = 2 * time.Minute
-
 	ProviderName = "terraform-provider-vcf"
 
 	// VcfTestUrl URL of a VCF instance, used for acceptance tests.
@@ -142,9 +138,6 @@ const (
 	// VcfTestResourceCaCertificate used in vcf_external_certificate tests.
 	VcfTestResourceCaCertificate = "VCF_TEST_RESOURCE_CA_CERTIFICATE"
 
-	// VcfTestResourceCertificateChain used in vcf_external_certificate tests.
-	VcfTestResourceCertificateChain = "VCF_TEST_RESOURCE_CERTIFICATE_CHAIN"
-
 	// VcfTestEdgeClusterRootPass the root user password for the NSX manager.
 	VcfTestEdgeClusterRootPass = "VCF_TEST_EDGE_CLUSTER_ROOT_PASS"
 
@@ -165,9 +158,6 @@ const (
 
 	// VcfTestComputeClusterId the identifier of the compute cluster that will contain the edge nodes.
 	VcfTestComputeClusterId = "VCF_TEST_COMPUTE_CLUSTER_ID"
-
-	// VcfTestComputeClusterName the display name of the compute cluster that will contain the edge nodes.
-	VcfTestComputeClusterName = "VCF_TEST_COMPUTE_CLUSTER_NAME"
 
 	// VcfTestVcenterFqdn the FQDN of the vcenter server.
 	VcfTestVcenterFqdn = "VCF_TEST_VCENTER_FQDN"
