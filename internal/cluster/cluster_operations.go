@@ -249,7 +249,7 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*vcf.ClusterSpec, e
 	if vdsRaw, ok := object["vds"]; ok {
 		vdsList := vdsRaw.([]interface{})
 		if len(vdsList) > 0 {
-			vdsSpecs := []vcf.VdsSpec{}
+			var vdsSpecs []vcf.VdsSpec
 			for _, vdsListEntry := range vdsList {
 				vdsSpec, err := network.TryConvertToVdsSpec(vdsListEntry.(map[string]interface{}))
 				if err != nil {
@@ -322,7 +322,7 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 	if nfsDatastoresRaw, ok := object["nfs_datastores"]; ok && !validationUtils.IsEmpty(nfsDatastoresRaw) {
 		nfsDatastoresList := nfsDatastoresRaw.([]interface{})
 		if len(nfsDatastoresList) > 0 {
-			specs := []vcf.NfsDatastoreSpec{}
+			var specs []vcf.NfsDatastoreSpec
 			for _, nfsDatastoreListEntry := range nfsDatastoresList {
 				nfsDatastoreSpec, err := datastores.TryConvertToNfsDatastoreSpec(
 					nfsDatastoreListEntry.(map[string]interface{}))
@@ -338,7 +338,7 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 	if vvolDatastoresRaw, ok := object["vvol_datastores"]; ok && !validationUtils.IsEmpty(vvolDatastoresRaw) {
 		vvolDatastoresList := vvolDatastoresRaw.([]interface{})
 		if len(vvolDatastoresList) > 0 {
-			specs := []vcf.VvolDatastoreSpec{}
+			var specs []vcf.VvolDatastoreSpec
 			for _, vvolDatastoreListEntry := range vvolDatastoresList {
 				vvolDatastoreSpec, err := datastores.TryConvertToVvolDatastoreSpec(
 					vvolDatastoreListEntry.(map[string]interface{}))

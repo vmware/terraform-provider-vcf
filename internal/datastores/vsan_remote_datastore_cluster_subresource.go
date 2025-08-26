@@ -35,7 +35,7 @@ func TryConvertToVSANRemoteDatastoreClusterSpec(object map[string]interface{}) (
 		return nil, fmt.Errorf("cannot convert to VSANRemoteDatastoreClusterSpec, datastore_uuids is required")
 	}
 	result := &vcf.VsanRemoteDatastoreClusterSpec{}
-	specs := []vcf.VsanRemoteDatastoreSpec{}
+	var specs []vcf.VsanRemoteDatastoreSpec
 	for _, datastoreUuid := range datastoreUuids {
 		specs = append(specs, vcf.VsanRemoteDatastoreSpec{DatastoreUuid: datastoreUuid})
 	}

@@ -68,7 +68,7 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*vcf.VdsSpec, error) {
 	if portgroupsRaw, ok := object["portgroup"]; ok && !validationutils.IsEmpty(portgroupsRaw) {
 		portgroupsList := portgroupsRaw.([]interface{})
 		if len(portgroupsList) > 0 {
-			portGroupSpecs := []vcf.PortgroupSpec{}
+			var portGroupSpecs []vcf.PortgroupSpec
 			for _, portgroupListEntry := range portgroupsList {
 				portgroupSpec, err := tryConvertToPortgroupSpec(portgroupListEntry.(map[string]interface{}))
 				if err != nil {
@@ -82,7 +82,7 @@ func TryConvertToVdsSpec(object map[string]interface{}) (*vcf.VdsSpec, error) {
 	if niocBandwidthAllocationsRaw, ok := object["nioc_bandwidth_allocations"]; ok && !validationutils.IsEmpty(niocBandwidthAllocationsRaw) {
 		niocBandwidthAllocationsList := niocBandwidthAllocationsRaw.([]interface{})
 		if len(niocBandwidthAllocationsList) > 0 {
-			specs := []vcf.NiocBandwidthAllocationSpec{}
+			var specs []vcf.NiocBandwidthAllocationSpec
 			for _, niocBandwidthAllocationListEntry := range niocBandwidthAllocationsList {
 				niocBandwidthAllocationSpec, err := tryConvertToNiocBandwidthAllocationSpec(
 					niocBandwidthAllocationListEntry.(map[string]interface{}))
