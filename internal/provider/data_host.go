@@ -345,7 +345,7 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("network_pool", networkPool)
 
 	// CPU information.
-	cpuCores := []map[string]interface{}{}
+	var cpuCores []map[string]interface{}
 	for _, core := range *host.Cpu.CpuCores {
 		cpuCore := map[string]interface{}{
 			"frequency_mhz": core.FrequencyMHz,
@@ -379,7 +379,7 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("compatible_storage_type", host.CompatibleStorageType)
 
 	// Storage information.
-	disks := []map[string]interface{}{}
+	var disks []map[string]interface{}
 	for _, disk := range *host.Storage.Disks {
 		diskInfo := map[string]interface{}{
 			"capacity_mb":  disk.CapacityMB,
@@ -400,7 +400,7 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("storage", storage)
 
 	// Physical NICs information.
-	physicalNics := []map[string]interface{}{}
+	var physicalNics []map[string]interface{}
 	for _, nic := range *host.PhysicalNics {
 		physicalNic := map[string]interface{}{
 			"device_name": nic.DeviceName,
@@ -413,7 +413,7 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 	_ = d.Set("physical_nics", physicalNics)
 
 	// IP addresses information.
-	ipAddresses := []map[string]interface{}{}
+	var ipAddresses []map[string]interface{}
 	for _, ip := range *host.IpAddresses {
 		ipAddress := map[string]interface{}{
 			"ip_address": ip.IpAddress,
