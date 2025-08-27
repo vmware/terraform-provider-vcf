@@ -35,7 +35,7 @@ func TryConvertToVmfsDatastoreSpec(object map[string]interface{}) (*vcf.VmfsData
 		return nil, fmt.Errorf("cannot convert to VmfsDatastoreSpec, datastore_names is required")
 	}
 	result := &vcf.VmfsDatastoreSpec{}
-	specs := []vcf.FcSpec{}
+	var specs []vcf.FcSpec
 	for _, datastoreName := range datastoreNames {
 		specs = append(specs, vcf.FcSpec{DatastoreName: datastoreName})
 	}

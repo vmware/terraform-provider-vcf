@@ -127,7 +127,7 @@ func TryConvertToHostSpec(object map[string]interface{}) (*vcf.HostSpec, error) 
 		vmNicsList := vmNicsRaw.([]interface{})
 		if len(vmNicsList) > 0 {
 			result.HostNetworkSpec = &vcf.HostNetworkSpec{}
-			vmNics := []vcf.VmNic{}
+			var vmNics []vcf.VmNic
 			for _, vmNicListEntry := range vmNicsList {
 				vmNic, err := network.TryConvertToVmNic(vmNicListEntry.(map[string]interface{}))
 				if err != nil {

@@ -103,7 +103,7 @@ func GetIpAddressPoolSpecFromSchema(object map[string]interface{}) (*vcf.IpAddre
 	if subnetsRaw, ok := object["subnet"]; ok {
 		subnetsList := subnetsRaw.([]interface{})
 		if len(subnetsList) > 0 {
-			subnets := []vcf.IpAddressPoolSubnetSpec{}
+			var subnets []vcf.IpAddressPoolSubnetSpec
 			for _, subnetsListEntry := range subnetsList {
 				ipAddressPoolSubnetSpec, err := getIpAddressPoolSubnetSpecFromSchema(subnetsListEntry.(map[string]interface{}))
 				if err != nil {
@@ -137,7 +137,7 @@ func GetInstallerIpAddressPoolSpecFromSchema(object map[string]interface{}) (*in
 	if subnetsRaw, ok := object["subnet"]; ok {
 		subnetsList := subnetsRaw.([]interface{})
 		if len(subnetsList) > 0 {
-			subnets := []installer.IpAddressPoolSubnetSpec{}
+			var subnets []installer.IpAddressPoolSubnetSpec
 			for _, subnetsListEntry := range subnetsList {
 				ipAddressPoolSubnetSpec, err := getInstallerIpAddressPoolSubnetSpecFromSchema(subnetsListEntry.(map[string]interface{}))
 				if err != nil {
