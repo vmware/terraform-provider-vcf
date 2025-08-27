@@ -7,6 +7,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -156,19 +157,16 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 	client := meta.(*api_client.SddcManagerClient).ApiClient
 
 	spec, err := nsx_edge_cluster.GetNsxEdgeClusterCreationSpec(data, client)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	validationErr := validateClusterCreationSpec(client, ctx, *spec)
-
 	if validationErr != nil {
 		return validationErr
 	}
 
 	res, err := client.CreateEdgeClusterWithResponse(ctx, *spec)
-
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -183,22 +181,36 @@ func resourceNsxEdgeClusterCreate(ctx context.Context, data *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	clusters, err := client.GetEdgeClustersWithResponse(ctx, nil)
+	const maxRetries = 30
+	const retryDelay = 10 * time.Second
 
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters)
-	if vcfErr != nil {
-		api_client.LogError(vcfErr, ctx)
-		return diag.FromErr(errors.New(*vcfErr.Message))
-	}
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		tflog.Info(ctx, fmt.Sprintf("Attempt %d/%d to find edge cluster", attempt+1, maxRetries))
 
-	for _, cluster := range *page.Elements {
-		if cluster.Name != nil && *cluster.Name == data.Get("name") {
-			data.SetId(*cluster.Id)
-			tflog.Info(ctx, "Edge cluster created successfully.")
-			return nil
+		clusters, err := client.GetEdgeClustersWithResponse(ctx, nil)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		page, vcfErr := api_client.GetResponseAs[vcf.PageOfEdgeCluster](clusters)
+		if vcfErr != nil {
+			api_client.LogError(vcfErr, ctx)
+			return diag.FromErr(errors.New(*vcfErr.Message))
+		}
+
+		tflog.Info(ctx, fmt.Sprintf("Looking for cluster name: '%s'", data.Get("name").(string)))
+		tflog.Info(ctx, fmt.Sprintf("Total clusters found in API response: %d", len(*page.Elements)))
+
+		for _, cluster := range *page.Elements {
+			if cluster.Name != nil && *cluster.Name == data.Get("name") {
+				data.SetId(*cluster.Id)
+				tflog.Info(ctx, "Edge cluster created successfully.")
+				return nil
+			}
+		}
+
+		// Sleep after all attempts other than the last one.
+		if attempt < maxRetries-1 {
+			time.Sleep(retryDelay)
 		}
 	}
 
