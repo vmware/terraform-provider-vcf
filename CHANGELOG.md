@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [v0.16.2](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.16.2)
+
+> Release Date: 2025-09-02
+
+FIXES:
+
+- `r/domain`: Improved the validation, documentation, and processing of the `failures_to_tolerate` parameter for vSAN clusters. [#351](https://github.com/vmware/terraform-provider-vcf/pull/351/)
+- `r/cluster`: Improved the validation, documentation, and processing of the `failures_to_tolerate` parameter for vSAN clusters. [#351](https://github.com/vmware/terraform-provider-vcf/pull/351/)
+
+DOCUMENTATION:
+
+- Updated component sizing for vCenter and NSX Manager. [#350](https://github.com/vmware/terraform-provider-vcf/pull/350/), [#352](https://github.com/vmware/terraform-provider-vcf/pull/352/)
+
+- CHORES:
+
+- Updated `hashicorp/terraform-plugin-framework` to v1.15.1. [#339](https://github.com/vmware/terraform-provider-vcf/pull/339)
+- Updated `hashicorp/terraform-plugin-docs` from 0.21. to 0.22.0. [#336](https://github.com/vmware/terraform-provider-vcf/pull/336/)
+- Updated `hashicorp/terraform-plugin-testing` to v1.13.3. [#354](https://github.com/vmware/terraform-provider-vcf/pull/354)
+- Updated `github.com/stretchr/testify` to 1.11.1. [#360](https://github.com/vmware/terraform-provider-vcf/pull/360)
+- Removed unused constants. [#359](https://github.com/vmware/terraform-provider-vcf/pull/359)
+- Refactors how slices are initialized. [#358](https://github.com/vmware/terraform-provider-vcf/pull/358)
+
 ## [v0.16.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.16.1)
 
 > Release Date: 2025-06-18
