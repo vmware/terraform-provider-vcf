@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -377,14 +378,18 @@ func dataSourceHostRead(ctx context.Context, d *schema.ResourceData, meta interf
 
 	// Storage information.
 	var disks []map[string]interface{}
-	for _, disk := range *host.Storage.Disks {
-		diskInfo := map[string]interface{}{
-			"capacity_mb":  disk.CapacityMB,
-			"disk_type":    disk.DiskType,
-			"manufacturer": disk.Manufacturer,
-			"model":        disk.Model,
+	if host.Storage.Disks != nil {
+		for _, disk := range *host.Storage.Disks {
+			diskInfo := map[string]interface{}{
+				"capacity_mb":  disk.CapacityMB,
+				"disk_type":    disk.DiskType,
+				"manufacturer": disk.Manufacturer,
+				"model":        disk.Model,
+			}
+			disks = append(disks, diskInfo)
 		}
-		disks = append(disks, diskInfo)
+	} else {
+		tflog.Warn(ctx, fmt.Sprintf("Could not read disks for host %s", *host.Fqdn))
 	}
 
 	storage := []map[string]interface{}{
