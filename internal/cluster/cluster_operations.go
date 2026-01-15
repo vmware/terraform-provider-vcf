@@ -405,10 +405,12 @@ func ImportCluster(ctx context.Context, data *schema.ResourceData, apiClient *vc
 	_ = data.Set("primary_datastore_type", clusterObj.PrimaryDatastoreType)
 	_ = data.Set("is_default", clusterObj.IsDefault)
 	_ = data.Set("is_stretched", clusterObj.IsStretched)
-	if clusterObj.VdsSpecs != nil {
-		flattenedVdsSpecs := getFlattenedVdsSpecsForRefs(*clusterObj.VdsSpecs)
-		_ = data.Set("vds", flattenedVdsSpecs)
+
+	flattenedVdsSpecs, err := getFlattenedVdsSpecsForCluster(ctx, clusterId, apiClient)
+	if err != nil {
+		return nil, err
 	}
+	_ = data.Set("vds", flattenedVdsSpecs)
 
 	if clusterObj.Hosts != nil {
 		flattenedHostSpecs, err := getFlattenedHostSpecsForRefs(ctx, *clusterObj.Hosts, apiClient)
@@ -466,6 +468,74 @@ func getFlattenedHostSpecsForRefs(ctx context.Context, hostRefs []vcf.HostRefere
 		flattenedHostSpecs = append(flattenedHostSpecs, *FlattenHost(*hostObj))
 	}
 	return flattenedHostSpecs, nil
+}
+
+func getFlattenedVdsSpecsForCluster(ctx context.Context, clusterID string, client *vcf.ClientWithResponses) ([]map[string]interface{}, error) {
+	res, err := client.GetVdsesWithResponse(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+
+	vdses, vcfErr := api_client.GetResponseAs[[]vcf.Vds](res)
+	if vcfErr != nil {
+		api_client.LogError(vcfErr, ctx)
+		return nil, errors.New(*vcfErr.Message)
+	}
+
+	result := make([]map[string]interface{}, len(*vdses))
+
+	for i, vds := range *vdses {
+		vdsSpec := vcf.VdsSpec{
+			IsUsedByNsxt: vds.IsUsedByNsxt,
+			Mtu:          vds.Mtu,
+			Name:         vds.Name,
+		}
+
+		if vds.PortGroups != nil {
+			vdsSpec.PortGroupSpecs = getVdsPortgroupSpecs(*vds.PortGroups)
+		}
+
+		if vds.NiocBandwidthAllocations != nil {
+			vdsSpec.NiocBandwidthAllocationSpecs = getVdsNiocBandwidthAllocationSpecs(*vds.NiocBandwidthAllocations)
+		}
+
+		result[i] = network.FlattenVdsSpec(vdsSpec)
+	}
+	return result, nil
+}
+
+func getVdsPortgroupSpecs(portgroups []vcf.Portgroup) *[]vcf.PortgroupSpec {
+	result := make([]vcf.PortgroupSpec, len(portgroups))
+
+	for i, pg := range portgroups {
+		result[i] = vcf.PortgroupSpec{
+			Name:          pg.Name,
+			ActiveUplinks: pg.ActiveUplinks,
+			TransportType: pg.TransportType,
+		}
+	}
+
+	return &result
+}
+
+func getVdsNiocBandwidthAllocationSpecs(allocs []vcf.NiocBandwidthAllocation) *[]vcf.NiocBandwidthAllocationSpec {
+	result := make([]vcf.NiocBandwidthAllocationSpec, len(allocs))
+
+	for i, alloc := range allocs {
+		spec := vcf.NiocBandwidthAllocationSpec{}
+
+		if alloc.Type != nil {
+			spec.Type = *alloc.Type
+		}
+
+		if alloc.NiocTrafficResourceAllocation != nil {
+			spec.NiocTrafficResourceAllocation = *alloc.NiocTrafficResourceAllocation
+		}
+
+		result[i] = spec
+	}
+
+	return &result
 }
 
 func getFlattenedVdsSpecsForRefs(vdsSpecs []vcf.VdsSpec) []map[string]interface{} {

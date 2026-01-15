@@ -110,8 +110,12 @@ func tryConvertToNiocBandwidthAllocationSpec(object map[string]interface{}) (*vc
 func flattenNiocBandwidthAllocationSpec(spec vcf.NiocBandwidthAllocationSpec) map[string]interface{} {
 	result := make(map[string]interface{})
 	result["type"] = spec.Type
-	result["limit"] = *spec.NiocTrafficResourceAllocation.Limit
-	result["reservation"] = *spec.NiocTrafficResourceAllocation.Reservation
+	if spec.NiocTrafficResourceAllocation.Limit != nil {
+		result["limit"] = *spec.NiocTrafficResourceAllocation.Limit
+	}
+	if spec.NiocTrafficResourceAllocation.Reservation != nil {
+		result["reservation"] = *spec.NiocTrafficResourceAllocation.Reservation
+	}
 	result["shares"] = spec.NiocTrafficResourceAllocation.SharesInfo.Shares
 	result["shares_level"] = spec.NiocTrafficResourceAllocation.SharesInfo.Level
 
