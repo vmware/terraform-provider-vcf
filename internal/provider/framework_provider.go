@@ -144,7 +144,9 @@ func (frameworkProvider *FrameworkProvider) Resources(ctx context.Context) []fun
 }
 
 func (frameworkProvider *FrameworkProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		func() datasource.DataSource { return &DataSourceClusterPersonality{} },
+	}
 }
 
 func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
@@ -170,6 +172,7 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 
 		frameworkProvider.SddcManagerClient = client
 		res.ResourceData = client
+		res.DataSourceData = client
 	} else {
 		// Connect to installer
 		client := api_client.NewInstallerClient(
@@ -185,6 +188,7 @@ func (frameworkProvider *FrameworkProvider) Configure(ctx context.Context, req p
 
 		frameworkProvider.InstallerClient = client
 		res.ResourceData = client
+		res.DataSourceData = client
 	}
 }
 
