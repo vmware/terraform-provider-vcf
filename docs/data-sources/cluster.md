@@ -25,6 +25,7 @@ Provides read-only access to preexisting vSphere cluster, deployed within a Doma
 ### Read-Only
 
 - `domain_id` (String) The ID of a workload domain that the cluster belongs to
+- `domain_name` (String) The name of a workload domain that the cluster belongs to
 - `host` (List of Object) List of ESXi host information present in the Cluster (see [below for nested schema](#nestedatt--host))
 - `id` (String) The ID of this resource.
 - `is_default` (Boolean) Status of the cluster if default or not
@@ -52,10 +53,21 @@ Read-Only:
 - `id` (String) UUID of the commissioned host, part of this cluster
 - `ip_address` (String) IPv4 address of the ESXi host
 - `password` (String)
+- `pnic` (List of Object) (see [below for nested schema](#nestedobjatt--host--pnic))
 - `serial_number` (String)
 - `ssh_thumbprint` (String)
 - `username` (String)
 - `vmnic` (List of Object) (see [below for nested schema](#nestedobjatt--host--vmnic))
+
+<a id="nestedobjatt--host--pnic"></a>
+### Nested Schema for `host.pnic`
+
+Read-Only:
+
+- `mac_address` (String)
+- `name` (String)
+- `speed` (Number)
+
 
 <a id="nestedobjatt--host--vmnic"></a>
 ### Nested Schema for `host.vmnic`

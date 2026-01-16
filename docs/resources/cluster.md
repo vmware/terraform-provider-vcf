@@ -96,6 +96,10 @@ Optional:
 - `username` (String) Username to authenticate to the ESXi host
 - `vmnic` (Block List) vmnic configuration for the ESXi host (see [below for nested schema](#nestedblock--host--vmnic))
 
+Read-Only:
+
+- `pnic` (Block List) Physical NIC configuration for the ESXi host (see [below for nested schema](#nestedblock--host--pnic))
+
 <a id="nestedblock--host--vmnic"></a>
 ### Nested Schema for `host.vmnic`
 
@@ -107,6 +111,16 @@ Optional:
 
 - `uplink` (String) Uplink to be associated with vmnic
 - `vds_name` (String) Name of the VDS to associate with the ESXi host
+
+
+<a id="nestedblock--host--pnic"></a>
+### Nested Schema for `host.pnic`
+
+Read-Only:
+
+- `mac_address` (String) MAC address of the physical NIC
+- `name` (String) Name of the physical NIC
+- `speed` (Number) The link speed of the physical NIC in MBit/s
 
 
 
@@ -270,6 +284,10 @@ Optional:
 - `username` (String) Username to authenticate to the ESXi host
 - `vmnic` (Block List) vmnic configuration for the ESXi host (see [below for nested schema](#nestedblock--vsan_stretch_configuration--secondary_fd_host--vmnic))
 
+Read-Only:
+
+- `pnic` (Block List) Physical NIC configuration for the ESXi host (see [below for nested schema](#nestedblock--vsan_stretch_configuration--secondary_fd_host--pnic))
+
 <a id="nestedblock--vsan_stretch_configuration--secondary_fd_host--vmnic"></a>
 ### Nested Schema for `vsan_stretch_configuration.secondary_fd_host.vmnic`
 
@@ -281,6 +299,16 @@ Optional:
 
 - `uplink` (String) Uplink to be associated with vmnic
 - `vds_name` (String) Name of the VDS to associate with the ESXi host
+
+
+<a id="nestedblock--vsan_stretch_configuration--secondary_fd_host--pnic"></a>
+### Nested Schema for `vsan_stretch_configuration.secondary_fd_host.pnic`
+
+Read-Only:
+
+- `mac_address` (String) MAC address of the physical NIC
+- `name` (String) Name of the physical NIC
+- `speed` (Number) The link speed of the physical NIC in MBit/s
 
 
 
