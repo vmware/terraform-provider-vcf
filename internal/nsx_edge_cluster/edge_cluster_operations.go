@@ -85,7 +85,6 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 		EdgeAdminPassword:             adminPassword,
 		EdgeAuditPassword:             auditPassword,
 		EdgeClusterName:               name,
-		EdgeClusterProfileSpec:        profileSpec,
 		EdgeClusterProfileType:        profileType,
 		EdgeClusterType:               clusterType,
 		EdgeFormFactor:                formFactor,
@@ -101,6 +100,10 @@ func GetNsxEdgeClusterCreationSpec(data *schema.ResourceData, client *vcf.Client
 		Tier1Unhosted:                 &tier1Unhosted,
 		TransitSubnets:                &transitSubnets,
 		SkipTepRoutabilityCheck:       &skipTepRoutabilityCheck,
+	}
+
+	if profileSpec != nil {
+		spec.EdgeClusterProfileSpec = *profileSpec
 	}
 
 	return spec, nil
