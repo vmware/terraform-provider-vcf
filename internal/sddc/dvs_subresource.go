@@ -12,6 +12,28 @@ import (
 )
 
 var trafficTypeValues = []string{"VSAN", "VMOTION", "VIRTUALMACHINE", "MANAGEMENT", "NFS", "VDP", "HBR", "FAULTTOLERANCE", "ISCSI"}
+var lacpLbValues = []string{
+	"SOURCE_MAC",
+	"DESTINATION_MAC",
+	"SOURCE_AND_DESTINATION_MAC",
+	"DESTINATION_IP_AND_VLAN",
+	"SOURCE_IP_AND_VLAN",
+	"SOURCE_AND_DESTINATION_IP_AND_VLAN",
+	"DESTINATION_TCP_UDP_PORT",
+	"SOURCE_TCP_UDP_PORT",
+	"SOURCE_AND_DESTINATION_TCP_UDP_PORT",
+	"DESTINATION_IP_AND_TCP_UDP_PORT",
+	"SOURCE_IP_AND_TCP_UDP_PORT",
+	"SOURCE_AND_DESTINATION_IP_AND_TCP_UDP_PORT",
+	"DESTINATION_IP_AND_TCP_UDP_PORT_AND_VLAN",
+	"SOURCE_IP_AND_TCP_UDP_PORT_AND_VLAN",
+	"SOURCE_AND_DESTINATION_IP_AND_TCP_UDP_PORT_AND_VLAN",
+	"DESTINATION_IP",
+	"SOURCE_IP",
+	"SOURCE_AND_DESTINATION_IP",
+	"VLAN",
+	"SOURCE_PORT_ID",
+}
 
 func GetDvsSchema() *schema.Schema {
 	return &schema.Schema{
@@ -124,6 +146,45 @@ func GetDvsSchema() *schema.Schema {
 						},
 					},
 				},
+				"lag": {
+					Type:        schema.TypeList,
+					Description: "LAG to be associated with the vSphere Distributed Switch",
+					Optional:    true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"name": {
+								Type:         schema.TypeString,
+								Description:  "LAG name",
+								Required:     true,
+								ValidateFunc: validation.StringIsNotEmpty,
+							},
+							"uplink_count": {
+								Type:         schema.TypeInt,
+								Required:     true,
+								Description:  "Number of uplink ports in this LAG",
+								ValidateFunc: validation.IntAtLeast(0),
+							},
+							"lacp_mode": {
+								Type:         schema.TypeString,
+								Required:     true,
+								Description:  "LACP mode",
+								ValidateFunc: validation.StringInSlice([]string{"ACTIVE", "PASSIVE"}, false),
+							},
+							"timeout_mode": {
+								Type:         schema.TypeString,
+								Required:     true,
+								Description:  "LACP timeout mode",
+								ValidateFunc: validation.StringInSlice([]string{"SLOW", "FAST"}, false),
+							},
+							"load_balancing_mode": {
+								Type:         schema.TypeString,
+								Required:     true,
+								Description:  "LACP load balancing mode",
+								ValidateFunc: validation.StringInSlice(lacpLbValues, false),
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -182,6 +243,10 @@ func GetDvsSpecsFromSchema(rawData []interface{}) *[]installer.DvsSpec {
 
 		if nsxtSwitchConfig, ok := dvsSpecRaw["nsxt_switch_config"].([]interface{}); ok && len(nsxtSwitchConfig) > 0 {
 			dvsSpec.NsxtSwitchConfig = convertNsxtSwitchConfig(nsxtSwitchConfig[0].(map[string]interface{}))
+		}
+
+		if lags, ok := dvsSpecRaw["lag"].([]interface{}); ok && len(lags) > 0 {
+			dvsSpec.LagSpecs = convertLags(lags)
 		}
 
 		dvsSpecs = append(dvsSpecs, dvsSpec)
@@ -253,4 +318,25 @@ func convertNsxtSwitchConfig(rawData map[string]interface{}) *installer.NsxtSwit
 	}
 
 	return config
+}
+
+func convertLags(rawData []interface{}) *[]installer.LagSpec {
+	if len(rawData) == 0 {
+		return nil
+	}
+
+	result := make([]installer.LagSpec, len(rawData))
+
+	for i, lagRaw := range rawData {
+		data := lagRaw.(map[string]interface{})
+		result[i] = installer.LagSpec{
+			LacpMode:          data["lacp_mode"].(string),
+			LacpTimeoutMode:   data["timeout_mode"].(string),
+			LoadBalancingMode: data["load_balancing_mode"].(string),
+			Name:              data["name"].(string),
+			UplinksCount:      int32(data["uplink_count"].(int)),
+		}
+	}
+
+	return &result
 }
