@@ -93,7 +93,7 @@ func FlattenCredentials(creds []vcf.Credential) []map[string]interface{} {
 			"resource": []map[string]string{{
 				"id":     entry.Resource.ResourceId,
 				"domain": *entry.Resource.DomainName,
-				"ip":     entry.Resource.ResourceIp,
+				"ip":     *entry.Resource.ResourceIp,
 				"name":   entry.Resource.ResourceName,
 				"type":   entry.Resource.ResourceType,
 			}},

@@ -78,7 +78,7 @@ func resourceClusterPersonalityCreate(ctx context.Context, data *schema.Resource
 		Name:       &name,
 		UploadMode: mode,
 		UploadSpecReferredMode: &vcf.PersonalityUploadSpecReferred{
-			ClusterId: clusterId,
+			ClusterId: &clusterId,
 			VCenterId: *vcenterId,
 		},
 	}
