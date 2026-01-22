@@ -91,6 +91,7 @@ Optional:
 - `high_availability_enabled` (Boolean) vSphere High Availability settings for the cluster
 - `ip_address_pool` (Block List, Max: 1) Contains the parameters required to create or reuse an IP address pool. Omit for DHCP, provide name only to reuse existing IP Pool, if subnets are provided a new IP Pool will be created (see [below for nested schema](#nestedblock--cluster--ip_address_pool))
 - `nfs_datastores` (Block List) Cluster storage configuration for NFS (see [below for nested schema](#nestedblock--cluster--nfs_datastores))
+- `supervisor` (Block List, Max: 1) (see [below for nested schema](#nestedblock--cluster--supervisor))
 - `vmfs_datastore` (Block List, Max: 1) Cluster storage configuration for VMFS (see [below for nested schema](#nestedblock--cluster--vmfs_datastore))
 - `vsan_datastore` (Block List, Max: 1) Cluster storage configuration for vSAN (see [below for nested schema](#nestedblock--cluster--vsan_datastore))
 - `vsan_remote_datastore_cluster` (Block List, Max: 1) Cluster storage configuration for vSAN Remote Datastore (see [below for nested schema](#nestedblock--cluster--vsan_remote_datastore_cluster))
@@ -228,6 +229,77 @@ Required:
 Optional:
 
 - `user_tag` (String) User tag used to annotate NFS share
+
+
+<a id="nestedblock--cluster--supervisor"></a>
+### Nested Schema for `cluster.supervisor`
+
+Required:
+
+- `management_network` (Block List, Min: 1, Max: 1) Configuration of the Supervisor's management network (see [below for nested schema](#nestedblock--cluster--supervisor--management_network))
+- `service_cidr` (Block List, Min: 1, Max: 1) Service IP address range (see [below for nested schema](#nestedblock--cluster--supervisor--service_cidr))
+- `vpc_network` (Block List, Min: 1, Max: 1) Configuration of the VPC network (see [below for nested schema](#nestedblock--cluster--supervisor--vpc_network))
+- `zone` (String) Name of the vSphere Zone
+
+Optional:
+
+- `name` (String) The display name of the Supervisor
+
+<a id="nestedblock--cluster--supervisor--management_network"></a>
+### Nested Schema for `cluster.supervisor.management_network`
+
+Required:
+
+- `control_plane_end_ip` (String) End IP address of the management network control plane
+- `control_plane_start_ip` (String) Start IP address of the management network control plane
+- `gateway` (String) Gateway IP address of the management network control plane
+- `netmask` (String) Subnet mask of the management network control plane
+- `vds` (String) The name of the VMware Distributed Switch for the management network control plane
+- `vlan_id` (Number) VLAN ID of the management network control plane
+
+
+<a id="nestedblock--cluster--supervisor--service_cidr"></a>
+### Nested Schema for `cluster.supervisor.service_cidr`
+
+Required:
+
+- `address` (String) IP address
+- `prefix` (Number) Subnet prefix
+
+
+<a id="nestedblock--cluster--supervisor--vpc_network"></a>
+### Nested Schema for `cluster.supervisor.vpc_network`
+
+Required:
+
+- `dns_servers` (List of String) The list of DNS servers
+- `ntp_servers` (List of String) The list of NTP servers
+- `private_cidr` (Block List, Min: 1, Max: 1) Private network IP address range (see [below for nested schema](#nestedblock--cluster--supervisor--vpc_network--private_cidr))
+- `private_transit_network_cidr` (Block List, Min: 1, Max: 1) Private transit network IP address range (see [below for nested schema](#nestedblock--cluster--supervisor--vpc_network--private_transit_network_cidr))
+
+Optional:
+
+- `connectivity_profile` (String) Name of the connectivity profile
+- `nsx_project` (String) ID of the NSX project
+
+<a id="nestedblock--cluster--supervisor--vpc_network--private_cidr"></a>
+### Nested Schema for `cluster.supervisor.vpc_network.private_cidr`
+
+Required:
+
+- `address` (String) IP address
+- `prefix` (Number) Subnet prefix
+
+
+<a id="nestedblock--cluster--supervisor--vpc_network--private_transit_network_cidr"></a>
+### Nested Schema for `cluster.supervisor.vpc_network.private_transit_network_cidr`
+
+Required:
+
+- `address` (String) IP address
+- `prefix` (Number) Subnet prefix
+
+
 
 
 <a id="nestedblock--cluster--vmfs_datastore"></a>

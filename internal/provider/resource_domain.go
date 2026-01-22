@@ -27,6 +27,9 @@ import (
 )
 
 func ResourceDomain() *schema.Resource {
+	clusterSchema := clusterSubresourceSchema()
+	resource_utils.MergeSchema(clusterSchema.Schema, domainClusterSchema())
+
 	return &schema.Resource{
 		CreateContext: resourceDomainCreate,
 		ReadContext:   resourceDomainRead,
@@ -43,7 +46,7 @@ func ResourceDomain() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(4 * time.Hour),
+			Create: schema.DefaultTimeout(6 * time.Hour),
 			Read:   schema.DefaultTimeout(20 * time.Minute),
 			Update: schema.DefaultTimeout(4 * time.Hour),
 			Delete: schema.DefaultTimeout(1 * time.Hour),
@@ -81,7 +84,7 @@ func ResourceDomain() *schema.Resource {
 				Required:    true,
 				Description: "Specification representing the clusters to be added to the workload domain",
 				MinItems:    1,
-				Elem:        clusterSubresourceSchema(),
+				Elem:        clusterSchema,
 			},
 			"sso": {
 				Type:        schema.TypeList,
@@ -128,6 +131,155 @@ func ResourceDomain() *schema.Resource {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Shows whether the workload domain is joined to the management domain SSO",
+			},
+		},
+	}
+}
+
+// Contains cluster schema entries which are only applicable to domain-level operations.
+func domainClusterSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"supervisor": {
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Description: "Supervisor configuration",
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"zone": {
+						Type:         schema.TypeString,
+						Required:     true,
+						Description:  "Name of the vSphere Zone",
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					"name": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Description:  "The display name of the Supervisor",
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					"service_cidr": {
+						Type:        schema.TypeList,
+						MaxItems:    1,
+						Required:    true,
+						Description: "Service IP address range",
+						Elem:        cidrSchema(),
+					},
+					"management_network": {
+						Type:        schema.TypeList,
+						MaxItems:    1,
+						Required:    true,
+						Description: "Configuration of the Supervisor's management network",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"control_plane_start_ip": {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "Start IP address of the management network control plane",
+									ValidateFunc: validation.IsIPv4Address,
+								},
+								"control_plane_end_ip": {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "End IP address of the management network control plane",
+									ValidateFunc: validation.IsIPv4Address,
+								},
+								"netmask": {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "Subnet mask of the management network control plane",
+									ValidateFunc: validation.IsIPv4Address,
+								},
+								"gateway": {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "Gateway IP address of the management network control plane",
+									ValidateFunc: validation.IsIPv4Address,
+								},
+								"vds": {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "The name of the VMware Distributed Switch for the management network control plane",
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+								"vlan_id": {
+									Type:         schema.TypeInt,
+									Required:     true,
+									Description:  "VLAN ID of the management network control plane",
+									ValidateFunc: validation.IntBetween(0, 4095),
+								},
+							},
+						},
+					},
+					"vpc_network": {
+						Type:        schema.TypeList,
+						MaxItems:    1,
+						Required:    true,
+						Description: "Configuration of the VPC network",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"nsx_project": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									Description:  "ID of the NSX project",
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+								"connectivity_profile": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									Description:  "Name of the connectivity profile",
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+								"private_transit_network_cidr": {
+									Type:        schema.TypeList,
+									MaxItems:    1,
+									Required:    true,
+									Description: "Private transit network IP address range",
+									Elem:        cidrSchema(),
+								},
+								"private_cidr": {
+									Type:        schema.TypeList,
+									MaxItems:    1,
+									Required:    true,
+									Description: "Private network IP address range",
+									Elem:        cidrSchema(),
+								},
+								"dns_servers": {
+									Type:        schema.TypeList,
+									Required:    true,
+									Description: "The list of DNS servers",
+									Elem:        &schema.Schema{Type: schema.TypeString},
+								},
+								"ntp_servers": {
+									Type:        schema.TypeList,
+									Required:    true,
+									Description: "The list of NTP servers",
+									Elem:        &schema.Schema{Type: schema.TypeString},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// Common CIDR schema.
+func cidrSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"address": {
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "IP address",
+				ValidateFunc: validation.IsIPv4Address,
+			},
+			"prefix": {
+				Type:         schema.TypeInt,
+				Required:     true,
+				Description:  "Subnet prefix",
+				ValidateFunc: validation.IntBetween(1, 31),
 			},
 		},
 	}

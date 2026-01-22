@@ -4,6 +4,12 @@
 
 package resource_utils
 
+import (
+	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
 // ToPointer - Utility to obtain a pointer to any rvalue without having to declare a local variable.
 func ToPointer[T interface{}](object interface{}) *T {
 	if object == nil {
@@ -95,4 +101,16 @@ func CalculateAddedRemovedResources(newResourcesList, oldResourcesList []interfa
 	}
 
 	return addedResources, removedResources
+}
+
+// MergeSchema merges the map[string]*schema.Schema from src into dst. Safety
+// against conflicts is enforced by panicking. This panic should be treated as an assertion and is not expected
+// to reach production.
+func MergeSchema(dst, src map[string]*schema.Schema) {
+	for k, v := range src {
+		if _, ok := dst[k]; ok {
+			panic(fmt.Errorf("conflicting schema key: %s", k))
+		}
+		dst[k] = v
+	}
 }

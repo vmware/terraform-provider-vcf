@@ -276,6 +276,8 @@ func TryConvertToClusterSpec(object map[string]interface{}) (*vcf.ClusterSpec, e
 		return nil, fmt.Errorf("cannot create stretched cluster, create the cluster first and apply the strech configuration later")
 	}
 
+	result.SupervisorActivationSpec = tryConvertToClusterSupervisorActivationSpec(object)
+
 	return result, nil
 }
 
@@ -356,6 +358,67 @@ func tryConvertToClusterDatastoreSpec(object map[string]interface{}, clusterName
 	}
 
 	return result, nil
+}
+
+func tryConvertToClusterSupervisorActivationSpec(object map[string]interface{}) *vcf.SupervisorActivationSpec {
+	if supervisor, ok := object["supervisor"]; ok {
+		supervisorDataRaw := supervisor.([]interface{})
+		supervisorData := supervisorDataRaw[0].(map[string]interface{})
+
+		serviceCidrDataRaw := supervisorData["service_cidr"].([]interface{})
+		serviceCidrData := serviceCidrDataRaw[0].(map[string]interface{})
+
+		mgmtNetworkDataRaw := supervisorData["management_network"].([]interface{})
+		mgmtNetworkData := mgmtNetworkDataRaw[0].(map[string]interface{})
+
+		vpcNetworkDataRaw := supervisorData["vpc_network"].([]interface{})
+		vpcNetworkData := vpcNetworkDataRaw[0].(map[string]interface{})
+
+		vpcPrivateCidrDataRaw := vpcNetworkData["private_cidr"].([]interface{})
+		vpcPrivateCidr := vpcPrivateCidrDataRaw[0].(map[string]interface{})
+
+		vpcPrivateTransitNetworkCidrDataRaw := vpcNetworkData["private_transit_network_cidr"].([]interface{})
+		vpcPrivateTransitNetworkCidr := vpcPrivateTransitNetworkCidrDataRaw[0].(map[string]interface{})
+
+		result := vcf.SupervisorActivationSpec{
+			SupervisorName: utils.ToPointer[string](supervisorData["name"]),
+			ZoneName:       supervisorData["zone"].(string),
+			ServiceCidr: vcf.Cidr{
+				Address: serviceCidrData["address"].(string),
+				Prefix:  int32(serviceCidrData["prefix"].(int)),
+			},
+			ManagementNetwork: vcf.SupervisorManagementNetwork{
+				ControlPlaneIpRange: vcf.IpRange{
+					EndIpAddress:   mgmtNetworkData["control_plane_end_ip"].(string),
+					StartIpAddress: mgmtNetworkData["control_plane_start_ip"].(string),
+				},
+				Details: &vcf.SupervisorManagementNetworkDetails{
+					Gateway: mgmtNetworkData["gateway"].(string),
+					NetMask: mgmtNetworkData["netmask"].(string),
+					VdsName: mgmtNetworkData["vds"].(string),
+					VlanId:  int32(mgmtNetworkData["vlan_id"].(int)),
+				},
+			},
+			VpcNetwork: vcf.SupervisorVpcNetwork{
+				DnsServers:                utils.ToStringSlice(vpcNetworkData["dns_servers"].([]interface{})),
+				NtpServers:                utils.ToStringSlice(vpcNetworkData["ntp_servers"].([]interface{})),
+				NsxProject:                utils.ToPointer[string](vpcNetworkData["nsx_project"].(string)),
+				NsxVpcConnectivityProfile: utils.ToPointer[string](vpcNetworkData["connectivity_profile"].(string)),
+				PrivateCidr: vcf.Cidr{
+					Address: vpcPrivateCidr["address"].(string),
+					Prefix:  int32(vpcPrivateCidr["prefix"].(int)),
+				},
+				PrivateTransitNetworkCidr: vcf.Cidr{
+					Address: vpcPrivateTransitNetworkCidr["address"].(string),
+					Prefix:  int32(vpcPrivateTransitNetworkCidr["prefix"].(int)),
+				},
+			},
+		}
+
+		return &result
+	}
+
+	return nil
 }
 
 func FlattenCluster(ctx context.Context, clusterObj *vcf.Cluster, apiClient *vcf.ClientWithResponses) (*map[string]interface{}, error) {
