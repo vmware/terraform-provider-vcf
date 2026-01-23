@@ -111,6 +111,7 @@ Required:
 
 Optional:
 
+- `lag` (Block List) LAG to be associated with the vSphere Distributed Switch (see [below for nested schema](#nestedblock--dvs--lag))
 - `mtu` (Number) DVS MTU (default value is 9000). In between 1500 and 9000
 - `nioc` (Block List) List of NIOC specs for networks (see [below for nested schema](#nestedblock--dvs--nioc))
 - `nsx_teaming` (Block List) NSX teaming policies for uplink profiles (see [below for nested schema](#nestedblock--dvs--nsx_teaming))
@@ -123,6 +124,18 @@ Required:
 
 - `uplink` (String) Uplink identifier
 - `vmnic` (String) Vmnic identifier
+
+
+<a id="nestedblock--dvs--lag"></a>
+### Nested Schema for `dvs.lag`
+
+Required:
+
+- `lacp_mode` (String) LACP mode
+- `load_balancing_mode` (String) LACP load balancing mode
+- `name` (String) LAG name
+- `timeout_mode` (String) LACP timeout mode
+- `uplink_count` (Number) Number of uplink ports in this LAG
 
 
 <a id="nestedblock--dvs--nioc"></a>
@@ -238,8 +251,8 @@ Required:
 Optional:
 
 - `ssl_thumbprint` (String) vCenter Server SSL thumbprint (SHA256)
-- `storage_size` (String) vCenter Server storage size. One among: lstorage, xlstorage
-- `vm_size` (String) vCenter Server instance size. One among: tiny, small, medium, large, xlarge
+- `storage_size` (String) vCenter VM storage size. One among:lstorage, xlstorage
+- `vm_size` (String) vCenter Server Appliance  size. One among: tiny, small, medium, large, xlarge
 
 
 <a id="nestedblock--automation"></a>
