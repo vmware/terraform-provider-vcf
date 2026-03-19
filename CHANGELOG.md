@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v0.17.2](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.17.2)
+
+> Release Date: 2026-03-23
+
+CHORES:
+
+- `provider`: Updated `google.golang.org/grpc` to 1.79.3
+
 ## [v0.17.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.17.1)
 
 > Release Date: 2025-09-02
