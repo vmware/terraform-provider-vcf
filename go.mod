@@ -1,19 +1,17 @@
 module github.com/vmware/terraform-provider-vcf
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.26.1
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
-	github.com/hashicorp/terraform-plugin-framework v1.18.0
+	github.com/hashicorp/terraform-plugin-framework v1.19.0
 	github.com/hashicorp/terraform-plugin-framework-timeouts v0.7.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.19.0
-	github.com/hashicorp/terraform-plugin-go v0.30.0
+	github.com/hashicorp/terraform-plugin-go v0.31.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
-	github.com/hashicorp/terraform-plugin-mux v0.22.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.39.0
-	github.com/hashicorp/terraform-plugin-testing v1.14.0
+	github.com/hashicorp/terraform-plugin-mux v0.23.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.0
+	github.com/hashicorp/terraform-plugin-testing v1.15.0
 	github.com/stretchr/testify v1.11.1
 	github.com/vmware/vcf-sdk-go v0.7.0
 )
@@ -57,7 +55,6 @@ require (
 	github.com/hashicorp/terraform-svchost v0.1.1 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
-	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
