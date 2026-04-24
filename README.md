@@ -80,6 +80,13 @@ If you discover a bug or would like to suggest an enhancement, submit [an issue]
 
 If you would like to submit a pull request, please read the [contribution guidelines][provider-contributing] to get started. In case of enhancement or feature contribution, we kindly ask you to open an issue to discuss it beforehand.
 
+## Support
+
+As Terraform is an open-source project that adheres to community GitHub standards,
+we encourage customers to log standard issues and enhancement requests directly within the repository.
+However, we recognize that certain situations require a formal technical support path through our established Global Support (GSS) channels.
+If you believe this is the case, please open a case via the Broadcom support portal and reference the respective Terraform provider and Git-Hub issue.
+
 ## License
 
 © Broadcom. All Rights Reserved.
