@@ -83,3 +83,12 @@ For example, set the environment variable for the provider:
 
 For more information on enabling logging, refer to
 [the Terraform documentation](https://developer.hashicorp.com/terraform/plugin/log/managing).
+
+## Bug Reports and Contributing
+
+For more information on how to submit bug reports, feature requests, or
+details on how to make your own contributions to the provider, see the VCF
+provider [project page][tf-vcf-project-page].
+
+[tf-vcf-project-page]: https://github.com/vmware/terraform-provider-vcf
+
