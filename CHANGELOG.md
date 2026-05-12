@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## [v0.18.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.0)
+
+> Release Date: 2026-05-12
+
+FEATURES:
+
+- `d/personality`: Added a data source for cluster personality. [#385](https://github.com/vmware/terraform-provider-vcf/pull/385)
+- `r/instance`: Added support for LAG ports on VDS during bringup. [#387](https://github.com/vmware/terraform-provider-vcf/pull/387)
+
+FIXES:
+
+- `d/host`: Added a nil check for missing hard disk data and log a warning. [#379](https://github.com/vmware/terraform-provider-vcf/pull/379)
+- `r/cluster`: Fixed VDS and pNIC data. [#384](https://github.com/vmware/terraform-provider-vcf/pull/384)
+
+DOCUMENTATION:
+
+- Updated support notice. [#406](https://github.com/vmware/terraform-provider-vcf/pull/406)
+
+CHORES:
+
+- Bumped stale dependencies. [#400](https://github.com/vmware/terraform-provider-vcf/pull/400)
+- Updated `actions/checkout` from 6.0.1 to 6.0.2. [#413](https://github.com/vmware/terraform-provider-vcf/pull/413)
+- Updated `actions/labeler` from 6.0.1 to 6.1.0. [#414](https://github.com/vmware/terraform-provider-vcf/pull/414)
+- Updated `actions/setup-go` from 6.1.0 to 6.4.0. [#409](https://github.com/vmware/terraform-provider-vcf/pull/409)
+- Updated `actions/stale` from 9.1.0 to 10.2.0. [#412](https://github.com/vmware/terraform-provider-vcf/pull/412)
+- Updated `cloudflare/circl` from 1.6.1 to 1.6.3. [#390](https://github.com/vmware/terraform-provider-vcf/pull/390)
+- Updated `crazy-max/ghaction-import-gpg` from 6.3.0 to 7.0.0. [#408](https://github.com/vmware/terraform-provider-vcf/pull/408)
+- Updated `dessant/lock-threads` from 5.0.1 to 6.0.0. [#411](https://github.com/vmware/terraform-provider-vcf/pull/411)
+- Updated GitHub Actions workflows to the latest versions. [#383](https://github.com/vmware/terraform-provider-vcf/pull/383)
+- Updated `golang.org/x/crypto` from 0.42.0 to 0.45.0. [#380](https://github.com/vmware/terraform-provider-vcf/pull/380)
+- Updated `google.golang.org/grpc` from 1.79.1 to 1.79.3. [#399](https://github.com/vmware/terraform-provider-vcf/pull/399)
+- Updated `goreleaser/goreleaser-action` from 6.4.0 to 7.2.1. [#410](https://github.com/vmware/terraform-provider-vcf/pull/410)
+- Updated `hashicorp/terraform-plugin-docs` from 0.22.0 to 0.25.0.
+- Updated `hashicorp/terraform-plugin-framework` from 1.16.0 to 1.18.0.
+- Updated `hashicorp/terraform-plugin-framework-timeouts` from 0.5.0 to 0.7.0.
+- Updated `hashicorp/terraform-plugin-framework-validators` from 0.18.0 to 0.19.0. [#373](https://github.com/vmware/terraform-provider-vcf/pull/373)
+- Updated `hashicorp/terraform-plugin-go` from 0.29.0 to 0.30.0. [#389](https://github.com/vmware/terraform-provider-vcf/pull/389)
+- Updated `hashicorp/terraform-plugin-log` from 0.9.0 to 0.10.0. [#378](https://github.com/vmware/terraform-provider-vcf/pull/378)
+- Updated `hashicorp/terraform-plugin-mux` from 0.20.0 to 0.23.1.
+- Updated `hashicorp/terraform-plugin-sdk/v2` from 2.37.0 to 2.40.1.
+- Updated `hashicorp/terraform-plugin-testing` from 1.13.3 to 1.16.0.
+- Updated `vmware/vcf-sdk-go` to v0.7.0. [#386](https://github.com/vmware/terraform-provider-vcf/pull/386)
+
+## [v0.17.2](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.17.2)
+
+> Release Date: 2026-03-23
+
+This is a hotpatch release to remediate CVE-2026-33186
+No functional changes are included
+
 ## [v0.17.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.17.1)
 
 > Release Date: 2025-09-02
