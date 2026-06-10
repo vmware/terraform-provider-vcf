@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v0.18.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.1)
+
+> Release Date: 2026-06-10
+
+CHORES:
+
+- Updated Go to 1.26.3. [#415](https://github.com/vmware/terraform-provider-vcf/pull/415)
+
 ## [v0.18.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.0)
 
 > Release Date: 2026-05-12
