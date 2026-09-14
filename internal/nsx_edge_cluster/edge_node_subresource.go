@@ -37,18 +37,21 @@ func EdgeNodeSchema() *schema.Resource {
 			"admin_password": {
 				Type:         schema.TypeString,
 				Required:     true,
+				Sensitive:    true,
 				Description:  "The administrator password for the edge node",
 				ValidateFunc: validationUtils.ValidateNsxEdgePassword,
 			},
 			"audit_password": {
 				Type:         schema.TypeString,
 				Required:     true,
+				Sensitive:    true,
 				Description:  "The audit password for the edge node",
 				ValidateFunc: validationUtils.ValidateNsxEdgePassword,
 			},
 			"root_password": {
 				Type:         schema.TypeString,
 				Required:     true,
+				Sensitive:    true,
 				Description:  "The root user password for the edge node",
 				ValidateFunc: validationUtils.ValidateNsxEdgePassword,
 			},
@@ -174,6 +177,7 @@ func BgpPeerSchema() *schema.Resource {
 			"password": {
 				Type:        schema.TypeString,
 				Required:    true,
+				Sensitive:   true,
 				Description: "Password",
 			},
 			"asn": {

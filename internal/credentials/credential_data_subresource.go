@@ -25,6 +25,7 @@ func CredentialDataSubresource() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The password of the account to which the credential belong",
 				Computed:    true,
+				Sensitive:   true,
 			},
 			"account_type": {
 				Type:        schema.TypeString,

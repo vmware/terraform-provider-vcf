@@ -49,18 +49,21 @@ func ResourceEdgeCluster() *schema.Resource {
 			"root_password": {
 				Type:         schema.TypeString,
 				Required:     true,
+				Sensitive:    true,
 				Description:  "Root user password for the NSX manager",
 				ValidateFunc: validationUtils.ValidateNsxEdgePassword,
 			},
 			"admin_password": {
 				Type:         schema.TypeString,
 				Required:     true,
+				Sensitive:    true,
 				Description:  "Administrator password for the NSX manager",
 				ValidateFunc: validationUtils.ValidateNsxEdgePassword,
 			},
 			"audit_password": {
 				Type:         schema.TypeString,
 				Required:     true,
+				Sensitive:    true,
 				Description:  "Audit user password for the NSX manager",
 				ValidateFunc: validationUtils.ValidateNsxEdgePassword,
 			},

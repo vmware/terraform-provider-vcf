@@ -21,6 +21,7 @@ func getCredentialsSchema() *schema.Schema {
 				"password": {
 					Type:         schema.TypeString,
 					Required:     true,
+					Sensitive:    true,
 					ValidateFunc: validation.ValidatePassword,
 				},
 				"username": {
