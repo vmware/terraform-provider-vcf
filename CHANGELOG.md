@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## [v0.18.2](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.2)
+
+> Release Date: 2026-09-14
+
+FIXES:
+
+- Mark previously exposed password attributes as `Sensitive` so `terraform plan/show` output no longer prints SDDC Manager, NSX Manager, NSX edge node, BGP peer, and credential data passwords in cleartext.
+
+CHORES:
+
+- Updated Go to 1.26.8. [#441](https://github.com/vmware/terraform-provider-vcf/pull/441)
+- Updated `actions/checkout` from 6.0.3 to 7.0.1. [#422](https://github.com/vmware/terraform-provider-vcf/pull/422), [#432](https://github.com/vmware/terraform-provider-vcf/pull/432)
+- Updated `actions/labeler` from 6.1.0 to 7.0.0. [#426](https://github.com/vmware/terraform-provider-vcf/pull/426), [#431](https://github.com/vmware/terraform-provider-vcf/pull/431)
+- Updated `actions/setup-go` from 6.4.0 to 7.0.0. [#423](https://github.com/vmware/terraform-provider-vcf/pull/423), [#430](https://github.com/vmware/terraform-provider-vcf/pull/430)
+- Updated `actions/stale` from 10.3.0 to 11.0.0. [#428](https://github.com/vmware/terraform-provider-vcf/pull/428), [#434](https://github.com/vmware/terraform-provider-vcf/pull/434)
+- Updated `github/issue-labeler` from 3.4 to 3.5. [#438](https://github.com/vmware/terraform-provider-vcf/pull/438)
+- Updated `github.com/hashicorp/terraform-plugin-log` from 0.10.0 to 0.11.0. [#435](https://github.com/vmware/terraform-provider-vcf/pull/435)
+- Updated `github.com/stretchr/testify` from 1.11.1 to 1.12.1. [#437](https://github.com/vmware/terraform-provider-vcf/pull/437)
+- Updated `golang.org/x/crypto` from 0.50.0 to 0.55.0. [#427](https://github.com/vmware/terraform-provider-vcf/pull/427)
+- Updated `golang.org/x/net` from 0.52.0 to 0.58.0. [#427](https://github.com/vmware/terraform-provider-vcf/pull/427), [#429](https://github.com/vmware/terraform-provider-vcf/pull/429)
+- Updated `golangci/golangci-lint-action` from 9.2.1 to 9.3.0. [#425](https://github.com/vmware/terraform-provider-vcf/pull/425)
+- Updated `google.golang.org/grpc` from 1.79.3 to 1.83.2. [#433](https://github.com/vmware/terraform-provider-vcf/pull/433), [#439](https://github.com/vmware/terraform-provider-vcf/pull/439), [#440](https://github.com/vmware/terraform-provider-vcf/pull/440)
+- Updated `goreleaser/goreleaser-action` from 7.2.2 to 7.2.3. [#424](https://github.com/vmware/terraform-provider-vcf/pull/424)
+
+## [v0.18.1](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.1)
+
+> Release Date: 2026-06-10
+
+CHORES:
+
+- Updated Go to 1.26.3. [#415](https://github.com/vmware/terraform-provider-vcf/pull/415)
+- Updated `actions/checkout` from 6.0.2 to 6.0.3. [#421](https://github.com/vmware/terraform-provider-vcf/pull/421)
+- Updated `actions/stale` from 10.2.0 to 10.3.0. [#417](https://github.com/vmware/terraform-provider-vcf/pull/417)
+- Updated `dessant/lock-threads` from 6.0.0 to 6.0.2. [#418](https://github.com/vmware/terraform-provider-vcf/pull/418), [#420](https://github.com/vmware/terraform-provider-vcf/pull/420)
+- Updated `golangci/golangci-lint-action` from 9.2.0 to 9.2.1. [#419](https://github.com/vmware/terraform-provider-vcf/pull/419)
+- Updated `goreleaser/goreleaser-action` from 7.2.1 to 7.2.2. [#416](https://github.com/vmware/terraform-provider-vcf/pull/416)
+
 ## [v0.18.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.0)
 
 > Release Date: 2026-05-12
