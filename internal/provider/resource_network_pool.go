@@ -165,14 +165,15 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 	res.Diagnostics.Append(types.List.ElementsAs(data.Networks, ctx, &networks, false)...)
 
 	if len(networks) > 0 {
-		networkPool.Networks = make([]vcf.Network, len(networks))
+		networkPool.Networks = make([]vcf.Network, len(networks)) //nolint:staticcheck
 
 		for i, network := range networks {
-			networkPool.Networks[i] = vcf.Network{
+			gateway, mask, subnet := network.Gateway.ValueString(), network.Mask.ValueString(), network.Subnet.ValueString()
+			networkPool.Networks[i] = vcf.Network{ //nolint:staticcheck
 				VlanId:  int32(network.VlanId.ValueInt64()),
-				Gateway: network.Gateway.ValueString(),
-				Mask:    network.Mask.ValueString(),
-				Subnet:  network.Subnet.ValueString(),
+				Gateway: &gateway,
+				Mask:    &mask,
+				Subnet:  &subnet,
 				Mtu:     int32(network.Mtu.ValueInt64()),
 				Type:    network.Type.ValueString(),
 			}

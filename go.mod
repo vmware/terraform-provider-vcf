@@ -1,6 +1,6 @@
 module github.com/vmware/terraform-provider-vcf
 
-go 1.26.3
+go 1.26.8
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.25.0
@@ -12,8 +12,9 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.23.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
+	github.com/oapi-codegen/runtime v1.6.0
 	github.com/stretchr/testify v1.12.1
-	github.com/vmware/vcf-sdk-go v0.7.0
+	github.com/vmware/vcf-sdk-go v0.7.1-0.20260914103519-07615edaa486
 )
 
 require (
@@ -63,7 +64,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/oapi-codegen/runtime v1.1.2 // indirect
 	github.com/oklog/run v1.2.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
@@ -77,7 +77,7 @@ require (
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
-	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
+	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0 // indirect
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect

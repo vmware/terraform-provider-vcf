@@ -133,7 +133,7 @@ func getNetworkPoolByName(ctx context.Context, apiClient *vcf.ClientWithResponse
 	return nil, errors.New("network pool not found")
 }
 
-func flattenNetworks(networks []vcf.Network) []interface{} {
+func flattenNetworks(networks []vcf.Network) []interface{} { //nolint:staticcheck
 	if networks == nil {
 		return []interface{}{}
 	}

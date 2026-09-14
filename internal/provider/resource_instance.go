@@ -90,12 +90,11 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 			Description: "Skip ESXi thumbprint validation",
 			Required:    true,
 		},
-		"vcenter":                     sddc.GetVcenterSchema(),
-		"vsan":                        sddc.GetVsanSchema(),
-		"automation":                  sddc.GetVcfAutomationSchema(),
-		"operations":                  sddc.GetVcfOperationsSchema(),
-		"operations_collector":        sddc.GetVcfOperationsCollectorSchema(),
-		"operations_fleet_management": sddc.GetVcfOperationsFleetManagementSchema(),
+		"vcenter":              sddc.GetVcenterSchema(),
+		"vsan":                 sddc.GetVsanSchema(),
+		"automation":           sddc.GetVcfAutomationSchema(),
+		"operations":           sddc.GetVcfOperationsSchema(),
+		"operations_collector": sddc.GetVcfOperationsCollectorSchema(),
 		"version": {
 			Type:        schema.TypeString,
 			Description: "VCF version",
@@ -170,11 +169,6 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 	if operationsCollectorSpec, ok := data.GetOk("operations_collector"); ok {
 		if spec := sddc.GetVcfOperationsCollectorSpecFromSchema(operationsCollectorSpec.([]interface{})); spec != nil {
 			sddcSpec.VcfOperationsCollectorSpec = spec
-		}
-	}
-	if operationsFleetManagementSpec, ok := data.GetOk("operations_fleet_management"); ok {
-		if spec := sddc.GetVcfOperationsFleetManagementSpecFromSchema(operationsFleetManagementSpec.([]interface{})); spec != nil {
-			sddcSpec.VcfOperationsFleetManagementSpec = spec
 		}
 	}
 	if version, ok := data.GetOk("version"); ok {

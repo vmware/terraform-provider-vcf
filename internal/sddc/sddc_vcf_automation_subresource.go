@@ -67,10 +67,7 @@ func GetVcfAutomationSpecFromSchema(rawData []interface{}) *installer.VcfAutomat
 		nodePrefix = utils.ToPointer[string](data["node_prefix"])
 	}
 
-	var internalClusterCidr *string
-	if data["internal_cluster_cidr"].(string) != "" {
-		internalClusterCidr = utils.ToPointer[string](data["internal_cluster_cidr"])
-	}
+	internalClusterCidr := data["internal_cluster_cidr"].(string)
 
 	var ipPools *[]string
 	if data["ip_pool"] != nil && len(data["ip_pool"].([]interface{})) > 0 {

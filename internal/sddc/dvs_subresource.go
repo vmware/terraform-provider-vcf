@@ -309,7 +309,7 @@ func convertNsxtSwitchConfig(rawData map[string]interface{}) *installer.NsxtSwit
 				transportZones[i].Name = utils.ToStringPointer(name)
 			}
 		}
-		config.TransportZones = transportZones
+		config.TransportZones = &transportZones
 		hasConfig = true
 	}
 

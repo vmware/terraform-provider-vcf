@@ -94,7 +94,7 @@ func resourceCeipUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 	}
 
-	res, err := apiClient.SetCeipStatusWithResponse(ctx, vcf.SetCeipStatusJSONRequestBody(enableApiParam))
+	res, err := apiClient.SetCeipStatusWithResponse(ctx, vcf.SetCeipStatusJSONRequestBody{Status: enableApiParam})
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
@@ -120,7 +120,7 @@ func resourceCeipDelete(ctx context.Context, d *schema.ResourceData, meta interf
 	vcfClient := meta.(*api_client.SddcManagerClient)
 	apiClient := vcfClient.ApiClient
 
-	ceipAccepted, err := apiClient.SetCeipStatusWithResponse(ctx, DisableApiParam)
+	ceipAccepted, err := apiClient.SetCeipStatusWithResponse(ctx, vcf.SetCeipStatusJSONRequestBody{Status: DisableApiParam})
 	if err != nil {
 		tflog.Error(ctx, err.Error())
 		return diag.FromErr(err)
