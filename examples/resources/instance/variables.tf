@@ -283,18 +283,6 @@ variable "hosts" {
   sensitive = true
 }
 
-# Operations Fleet Management Configuration
-variable "operations_fleet_management" {
-  description = "VCF Operations Fleet Management configuration"
-  type = object({
-    hostname            = string
-    root_user_password  = optional(string)
-    admin_user_password = optional(string)
-  })
-  sensitive = true
-  default   = null
-}
-
 # Operations Configuration
 variable "operations" {
   description = "VCF Operations configuration"

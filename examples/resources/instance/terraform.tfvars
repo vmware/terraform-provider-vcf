@@ -180,13 +180,6 @@ hosts = [
   }
 ]
 
-# Operations Fleet Management Configuration
-operations_fleet_management = {
-  hostname            = "flt-fm01.rainpole.io"
-  root_user_password  = "VMware123!VMware123!"
-  admin_user_password = "VMware123!VMware123!"
-}
-
 # Operations Configuration
 operations = {
   node = [

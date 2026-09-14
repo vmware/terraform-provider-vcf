@@ -139,7 +139,7 @@ func FlattenNsxClusterRef(ctx context.Context, nsxtClusterRef vcf.NsxTClusterRef
 	flattenedNsxCluster["vip"] = nsxtClusterRef.Vip
 	flattenedNsxCluster["vip_fqdn"] = nsxtClusterRef.VipFqdn
 
-	res, err := apiClient.GetNsxClusterWithResponse(ctx, *nsxtClusterRef.Id)
+	res, err := apiClient.GetNsxClusterWithResponse(ctx, *nsxtClusterRef.Id, nil)
 	if err != nil {
 		return nil, err
 	}

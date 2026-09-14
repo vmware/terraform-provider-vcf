@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -113,7 +115,7 @@ func resourceCsrCreate(ctx context.Context, data *schema.ResourceData, meta inte
 	resourceFqdn := data.Get("fqdn").(string)
 
 	country := data.Get("country").(string)
-	email := data.Get("email").(string)
+	email := openapi_types.Email(data.Get("email").(string))
 	keySize := strconv.Itoa(data.Get("key_size").(int))
 	locality := data.Get("locality").(string)
 	organization := data.Get("organization").(string)

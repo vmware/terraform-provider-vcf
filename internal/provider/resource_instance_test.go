@@ -477,13 +477,6 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				},
 			},
 		},
-		"operations_fleet_management": []interface{}{
-			map[string]interface{}{
-				"hostname":            "operations-1",
-				"admin_user_password": "MnogoSl0jn@P@rol@!",
-				"root_user_password":  "MnogoSl0jn@P@rol@!",
-			},
-		},
 		"operations_collector": []interface{}{
 			map[string]interface{}{
 				"hostname":           "operations-1",
@@ -561,9 +554,6 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsCollectorSpec.Hostname)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsCollectorSpec).RootUserPassword)
 	assert.Equal(t, utils.ToPointer[string]("small"), (*sddcSpec.VcfOperationsCollectorSpec).ApplianceSize)
-	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsFleetManagementSpec.Hostname)
-	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).RootUserPassword)
-	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsFleetManagementSpec).AdminUserPassword)
 	assert.Equal(t, utils.ToStringPointer("9.0.0"), sddcSpec.Version)
 	assert.Equal(t, utils.ToPointer[int32](int32(1)), sddcSpec.DatastoreSpec.VsanSpec.FailuresToTolerate)
 	assert.Equal(t, "LOADBALANCE_SRCID", (*(*sddcSpec.DvsSpecs)[0].NsxTeamings)[0].Policy)

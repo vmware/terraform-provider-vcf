@@ -36,7 +36,6 @@ description: |-
 - `nsx` (Block List, Max: 1) (see [below for nested schema](#nestedblock--nsx))
 - `operations` (Block List, Max: 1) (see [below for nested schema](#nestedblock--operations))
 - `operations_collector` (Block List, Max: 1) (see [below for nested schema](#nestedblock--operations_collector))
-- `operations_fleet_management` (Block List, Max: 1) (see [below for nested schema](#nestedblock--operations_fleet_management))
 - `sddc_manager` (Block List, Max: 1) (see [below for nested schema](#nestedblock--sddc_manager))
 - `security` (Block List, Max: 1) (see [below for nested schema](#nestedblock--security))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -369,19 +368,6 @@ Required:
 Optional:
 
 - `appliance_size` (String)  Appliance size. One among: small or standard.
-- `root_user_password` (String, Sensitive) root password
-
-
-<a id="nestedblock--operations_fleet_management"></a>
-### Nested Schema for `operations_fleet_management`
-
-Required:
-
-- `hostname` (String) Host name for the node
-
-Optional:
-
-- `admin_user_password` (String, Sensitive) root password
 - `root_user_password` (String, Sensitive) root password
 
 

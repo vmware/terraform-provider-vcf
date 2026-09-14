@@ -175,15 +175,6 @@ resource "vcf_instance" "main" {
     }
   }
 
-  dynamic "operations_fleet_management" {
-    for_each = var.operations_fleet_management != null ? [var.operations_fleet_management] : []
-    content {
-      hostname            = operations_fleet_management.value.hostname
-      root_user_password  = operations_fleet_management.value.root_user_password
-      admin_user_password = operations_fleet_management.value.admin_user_password
-    }
-  }
-
   dynamic "operations" {
     for_each = var.operations != null ? [var.operations] : []
     content {

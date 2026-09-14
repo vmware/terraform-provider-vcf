@@ -89,7 +89,7 @@ func GenerateCertificateForResource(ctx context.Context, client *api_client.Sddc
 func ReadCertificate(ctx context.Context, client *vcf.ClientWithResponses,
 	domainId, resourceFqdn string) (*vcf.Certificate, error) {
 
-	certificatesResponse, err := client.GetCertificatesByDomainWithResponse(ctx, domainId)
+	certificatesResponse, err := client.GetCertificatesByDomainWithResponse(ctx, domainId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get certificate by domain: %w", err)
 	}
