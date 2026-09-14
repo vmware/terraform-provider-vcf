@@ -1,6 +1,6 @@
 module github.com/vmware/terraform-provider-vcf
 
-go 1.26.3
+go 1.26.8
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.25.0
