@@ -211,4 +211,20 @@ resource "vcf_instance" "main" {
       ip_pool               = automation.value.ip_pool
     }
   }
+
+  dynamic "vsp_cluster" {
+    for_each = var.vsp_cluster != null ? [var.vsp_cluster] : []
+    content {
+      platform_fqdn              = vsp_cluster.value.platform_fqdn
+      instance_fqdn              = vsp_cluster.value.instance_fqdn
+      fleet_fqdn                 = vsp_cluster.value.fleet_fqdn
+      size                       = vsp_cluster.value.size
+      system_user_password       = vsp_cluster.value.system_user_password
+      internal_cluster_cidr_ipv4 = vsp_cluster.value.internal_cluster_cidr_ipv4
+
+      ipv4_pool {
+        cidr = vsp_cluster.value.ipv4_pool_cidr
+      }
+    }
+  }
 }
