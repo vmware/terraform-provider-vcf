@@ -41,6 +41,7 @@ description: |-
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `version` (String) VCF version
 - `vsan` (Block List, Max: 1) (see [below for nested schema](#nestedblock--vsan))
+- `vsp_cluster` (Block List, Max: 1) (see [below for nested schema](#nestedblock--vsp_cluster))
 
 ### Read-Only
 
@@ -423,3 +424,41 @@ Optional:
 - `esa_enabled` (Boolean) Enable vSAN ESA
 - `failures_to_tolerate` (Number) Host failures to tolerate
 - `vsan_dedup` (Boolean) VSAN feature Deduplication and Compression flag, one flag for both features
+
+
+<a id="nestedblock--vsp_cluster"></a>
+### Nested Schema for `vsp_cluster`
+
+Required:
+
+- `instance_fqdn` (String) FQDN of the VCF instance
+- `ipv4_pool` (Block List, Min: 1, Max: 1) IPv4 addresses available to the cluster. One of cidr, ip_range or addresses is required (see [below for nested schema](#nestedblock--vsp_cluster--ipv4_pool))
+- `platform_fqdn` (String) FQDN of the VCF management services platform cluster
+
+Optional:
+
+- `fleet_fqdn` (String) FQDN of the fleet. Provided for VVF and for the primary VCF instance only
+- `internal_cluster_cidr_ipv4` (String) Internal cluster CIDR for IPv4. One among: 198.18.0.0/15, 240.0.0.0/15, 250.0.0.0/15
+- `size` (String) Size of the cluster. One among: small, small_ha, medium, large
+- `ssl_thumbprint` (String) SSL thumbprint (SHA256) of the product certificate. Required when importing an existing deployment
+- `system_user_password` (String, Sensitive) SSH password for vmware-system-user and admin@vsp.local on the cluster nodes. If blank the password will be auto-generated
+- `use_existing_deployment` (Boolean) Import an existing deployment instead of deploying one
+- `version` (String) Version of the cluster
+
+<a id="nestedblock--vsp_cluster--ipv4_pool"></a>
+### Nested Schema for `vsp_cluster.ipv4_pool`
+
+Optional:
+
+- `addresses` (List of String) List of IP addresses
+- `cidr` (String) Network CIDR
+- `excluded_addresses` (List of String) List of IP addresses to exclude. Applies to cidr and ip_range
+- `ip_range` (Block List, Max: 1) Range of IP addresses (see [below for nested schema](#nestedblock--vsp_cluster--ipv4_pool--ip_range))
+
+<a id="nestedblock--vsp_cluster--ipv4_pool--ip_range"></a>
+### Nested Schema for `vsp_cluster.ipv4_pool.ip_range`
+
+Required:
+
+- `end_ip_address` (String)
+- `start_ip_address` (String)

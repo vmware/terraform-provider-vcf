@@ -22,7 +22,7 @@ import (
 
 func TestAccResourceVcfInstanceBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck:                 func() { testAccVcfInstancePreCheck(t) },
 		ProtoV6ProviderFactories: muxedFactories(),
 		Steps: []resource.TestStep{
 			{
@@ -69,7 +69,6 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  skip_esx_thumbprint_validation = true
 	  management_pool_name = "bringup-networkpool"
 	  ceip_enabled = false
-	  version = "9.0.0"
 	  sddc_manager {
 		hostname = "sddc-manager"
 		ssh_password = "MnogoSl0jn@P@rol@!"
@@ -77,59 +76,55 @@ func testAccCheckVcfSddcConfigBasic() string {
 		local_user_password = "MnogoSl0jn@P@rol@!"
 	  }
 	  ntp_servers = [
-		"10.0.0.250"
+		"25.0.0.1"
 	  ]
 	  dns {
-		domain = "vrack.vsphere.local"
-		name_server = "10.0.0.250"
+		domain = "vcf.nimbus.internal"
+		name_server = "25.0.0.1"
 	  }
 	  network {
-		subnet = "10.0.0.0/22"
+		subnet = "25.0.0.0/22"
 		vlan_id = "0"
 		mtu = "1500"
 		network_type = "MANAGEMENT"
-		gateway = "10.0.0.250"
+		gateway = "25.0.0.1"
+		teaming_policy = "loadbalance_loadbased"
 		active_uplinks = [
 			"uplink1",
 			"uplink2"
 		]
 	  }
 	  network {
-		active_uplinks = [
-			"uplink1",
-			"uplink2"
-		]
-		subnet = "10.0.4.0/24"
+		subnet = "25.0.4.0/22"
 		include_ip_address_ranges {
-		  start_ip_address = "10.0.4.7"
-		  end_ip_address = "10.0.4.48"
-		}
-		include_ip_address_ranges {
-		  start_ip_address = "10.0.4.3"
-		  end_ip_address = "10.0.4.6"
-		}
-		include_ip_address = [
-		  "10.0.4.50",
-		  "10.0.4.49"]
-		vlan_id = "0"
-		mtu = "8940"
-		network_type = "VSAN"
-		gateway = "10.0.4.253"
-	  }
-	  network {
-		active_uplinks = [
-			"uplink1",
-			"uplink2"
-		]
-		subnet = "10.0.8.0/24"
-		include_ip_address_ranges {
-		  start_ip_address = "10.0.8.3"
-		  end_ip_address = "10.0.8.50"
+		  start_ip_address = "25.0.4.7"
+		  end_ip_address = "25.0.4.48"
 		}
 		vlan_id = "0"
 		mtu = "8940"
 		network_type = "VMOTION"
-		gateway = "10.0.8.253"
+		gateway = "25.0.4.253"
+		teaming_policy = "loadbalance_loadbased"
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
+	  }
+	  network {
+		subnet = "25.0.8.0/22"
+		include_ip_address_ranges {
+		  start_ip_address = "25.0.8.3"
+		  end_ip_address = "25.0.8.50"
+		}
+		vlan_id = "0"
+		mtu = "8940"
+		network_type = "VSAN"
+		gateway = "25.0.8.253"
+		teaming_policy = "loadbalance_loadbased"
+		active_uplinks = [
+			"uplink1",
+			"uplink2"
+		]
 	  }
 	  nsx {
 		nsx_manager_size = "medium"
@@ -148,42 +143,6 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  }
 	  dvs {
 		mtu = 8940
-		nioc {
-		  traffic_type = "VSAN"
-		  value = "HIGH"
-		}
-		nioc {
-		  traffic_type = "VMOTION"
-		  value = "LOW"
-		}
-		nioc {
-		  traffic_type = "VDP"
-		  value = "LOW"
-		}
-		nioc {
-		  traffic_type = "VIRTUALMACHINE"
-		  value = "HIGH"
-		}
-		nioc {
-		  traffic_type = "MANAGEMENT"
-		  value = "NORMAL"
-		}
-		nioc {
-		  traffic_type = "NFS"
-		  value = "LOW"
-		}
-		nioc {
-		  traffic_type = "HBR"
-		  value = "LOW"
-		}
-		nioc {
-		  traffic_type = "FAULTTOLERANCE"
-		  value = "LOW"
-		}
-		nioc {
-		  traffic_type = "ISCSI"
-		  value = "LOW"
-		}
 		dvs_name = "SDDC-Dswitch-Private"
 		vmnic_mapping {
 			vmnic = "vmnic0"
@@ -203,13 +162,12 @@ func testAccCheckVcfSddcConfigBasic() string {
 		  active_uplinks = ["uplink1", "uplink2"]
 		}
 		nsxt_switch_config {
-		  host_switch_operational_mode = "ENS_INTERRUPT"
 		  transport_zones {
 			name = "nsx-vlan-transportzone"
 			transport_type = "VLAN"
 		  }
 		  transport_zones {
-			name = "overlay-tz-sfo-m01-nsx01"
+			name = "overlay-tz"
 			transport_type = "OVERLAY"
 		  }
 		}
@@ -217,62 +175,56 @@ func testAccCheckVcfSddcConfigBasic() string {
 	  cluster {
 		datacenter_name = "SDDC-Datacenter"
 		cluster_name = "SDDC-Cluster1"
-		cluster_evc_mode = ""
-		resource_pool {
-		  name = "Mgmt-ResourcePool"
-		  type = "management"
-		}
-		resource_pool {
-		  name = "Network-ResourcePool"
-		  type = "network"
-		}
-		resource_pool {
-		  name = "Compute-ResourcePool"
-		  type = "compute"
-		}
-		resource_pool {
-		  name = "User-RP"
-		  type = "compute"
-		}
 	  }
 	  vcenter {
 		vcenter_hostname = "vcenter-1"
 		root_vcenter_password = "MnogoSl0jn@P@rol@!"
 		vm_size = "tiny"
 	  }
-	  host {
-		credentials {
-		  username = "root"
-		  password = %q
+	  vsp_cluster {
+		platform_fqdn = "vsp.vcf.nimbus.internal"
+		instance_fqdn = "sddc-lcm.vcf.nimbus.internal"
+		fleet_fqdn = "fleet-lcm.vcf.nimbus.internal"
+		size = "small"
+		system_user_password = "MnogoSl0jn@P@rol@!"
+		internal_cluster_cidr_ipv4 = "198.18.0.0/15"
+		ipv4_pool {
+		  cidr = "25.0.0.100/28"
 		}
-		hostname = "esxi-1"
 	  }
 	  host {
 		credentials {
 		  username = "root"
 		  password = %q
 		}
-		hostname = "esxi-2"
+		hostname = %q
 	  }
 	  host {
 		credentials {
 		  username = "root"
 		  password = %q
 		}
-		hostname = "esxi-3"
+		hostname = %q
 	  }
 	  host {
 		credentials {
 		  username = "root"
 		  password = %q
 		}
-		hostname = "esxi-4"
+		hostname = %q
+	  }
+	  host {
+		credentials {
+		  username = "root"
+		  password = %q
+		}
+		hostname = %q
 	  }
 	}`,
-		os.Getenv(constants.VcfTestHost1Pass),
-		os.Getenv(constants.VcfTestHost2Pass),
-		os.Getenv(constants.VcfTestHost3Pass),
-		os.Getenv(constants.VcfTestHost4Pass))
+		os.Getenv(constants.VcfTestHost1Pass), os.Getenv(constants.VcfTestHost1Fqdn),
+		os.Getenv(constants.VcfTestHost2Pass), os.Getenv(constants.VcfTestHost2Fqdn),
+		os.Getenv(constants.VcfTestHost3Pass), os.Getenv(constants.VcfTestHost3Fqdn),
+		os.Getenv(constants.VcfTestHost4Pass), os.Getenv(constants.VcfTestHost4Fqdn))
 }
 
 func TestVcfInstanceSchemaParse(t *testing.T) {
@@ -484,6 +436,26 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 				"root_user_password": "MnogoSl0jn@P@rol@!",
 			},
 		},
+		"vsp_cluster": []interface{}{
+			map[string]interface{}{
+				"platform_fqdn":              "vsp-cluster",
+				"instance_fqdn":              "vsp-instance",
+				"fleet_fqdn":                 "vsp-fleet",
+				"size":                       "small",
+				"system_user_password":       "MnogoSl0jn@P@rol@!",
+				"internal_cluster_cidr_ipv4": "198.18.0.0/15",
+				"ipv4_pool": []interface{}{
+					map[string]interface{}{
+						"ip_range": []interface{}{
+							map[string]interface{}{
+								"start_ip_address": "10.0.0.80",
+								"end_ip_address":   "10.0.0.91",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	var testResourceData = schema.TestResourceDataRaw(t, resourceVcfInstanceSchema(), input)
 	sddcSpec := buildSddcSpec(testResourceData)
@@ -554,6 +526,14 @@ func TestVcfInstanceSchemaParse(t *testing.T) {
 	assert.Equal(t, "operations-1", sddcSpec.VcfOperationsCollectorSpec.Hostname)
 	assert.Equal(t, utils.ToPointer[string]("MnogoSl0jn@P@rol@!"), (*sddcSpec.VcfOperationsCollectorSpec).RootUserPassword)
 	assert.Equal(t, utils.ToPointer[string]("small"), (*sddcSpec.VcfOperationsCollectorSpec).ApplianceSize)
+	assert.Equal(t, "vsp-cluster", sddcSpec.VspClusterSpec.PlatformFqdn)
+	assert.Equal(t, "vsp-instance", sddcSpec.VspClusterSpec.InstanceFqdn)
+	assert.Equal(t, utils.ToStringPointer("vsp-fleet"), sddcSpec.VspClusterSpec.FleetFqdn)
+	assert.Equal(t, utils.ToStringPointer("small"), sddcSpec.VspClusterSpec.Size)
+	assert.Equal(t, utils.ToStringPointer("MnogoSl0jn@P@rol@!"), sddcSpec.VspClusterSpec.SystemUserPassword)
+	assert.Equal(t, utils.ToStringPointer("198.18.0.0/15"), sddcSpec.VspClusterSpec.InternalClusterCidrIpv4)
+	assert.Equal(t, "10.0.0.80", sddcSpec.VspClusterSpec.Ipv4Pool.IpRange.StartIpAddress)
+	assert.Equal(t, "10.0.0.91", sddcSpec.VspClusterSpec.Ipv4Pool.IpRange.EndIpAddress)
 	assert.Equal(t, utils.ToStringPointer("9.0.0"), sddcSpec.Version)
 	assert.Equal(t, utils.ToPointer[int32](int32(1)), sddcSpec.DatastoreSpec.VsanSpec.FailuresToTolerate)
 	assert.Equal(t, "LOADBALANCE_SRCID", (*(*sddcSpec.DvsSpecs)[0].NsxTeamings)[0].Policy)
