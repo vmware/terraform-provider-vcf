@@ -107,7 +107,7 @@ func (sddcManagerClient *SddcManagerClient) GetResourceIdAssociatedWithTask(ctx 
 	if err != nil {
 		return "", err
 	}
-	if len(*task.Resources) == 0 {
+	if task.Resources == nil || len(*task.Resources) == 0 {
 		return "", fmt.Errorf("no resources associated with Task with ID %q", taskId)
 	}
 	for _, resource := range *task.Resources {

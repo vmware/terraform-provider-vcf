@@ -28,6 +28,19 @@ const (
 	statusNotApplicable       = "NOT_APPLICABLE"
 )
 
+// pendingTaskStatuses are the task statuses documented by the VCF API as non-terminal.
+// See vcf.Task.Status: "One among: PENDING, Pending, IN_PROGRESS, In Progress, SUCCESSFUL,
+// Successful, FAILED, Failed, CANCELLED, Cancelled, COMPLETED_WITH_WARNING, SKIPPED, QUEUED,
+// TIMED_OUT, Queued, Timed Out".
+var pendingTaskStatuses = []string{
+	statusPending, statusInProgressUppercase, statusInProgress, "QUEUED",
+}
+
+// failedTaskStatuses are the terminal statuses that indicate the task did not succeed.
+var failedTaskStatuses = []string{
+	statusFailed, statusCancelled, "TIMED_OUT", "Timed Out",
+}
+
 type TaskTracker struct {
 	ctx             context.Context
 	client          *vcf.ClientWithResponses
@@ -68,18 +81,19 @@ func (t *TaskTracker) WaitForTask() error {
 
 			t.logTask(*task)
 
-			switch *task.Status {
-			case statusInProgress, statusInProgressUppercase, statusPending:
+			status := *task.Status
+			switch {
+			case t.statusIn(status, pendingTaskStatuses):
 				continue
-			case statusFailed, statusCancelled:
+			case t.statusIn(status, failedTaskStatuses):
 				errorMsg := fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s",
-					*task.Id, *task.Name, *task.Type, *task.Status)
+					*task.Id, *task.Name, *task.Type, status)
 				tflog.Error(t.ctx, errorMsg)
 
 				return errors.New(errorMsg)
 			default:
 				tflog.Info(t.ctx, fmt.Sprintf("Task with ID = %s , Name: %q Type: %q is in state %s",
-					*task.Id, *task.Name, *task.Type, *task.Status))
+					*task.Id, *task.Name, *task.Type, status))
 				return nil
 			}
 		}
@@ -133,4 +147,13 @@ func (t *TaskTracker) logErrors(errors []vcf.Error) {
 
 func (t *TaskTracker) statusEqual(a, b string) bool {
 	return strings.EqualFold(a, b)
+}
+
+func (t *TaskTracker) statusIn(status string, candidates []string) bool {
+	for _, candidate := range candidates {
+		if t.statusEqual(status, candidate) {
+			return true
+		}
+	}
+	return false
 }

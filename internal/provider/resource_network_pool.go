@@ -200,6 +200,11 @@ func (r *ResourceNetworkPool) Create(ctx context.Context, req resource.CreateReq
 	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](created)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr, ctx)
+		message := "unknown error"
+		if vcfErr.Message != nil {
+			message = *vcfErr.Message
+		}
+		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to create network pool", message))
 		return
 	}
 
@@ -217,11 +222,18 @@ func (r *ResourceNetworkPool) Read(ctx context.Context, req resource.ReadRequest
 	pool, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr, ctx)
+		message := "unknown error"
+		if vcfErr.Message != nil {
+			message = *vcfErr.Message
+		}
+		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to read network pool", message))
 		return
 	}
 
 	data.Id = types.StringValue(*pool.Id)
 	data.Name = types.StringValue(pool.Name)
+
+	res.Diagnostics.Append(res.State.Set(ctx, &data)...)
 }
 
 func (r *ResourceNetworkPool) Update(ctx context.Context, req resource.UpdateRequest, res *resource.UpdateResponse) {
@@ -236,6 +248,11 @@ func (r *ResourceNetworkPool) Delete(ctx context.Context, req resource.DeleteReq
 	_, vcfErr := api_client.GetResponseAs[vcf.NetworkPool](networkPoolPayload)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr, ctx)
+		message := "unknown error"
+		if vcfErr.Message != nil {
+			message = *vcfErr.Message
+		}
+		res.Diagnostics.Append(diag.NewErrorDiagnostic("Failed to delete network pool", message))
 		return
 	}
 

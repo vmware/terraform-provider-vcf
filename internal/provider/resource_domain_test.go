@@ -336,29 +336,29 @@ func testAccVcfDomainConfig(commissionHostConfig,
 	clusterConfig, additionalClusterConfig string) string {
 	return fmt.Sprintf(`
 	resource "vcf_network_pool" "domain_pool" {
-		name    = "engineering-pool"
+		name    = "wld01-networkpool-3"
 		network {
-			gateway   = "192.168.10.1"
-			mask      = "255.255.255.0"
+			gateway   = "25.0.8.1"
+			mask      = "255.255.252.0"
 			mtu       = 8940
-			subnet    = "192.168.10.0"
+			subnet    = "25.0.8.0"
 			type      = "VSAN"
-			vlan_id   = 100
+			vlan_id   = 0
 			ip_pools {
-				start = "192.168.10.5"
-				end   = "192.168.10.50"
+				start = "25.0.8.91"
+				end   = "25.0.8.120"
 			}
 		}
 		network {
-			gateway   = "192.168.11.1"
-			mask      = "255.255.255.0"
+			gateway   = "25.0.4.1"
+			mask      = "255.255.252.0"
 			mtu       = 8940
-			subnet    = "192.168.11.0"
+			subnet    = "25.0.4.0"
 			type      = "vMotion"
-			vlan_id   = 100
+			vlan_id   = 0
 			ip_pools {
-			  start = "192.168.11.5"
-			  end   = "192.168.11.50"
+			  start = "25.0.4.91"
+			  end   = "25.0.4.120"
 			}
 		  }
 	}
@@ -369,45 +369,45 @@ func testAccVcfDomainConfig(commissionHostConfig,
 	resource "vcf_domain" "domain1" {
 		name                    = "sfo-w01-vc01"
 		sso {
-			domain_name = "acc-test.vrack.vsphere.local"
+			domain_name = "acc-test.vcf.nimbus.internal"
 			domain_password = "S@mpleL0ngP@ss123!"
 		}
 		vcenter_configuration {
 			name            = "test-vcenter"
 			datacenter_name = "test-datacenter"
-			root_password   = "S@mpleL0ngP@ss123!"
-			vm_size         = "small"
+			root_password   = "MnogoSl0jn@P@rol@!"
+			vm_size         = "tiny"
 			storage_size    = "lstorage"
-			ip_address      = "10.0.0.143"
-			subnet_mask     = "255.255.255.0"
-			gateway         = "10.0.0.250"
-			fqdn            = "sfo-w01-vc01.vrack.vsphere.local"
+			ip_address      = "25.0.0.50"
+			subnet_mask     = "255.255.252.0"
+			gateway         = "25.0.0.1"
+			fqdn            = "sfo-w01-vc01.vcf.nimbus.internal"
 		}
 		nsx_configuration {
-			vip        					= "10.0.0.166"
-			vip_fqdn   					= "sfo-w01-nsx01.vrack.vsphere.local"
-			nsx_manager_admin_password	= "S@mpleL0ngP@ss123!"
+			vip        					= "25.0.0.55"
+			vip_fqdn   					= "sfo-w01-nsx01.vcf.nimbus.internal"
+			nsx_manager_admin_password	= "MnogoSl0jn@P@rol@!"
 			form_factor                 = "small"
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01a"
-				ip_address  = "10.0.0.162"
-				fqdn    = "sfo-w01-nsx01a.vrack.vsphere.local"
-				subnet_mask = "255.255.255.0"
-				gateway     = "10.0.0.250"
+				ip_address  = "25.0.0.56"
+				fqdn    = "sfo-w01-nsx01a.vcf.nimbus.internal"
+				subnet_mask = "255.255.252.0"
+				gateway     = "25.0.0.1"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01b"
-				ip_address  = "10.0.0.163"
-				fqdn    = "sfo-w01-nsx01b.vrack.vsphere.local"
-				subnet_mask = "255.255.255.0"
-				gateway     = "10.0.0.250"
+				ip_address  = "25.0.0.57"
+				fqdn    = "sfo-w01-nsx01b.vcf.nimbus.internal"
+				subnet_mask = "255.255.252.0"
+				gateway     = "25.0.0.1"
 			}
 			nsx_manager_node {
 				name        = "sfo-w01-nsx01c"
-				ip_address  = "10.0.0.164"
-				fqdn    = "sfo-w01-nsx01c.vrack.vsphere.local"
-				subnet_mask = "255.255.255.0"
-				gateway     = "10.0.0.250"
+				ip_address  = "25.0.0.58"
+				fqdn    = "sfo-w01-nsx01c.vcf.nimbus.internal"
+				subnet_mask = "255.255.252.0"
+				gateway     = "25.0.0.1"
 			}
         }
 		// cluster 1 config
@@ -418,11 +418,15 @@ func testAccVcfDomainConfig(commissionHostConfig,
 }
 
 func testAccVcfClusterInDomainConfig(clusterName, hostConfig string) string {
+	clusterImageIdConfig := ""
+	if clusterImageId := os.Getenv(constants.VcfTestClusterImageId); clusterImageId != "" {
+		clusterImageIdConfig = fmt.Sprintf("cluster_image_id = %q", clusterImageId)
+	}
 	return fmt.Sprintf(`
 		cluster {
 			name = %q
 			high_availability_enabled = true
-			cluster_image_id = %q
+			%s
 			// hosts config
 			%s
 			vds {
@@ -445,7 +449,7 @@ func testAccVcfClusterInDomainConfig(clusterName, hostConfig string) string {
 				failures_to_tolerate = 1
 			}
 			geneve_vlan_id = 3
-		}`, clusterName, os.Getenv(constants.VcfTestClusterImageId), hostConfig, clusterName, clusterName, clusterName,
+		}`, clusterName, clusterImageIdConfig, hostConfig, clusterName, clusterName, clusterName,
 		clusterName, clusterName)
 }
 

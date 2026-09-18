@@ -172,15 +172,26 @@ func convertVcfErrorsToDiagErrors(err *vcf.Error) []diag.Diagnostic {
 	var result []diag.Diagnostic
 
 	var errorDetail string
-	if err.RemediationMessage != nil && IsEmpty(*err.ReferenceToken) {
+	if err.NestedErrors != nil && len(*err.NestedErrors) > 0 {
+		for _, nestedError := range *err.NestedErrors {
+			if nestedError.Message != nil {
+				errorDetail += *nestedError.Message + "\n"
+			}
+		}
+	} else if err.RemediationMessage != nil && (err.ReferenceToken == nil || IsEmpty(*err.ReferenceToken)) {
 		errorDetail = *err.RemediationMessage
-	} else {
+	} else if err.ReferenceToken != nil {
 		errorDetail = fmt.Sprintf("look for reference token %q in service logs", *err.ReferenceToken)
+	}
+
+	summary := "unknown error"
+	if err.Message != nil {
+		summary = *err.Message
 	}
 
 	result = append(result, diag.Diagnostic{
 		Severity: diag.Error,
-		Summary:  *err.Message,
+		Summary:  summary,
 		Detail:   errorDetail,
 	})
 
