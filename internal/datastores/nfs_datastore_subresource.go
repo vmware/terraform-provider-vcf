@@ -66,7 +66,7 @@ func TryConvertToNfsDatastoreSpec(object map[string]interface{}) (*vcf.NfsDatast
 		return nil, fmt.Errorf("cannot convert to NfsDatastoreSpec, path is required")
 	}
 	result := &vcf.NfsDatastoreSpec{}
-	result.DatastoreName = datastoreName
+	result.DatastoreName = &datastoreName
 	result.NasVolume = vcf.NasVolumeSpec{}
 	result.NasVolume.Path = path
 	if readOnly, ok := object["read_only"]; ok && !validationutils.IsEmpty(readOnly) {

@@ -47,7 +47,7 @@ func CreateDomainCreationSpec(data *schema.ResourceData) (*vcf.DomainCreationSpe
 
 	computeSpec, err := generateComputeSpecFromResourceData(data)
 	if err == nil {
-		result.ComputeSpec = *computeSpec
+		result.ComputeSpec = computeSpec
 	} else {
 		return nil, err
 	}

@@ -55,7 +55,7 @@ func TryConvertToVsanDatastoreSpec(object map[string]interface{}) (*vcf.VsanData
 		return nil, fmt.Errorf("cannot convert to VSANDatastoreSpec, datastore_name is required")
 	}
 	result := &vcf.VsanDatastoreSpec{}
-	result.DatastoreName = datastoreName
+	result.DatastoreName = &datastoreName
 	if dedupAndCompressionEnabled, ok := object["dedup_and_compression_enabled"]; ok && !validationutils.IsEmpty(dedupAndCompressionEnabled) {
 		result.DedupAndCompressionEnabled = utils.ToBoolPointer(dedupAndCompressionEnabled)
 	}
