@@ -81,16 +81,18 @@ func getVspIpv4PoolSchema() *schema.Schema {
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"cidr": {
-					Type:         schema.TypeString,
-					Description:  "Network CIDR",
-					Optional:     true,
-					ValidateFunc: validation.StringLenBetween(9, 18),
+					Type:          schema.TypeString,
+					Description:   "Network CIDR",
+					Optional:      true,
+					ValidateFunc:  validation.StringLenBetween(9, 18),
+					ConflictsWith: []string{"ip_range", "addresses"},
 				},
 				"ip_range": {
-					Type:        schema.TypeList,
-					Description: "Range of IP addresses",
-					Optional:    true,
-					MaxItems:    1,
+					Type:          schema.TypeList,
+					Description:   "Range of IP addresses",
+					Optional:      true,
+					MaxItems:      1,
+					ConflictsWith: []string{"cidr", "addresses"},
 					Elem: &schema.Resource{
 						Schema: map[string]*schema.Schema{
 							"start_ip_address": {
@@ -107,10 +109,11 @@ func getVspIpv4PoolSchema() *schema.Schema {
 					},
 				},
 				"addresses": {
-					Type:        schema.TypeList,
-					Description: "List of IP addresses",
-					Optional:    true,
-					Elem:        &schema.Schema{Type: schema.TypeString},
+					Type:          schema.TypeList,
+					Description:   "List of IP addresses",
+					Optional:      true,
+					ConflictsWith: []string{"cidr", "ip_range"},
+					Elem:          &schema.Schema{Type: schema.TypeString},
 				},
 				"excluded_addresses": {
 					Type:        schema.TypeList,
