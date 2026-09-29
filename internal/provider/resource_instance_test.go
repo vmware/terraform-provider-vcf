@@ -79,7 +79,7 @@ func testAccCheckVcfSddcConfigBasic() string {
 		"25.0.0.1"
 	  ]
 	  dns {
-		domain = "vcf.nimbus.internal"
+		domain = "example.local"
 		name_server = "25.0.0.1"
 	  }
 	  network {
@@ -182,9 +182,9 @@ func testAccCheckVcfSddcConfigBasic() string {
 		vm_size = "tiny"
 	  }
 	  vsp_cluster {
-		platform_fqdn = "vsp.vcf.nimbus.internal"
-		instance_fqdn = "sddc-lcm.vcf.nimbus.internal"
-		fleet_fqdn = "fleet-lcm.vcf.nimbus.internal"
+		platform_fqdn = "vsp.example.local"
+		instance_fqdn = "sddc-lcm.example.local"
+		fleet_fqdn = "fleet-lcm.example.local"
 		size = "small"
 		system_user_password = "MnogoSl0jn@P@rol@!"
 		internal_cluster_cidr_ipv4 = "198.18.0.0/15"
