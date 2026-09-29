@@ -149,7 +149,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	validationResult, vcfErr := api_client.GetResponseAs[vcf.Validation](validateResponse)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr, ctx)
-		return diag.FromErr(errors.New(*vcfErr.Message))
+		return validationUtils.ConvertVcfErrorToDiag(vcfErr)
 	}
 	if validationUtils.HasValidationFailed(validationResult) {
 		return validationUtils.ConvertValidationResultToDiag(validationResult)
@@ -162,7 +162,7 @@ func resourceDomainCreate(ctx context.Context, data *schema.ResourceData, meta i
 	task, vcfErr := api_client.GetResponseAs[vcf.Task](accepted)
 	if vcfErr != nil {
 		api_client.LogError(vcfErr, ctx)
-		return diag.FromErr(errors.New(*vcfErr.Message))
+		return validationUtils.ConvertVcfErrorToDiag(vcfErr)
 	}
 	if err = api_client.NewTaskTracker(ctx, apiClient, *task.Id).WaitForTask(); err != nil {
 		return diag.FromErr(err)
