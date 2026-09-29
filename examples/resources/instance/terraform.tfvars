@@ -219,3 +219,14 @@ automation = {
   node_prefix           = "sfo-automation"
   ip_pool               = ["10.11.10.106", "10.11.10.107", "10.11.10.108", "10.11.10.109"]
 }
+
+# VSP Cluster Configuration
+vsp_cluster = {
+  platform_fqdn              = "flt-vsp01.rainpole.io"
+  instance_fqdn              = "flt-vsp01-lcm.rainpole.io"
+  fleet_fqdn                 = "flt-vsp01-fleet.rainpole.io"
+  size                       = "small"
+  system_user_password       = "VMware123!VMware123!"
+  internal_cluster_cidr_ipv4 = "198.18.0.0/15"
+  ipv4_pool_cidr             = "10.11.10.128/28"
+}

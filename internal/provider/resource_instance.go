@@ -95,6 +95,7 @@ func resourceVcfInstanceSchema() map[string]*schema.Schema {
 		"automation":           sddc.GetVcfAutomationSchema(),
 		"operations":           sddc.GetVcfOperationsSchema(),
 		"operations_collector": sddc.GetVcfOperationsCollectorSchema(),
+		"vsp_cluster":          sddc.GetVspClusterSchema(),
 		"version": {
 			Type:        schema.TypeString,
 			Description: "VCF version",
@@ -169,6 +170,11 @@ func buildSddcSpec(data *schema.ResourceData) *installer.SddcSpec {
 	if operationsCollectorSpec, ok := data.GetOk("operations_collector"); ok {
 		if spec := sddc.GetVcfOperationsCollectorSpecFromSchema(operationsCollectorSpec.([]interface{})); spec != nil {
 			sddcSpec.VcfOperationsCollectorSpec = spec
+		}
+	}
+	if vspClusterSpec, ok := data.GetOk("vsp_cluster"); ok {
+		if spec := sddc.GetVspClusterSpecFromSchema(vspClusterSpec.([]interface{})); spec != nil {
+			sddcSpec.VspClusterSpec = spec
 		}
 	}
 	if version, ok := data.GetOk("version"); ok {

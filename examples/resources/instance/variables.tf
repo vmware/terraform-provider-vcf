@@ -340,3 +340,29 @@ variable "automation" {
     error_message = "Internal cluster CIDR must be one of: 198.18.0.0/15, 240.0.0.0/15, 250.0.0.0/15."
   }
 }
+
+# VSP Cluster Configuration
+variable "vsp_cluster" {
+  description = "VCF Management Services Platform (VSP) cluster configuration"
+  type = object({
+    platform_fqdn              = string
+    instance_fqdn              = string
+    fleet_fqdn                 = optional(string)
+    size                       = optional(string)
+    system_user_password       = optional(string)
+    internal_cluster_cidr_ipv4 = optional(string)
+    ipv4_pool_cidr             = string
+  })
+  sensitive = true
+  default   = null
+
+  validation {
+    condition     = var.vsp_cluster == null || var.vsp_cluster.internal_cluster_cidr_ipv4 == null || contains(["198.18.0.0/15", "240.0.0.0/15", "250.0.0.0/15"], var.vsp_cluster.internal_cluster_cidr_ipv4)
+    error_message = "Internal cluster CIDR must be one of: 198.18.0.0/15, 240.0.0.0/15, 250.0.0.0/15."
+  }
+
+  validation {
+    condition     = var.vsp_cluster == null || var.vsp_cluster.size == null || contains(["small", "small_ha", "medium", "large"], var.vsp_cluster.size)
+    error_message = "Size must be one of: small, small_ha, medium, large."
+  }
+}

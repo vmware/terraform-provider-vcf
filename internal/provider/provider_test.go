@@ -75,6 +75,11 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
+func testAccVcfInstancePreCheck(t *testing.T) {
+	testAccSDDCManagerOrCloudBuilderPreCheck(t)
+	testAccHostsPreCheck(t, 4)
+}
+
 func testAccSDDCManagerOrCloudBuilderPreCheck(t *testing.T) {
 	testSddcManagerUrl := os.Getenv(constants.VcfTestUrl)
 	testCloudBuilderUrl := os.Getenv(constants.InstallerTestUrl)
@@ -119,7 +124,7 @@ func testAccHostsPreCheck(t *testing.T, numberOfHosts int) {
 		constants.VcfTestHost8Pass,
 	}
 
-	if numberOfHosts < len(hostList) {
+	if numberOfHosts > len(hostList) {
 		t.Fatal("Too many hosts required")
 		return
 	}
