@@ -82,6 +82,12 @@ func FlattenCredentials(creds []vcf.Credential) []map[string]interface{} {
 	credsArray := make([]map[string]interface{}, 0)
 
 	for _, entry := range creds {
+		resource := map[string]string{
+			"id":   entry.Resource.ResourceId,
+			"name": entry.Resource.ResourceName,
+			"type": entry.Resource.ResourceType,
+		}
+
 		entryMap := map[string]interface{}{
 			"id":                entry.Id,
 			"account_type":      entry.AccountType,
@@ -90,13 +96,14 @@ func FlattenCredentials(creds []vcf.Credential) []map[string]interface{} {
 			"modification_time": entry.ModificationTimestamp,
 			"user_name":         entry.Username,
 			"password":          entry.Password,
-			"resource": []map[string]string{{
-				"id":     entry.Resource.ResourceId,
-				"domain": *entry.Resource.DomainName,
-				"ip":     *entry.Resource.ResourceIp,
-				"name":   entry.Resource.ResourceName,
-				"type":   entry.Resource.ResourceType,
-			}},
+			"resource":          []map[string]string{resource},
+		}
+
+		if entry.Resource.DomainName != nil {
+			resource["domain"] = *entry.Resource.DomainName
+		}
+		if entry.Resource.ResourceIp != nil {
+			resource["ip"] = *entry.Resource.ResourceIp
 		}
 
 		if entry.AutoRotatePolicy != nil {
