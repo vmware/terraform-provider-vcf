@@ -450,10 +450,10 @@ Optional:
 
 Optional:
 
-- `addresses` (List of String) List of IP addresses
-- `cidr` (String) Network CIDR
+- `addresses` (List of String) List of IP addresses. Conflicts with `ip_range` and `cidr`.
+- `cidr` (String) Network CIDR. Conflicts with `ip_range` and `addresses`.
 - `excluded_addresses` (List of String) List of IP addresses to exclude. Applies to cidr and ip_range
-- `ip_range` (Block List, Max: 1) Range of IP addresses (see [below for nested schema](#nestedblock--vsp_cluster--ipv4_pool--ip_range))
+- `ip_range` (Block List, Max: 1) Range of IP addresses (see [below for nested schema](#nestedblock--vsp_cluster--ipv4_pool--ip_range)). Conflicts with `cidr` and `addresses`.
 
 <a id="nestedblock--vsp_cluster--ipv4_pool--ip_range"></a>
 ### Nested Schema for `vsp_cluster.ipv4_pool.ip_range`
