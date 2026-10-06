@@ -67,6 +67,7 @@ func DataSourceCredentials() *schema.Resource {
 			"credentials": {
 				Type:        schema.TypeList,
 				Computed:    true,
+				Sensitive:   true,
 				Description: "List of credentials read from the API",
 				Elem:        credentials.CredentialDataSubresource(),
 			},
