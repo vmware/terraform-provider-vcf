@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [v0.19.0](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.19.0)
+
+> Release Date: 2026-10-07
+
+FEATURES:
+
+- `r/domain`: Adapted the resource for VCF 9.1.1. [#447](https://github.com/vmware/terraform-provider-vcf/pull/447)
+- `r/instance`: Updated the resource for VCF 9.1.1. [#445](https://github.com/vmware/terraform-provider-vcf/pull/445)
+
+FIXES:
+
+- `r/cluster`: Removed incorrect `ConflictsWith` from VSP cluster attributes. [#451](https://github.com/vmware/terraform-provider-vcf/pull/451)
+- Fixed an unsafe pointer dereference in `FlattenCredentials`. [#450](https://github.com/vmware/terraform-provider-vcf/pull/450)
+
+CHORES:
+
+- Updated `github.com/vmware/vcf-sdk-go` to 0.8.0 and fixed resulting build issues. [#444](https://github.com/vmware/terraform-provider-vcf/pull/444)
+- Updated `github.com/vmware/vcf-sdk-go` from 0.8.0 to 0.8.1 and removed the dependency on `oapi-codegen/runtime`. [#448](https://github.com/vmware/terraform-provider-vcf/pull/448)
+
 ## [v0.18.2](https://github.com/vmware/terraform-provider-vcf/releases/tag/v0.18.2)
 
 > Release Date: 2026-09-14
